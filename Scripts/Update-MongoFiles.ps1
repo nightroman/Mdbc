@@ -25,22 +25,10 @@
 	* Attributes : Int32 : Attributes converted to Int32
 	* Length : Int64 : exists for files only
 
-LICENSE
-
-	* Mdbc module - MongoDB Windows PowerShell Cmdlets
-	* Copyright (c) 2011 Roman Kuzmin
-	*
-	* Licensed under the Apache License, Version 2.0 (the "License");
-	* you may not use this file except in compliance with the License.
-	* You may obtain a copy of the License at
-	*
-	* http://www.apache.org/licenses/LICENSE-2.0
-	*
-	* Unless required by applicable law or agreed to in writing, software
-	* distributed under the License is distributed on an "AS IS" BASIS,
-	* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-	* See the License for the specific language governing permissions and
-	* limitations under the License.
+.Parameter Path
+		The directory path which contents has to be updated in the test.test
+		collection. Note that for paths like C:\ it may take several minutes.
+		PowerShell Get-ChildItem is relatively slow.
 
 .Link
 	Get-MongoFile.ps1

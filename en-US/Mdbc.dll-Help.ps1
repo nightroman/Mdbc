@@ -329,6 +329,7 @@ Checks if the field does not have any value in the specified set (MongoDB $nin).
 		description = 'Use it for Get-MdbcData, Remove-MdbcData, Update-MdbcData.'
 	}
 	links = @(
+		@{ text = 'query (alias)' }
 		@{ text = 'Get-MdbcData' }
 		@{ text = 'Remove-MdbcData' }
 		@{ text = 'Update-MdbcData' }
@@ -416,7 +417,10 @@ Deletes a given field.
 	}
 	inputs = @()
 	outputs = @{ type = 'Update expression'; description = 'Use these expression objects for Update-MdbcData.' }
-	links = @{ text = 'Update-MdbcData' }
+	links = @(
+		@{ text = 'update (alias)' }
+		@{ text = 'Update-MdbcData' }
+	)
 }
 
 ### Add-MdbcData
@@ -487,6 +491,21 @@ Number of documents to skip.
 Number of documents taking into account the Limit and Skip values.
 '@
 	}
+	inputs = @()
+	outputs = @(
+		@{
+			type = 'Int64'
+			description = 'If the Count or Size switch is specified.'
+		}
+		@{
+			type = 'MongoDB.Driver.MongoCursor'
+			description = 'If the Cursor switch is specified.'
+		}
+		@{
+			type = 'Mdbc.Dictionary'
+			description = 'Query results, BSON document wrapper objects.'
+		}
+	)
 	links = @(
 		@{ text = 'Connect-Mdbc' }
 		@{ text = 'New-MdbcQuery' }
@@ -516,22 +535,24 @@ Number of documents taking into account the Limit and Skip values.
 ### Update-MdbcData
 @{
 	command = 'Update-MdbcData'
-	synopsis = 'Updates specified documents.'
+	synopsis = 'Updates the specified documents.'
 	description = ''
 	parameters = @{
 		Collection = $script:collection
-		InputObject = ''
+		InputObject = @'
+Specified documents to be updated. It is either MongoDB.Driver.IMongoQuery (see
+New-MdbcQuery) or an object with _id (BsonDocument or its wrapper
+Mdbc.Dictionary) or just an _id value.
+'@
 		Modes = 'Additional update flags. See the C# driver manual.'
 		Safe = 'Tells to enable safe mode.'
 		SafeMode = 'Advanced safe mode options.'
-		Updates = 'Update expressions.'
+		Updates = 'Update expressions. See New-MdbcUpdate (update).'
 	}
-	inputs = @( ### ???
-		@{
-			type = ''
-			description = ''
-		}
-	)
+	inputs = @{
+		type = 'MongoDB.Driver.IMongoQuery or objects treated as _id values.'
+		description = 'See InputObject'
+	}
 	outputs = $script:typeSafeModeResult
 	links = @(
 		@{ text = 'Connect-Mdbc' }

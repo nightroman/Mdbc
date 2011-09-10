@@ -1,24 +1,24 @@
 
-# A few more features in addition to cmdlets
+# A few features in addition to cmdlets.
+
+# Predefined aliases
+Set-Alias query New-MdbcQuery
+Set-Alias update New-MdbcUpdate
 
 <#
-.SYNOPSIS
+.Synopsis
 	Converts Mdbc data to PowerShell objects.
 #>
-
 filter Convert-MdbcData {
 	New-Object PSObject -Property $_
 }
 
 <#
-.SYNOPSIS
+.Synopsis
 	Converts Mdbc data to JSON strings.
 #>
 filter Convert-MdbcJson {
 	$_.Document().ToString()
 }
-
-Set-Alias query New-MdbcQuery
-Set-Alias update New-MdbcUpdate
 
 Export-ModuleMember -Alias * -Cmdlet * -Function *

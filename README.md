@@ -70,10 +70,16 @@ installed and ready to use.
 Next Steps
 ----------
 
-Read cmdlet help topics and take a look at their examples, they should
-demonstrate the most of use cases to start with.
+Read cmdlet help topics and take a look at their examples, they show some basic
+use cases to start with.
 
-*Mdbc* cmdlets are enough for many but rather frequent and routine operations.
-For advanced operations the C# driver API should be called from scripts, it is
-possible and easy. The C# driver claims to be PowerShell friendly and some API
-is specifically designed with PowerShell in mind. Read the C# driver manuals.
+Take a look at the scripts in the *Scripts* directory. They are rather toys but
+can be useful, too, at least for learning.
+
+Even more examples can be found in the *Tests* directory. Download the sources.
+These tests cover all the cmdlets and most of other helper features.
+
+*Mdbc* cmdlets are designed for rather trivial routine operations. For advanced
+operations the C# driver API should be used. This is easy but one has to know
+how. The C# driver claims to be PowerShell friendly, some API was specifically
+designed with PowerShell in mind. Read the C# driver manuals.

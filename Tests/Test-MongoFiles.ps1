@@ -1,9 +1,14 @@
 
+<#
+.Synopsis
+	Tests data in test.files created by Scripts\Update-MongoFiles.ps1
+#>
+
 Set-StrictMode -Version 2
 $time1 = [DateTime]'2010-01-01'
 
 Import-Module Mdbc
-$collection = Connect-Mdbc mongodb://localhost test files
+$collection = Connect-Mdbc . test files
 
 function Test-Query($query) {
 	Write-Host $query.ToString()
