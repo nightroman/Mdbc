@@ -1,0 +1,9 @@
+*.suo
+*.user
+[B|b]in
+[D|d]ebug
+[O|o]bj
+[R|r]elease
+Test.ps1
+MongoDB.Bson.dll
+MongoDB.Driver.dll

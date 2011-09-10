@@ -1,0 +1,45 @@
+﻿
+TOPIC
+    about_Mdbc
+
+SHORT DESCRIPTION
+    MongoDB cmdlets built on top of the official C# driver.
+
+LONG DESCRIPTION
+    The module provides cmdlets for the following operations:
+
+    Connect, get instance of a server, database, or collection:
+
+        Connect-Mdbc
+
+    Add, get, remove, and update data:
+
+        Add-MdbcData
+        Get-MdbcData
+        Remove-MdbcData
+        Update-MdbcData
+
+    Create new documents for Add-MdbcData:
+
+        New-MdbcData
+
+    Create update expressions for Update-MdbcData:
+
+        New-MdbcUpdate
+
+    Create queries for Get-MdbcData, Remove-MdbcData, and Update-MdbcData:
+
+        New-MdbcQuery
+
+SEE ALSO
+    MongoDB: http://www.mongodb.org
+    C# driver: http://www.mongodb.org/display/DOCS/CSharp+Language+Center
+    C# driver repository: https://github.com/mongodb/mongo-csharp-driver
+    Connect-Mdbc
+    Add-MdbcData
+    Get-MdbcData
+    Remove-MdbcData
+    Update-MdbcData
+    New-MdbcData
+    New-MdbcUpdate
+    New-MdbcQuery
