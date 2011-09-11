@@ -16,11 +16,9 @@
 	script directory and invoke the Build task:
 	PS> Invoke-Build Build
 
-	CAUTION: This command builds the module and then installs it to the
-	$ModuleRoot. ALL FILES THERE ARE REMOVED. Then new files are copied.
-
-	As far as the $ModuleRoot is the working location of the Mdbc module, the
-	build fails if the module is currently in use. Ensure it is not and repeat.
+	This command builds the module and installs it to the $ModuleRoot which is
+	the working location of the Mdbc module. The build fails if the module is
+	currently in use. Ensure it is not and then repeat.
 
 	The build task Help fails if the help builder Helps is not installed.
 	Ignore this or better get and install the module (it is really easy):
@@ -59,7 +57,7 @@ task Clean {
 # It is called as the post-build event of Mdbc.csproj.
 task PostBuild {
 	Copy-Item Src\Bin\$Configuration\Mdbc.dll Module
-	exec { robocopy Module $ModuleRoot /mir /np /r:0 } (0..3)
+	exec { robocopy Module $ModuleRoot /s /np /r:0 } (0..3)
 },
 @{Help=1}
 
