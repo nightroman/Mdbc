@@ -27,7 +27,7 @@ namespace Mdbc.Commands
 		[Parameter(Position = 1, Mandatory = true)]
 		public PSObject Updates { get; set; }
 		[Parameter(Position = 2, Mandatory = true, ValueFromPipeline = true)]
-		public PSObject InputObject { get; set; }
+		public PSObject Query { get; set; }
 		[Parameter]
 		public UpdateFlags Modes { get; set; }
 		[Parameter]
@@ -52,7 +52,7 @@ namespace Mdbc.Commands
 		}
 		protected override void ProcessRecord()
 		{
-			var query = Actor.ObjectToQuery(InputObject);
+			var query = Actor.ObjectToQuery(Query);
 
 			if (Safe)
 				SafeMode = new SafeMode(Safe);

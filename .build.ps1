@@ -140,14 +140,35 @@ task ConvertMarkdown `
 
 # Make the public zip
 task Zip @{ConvertMarkdown=1}, @{UpdateScripts=1}, {
-	$zip = "Mdbc.1.0.0.rc0.zip"
+	$zip = "Mdbc.1.0.0.rc1.zip"
+
+	# make zip
 	exec { robocopy $ModuleRoot z\Mdbc /s } (0..3)
 	exec { robocopy Scripts z\Mdbc\Scripts } (0..3)
 	Copy-Item License.txt, *.htm z\Mdbc
 	Push-Location z
-	exec { & 7z a $zip * }
+	$content = exec { & 7z a $zip * } | ?{ $_ -match '^Compressing'} | Out-String
+	$content
 	Copy-Item $zip ..
 	Pop-Location
 	Remove-Item z -Recurse -Force
 	Remove-Item *.htm
+
+	# test content if ConvertMarkdown is done
+	assert ((error ConvertMarkdown) -or ($content -eq @'
+Compressing  Mdbc\en-US\about_Mdbc.help.txt
+Compressing  Mdbc\en-US\Mdbc.dll-Help.xml
+Compressing  Mdbc\License.C# Driver.txt
+Compressing  Mdbc\License.txt
+Compressing  Mdbc\Mdbc.dll
+Compressing  Mdbc\Mdbc.Format.ps1xml
+Compressing  Mdbc\Mdbc.psd1
+Compressing  Mdbc\Mdbc.psm1
+Compressing  Mdbc\MongoDB.Bson.dll
+Compressing  Mdbc\MongoDB.Driver.dll
+Compressing  Mdbc\README.htm
+Compressing  Mdbc\Scripts\Get-MongoFile.ps1
+Compressing  Mdbc\Scripts\Update-MongoFiles.ps1
+
+'@))
 }

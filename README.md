@@ -59,13 +59,12 @@ sure that mongod is started, otherwise `Connect-Mdbc` fails):
     Get-MdbcData $collection (query Name -EQ mongod)
 
     # Remove these data:
-    Remove-MdbcData $collection (query Name -EQ mongod)
+    $data | Remove-MdbcData $collection
 
     # Query again, just get the count, it should be 0:
     Get-MdbcData $collection (query Name -EQ mongod) -Count
 
-This is it. If the code above works then the module and its cmdlets are
-installed and ready to use.
+This is it. If the code above works then the module is installed and ready to use.
 
 Next Steps
 ----------

@@ -28,7 +28,7 @@
 	Get-MdbcData $collection (query Name -EQ mongod)
 
 	# Remove these data:
-	Remove-MdbcData $collection (query Name -EQ mongod)
+	$data | Remove-MdbcData $collection
 
 	# Query again, just get the count, it should be 0:
 	Get-MdbcData $collection (query Name -EQ mongod) -Count

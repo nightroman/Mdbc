@@ -7,23 +7,50 @@
 # Import the module to make commands available for the builder.
 Import-Module Mdbc
 
-# Shared collection description.
-$script:collection = @'
+# Description of the Collection parameter.
+$script:CollectionParameter = @'
 Collection object. It is obtained by Connect-Mdbc directly (using the
 Collection parameter) or from returned database or server objects.
 '@
 
+# Description of the Query parameter.
+$script:QueryParameter = @'
+Specified the documents to be processed. It can be MongoDB.Driver.IMongoQuery
+(see New-MdbcQuery) or a document with _id (BsonDocument or Mdbc.Dictionary) or
+just a value treated as _id and converted into the query internally.
+'@
+
 # Shared [Mdbc.Dictionary] type info.
-$script:typeMdbcDictionary = @{
+$script:TypeMdbcDictionary = @{
 	type = '[Mdbc.Dictionary]'
 	description = 'Objects created by New-MdbcData or obtained by Get-MdbcData.'
 }
 
 # Shared SafeModeResult type info.
-$script:typeSafeModeResult = @{
+$script:TypeSafeModeResult = @{
 	type = '[MongoDB.Driver.SafeModeResult]'
 	description = 'The result is returned if safe mode if enabled.'
 }
+
+# Query inputs.
+$script:QueryInputs = @(
+	@{
+		type = '[MongoDB.Driver.IMongoQuery]'
+		description = 'Query expression. See New-MdbcQuery (query).'
+	}
+	@{
+		type = '[Mdbc.Dictionary], [MongoDB.Bson.BsonDocument]'
+		description = @'
+A document which _id is used for identification.
+[Mdbc.Dictionary] objects are created by New-MdbcData or obtained by Get-MdbcData.
+'@
+	}
+	@{
+		type = '[object]'
+		description = 'Any other value is treated as _id for identification.'
+	}
+)
+
 
 ### Connect-Mdbc
 @{
@@ -428,14 +455,14 @@ Deletes a given field.
 	command = 'Add-MdbcData'
 	synopsis = 'Adds new documents to the database collection or updates existing.'
 	parameters = @{
-		Collection = $collection
+		Collection = $script:CollectionParameter
 		InputObject = 'Document (Mdbc.Dictionary, BsonDocument, or PSCustomObject).'
 		Safe = 'Tells to enable safe mode.'
 		SafeMode = 'Advanced safe mode options.'
 		Update = 'Tells to update existing documents with the same _id or add new documents otherwise.'
 	}
 	inputs = @(
-		$script:typeMdbcDictionary
+		$script:TypeMdbcDictionary
 		@{
 			type = '[PSCustomObject]'
 			description = 'Custom objects often created by Select-Object but not only.'
@@ -445,7 +472,7 @@ Deletes a given field.
 			description = 'This type is supported but normally it should not be used directly.'
 		}
 	)
-	outputs = $script:typeSafeModeResult
+	outputs = $script:TypeSafeModeResult
 	links = @(
 		@{ text = 'New-MdbcData' }
 		@{ text = 'Select-Object' }
@@ -462,10 +489,8 @@ Gets documents from the database collection.
 Gets documents from the database collection.
 '@
 	parameters = @{
-		Collection = $collection
-		Query = @'
-Query expression obtained by New-MdbcQuery.
-'@
+		Collection = $script:CollectionParameter
+		Query = $script:QueryParameter
 		Count = @'
 Tells to return the number of documents that match the query.
 '@
@@ -518,14 +543,14 @@ Number of documents taking into account the Limit and Skip values.
 	synopsis = 'Removes specified documents from the collection.'
 	description = ''
 	parameters = @{
-		Collection = $script:collection
+		Collection = $script:CollectionParameter
+		Query = $script:QueryParameter
 		Modes = 'Additional removal flags. See the C# driver manual.'
-		Query = 'Specifies the documents to be removed.'
 		Safe = 'Tells to enable safe mode.'
 		SafeMode = 'Advanced safe mode options.'
 	}
-	inputs = @()
-	outputs = $script:typeSafeModeResult
+	inputs = $script:QueryInputs
+	outputs = $script:TypeSafeModeResult
 	links = @(
 		@{ text = 'Connect-Mdbc' }
 		@{ text = 'New-MdbcQuery' }
@@ -538,22 +563,15 @@ Number of documents taking into account the Limit and Skip values.
 	synopsis = 'Updates the specified documents.'
 	description = ''
 	parameters = @{
-		Collection = $script:collection
-		InputObject = @'
-Specified documents to be updated. It is either MongoDB.Driver.IMongoQuery (see
-New-MdbcQuery) or an object with _id (BsonDocument or its wrapper
-Mdbc.Dictionary) or just an _id value.
-'@
+		Collection = $script:CollectionParameter
+		Query = $script:QueryParameter
 		Modes = 'Additional update flags. See the C# driver manual.'
 		Safe = 'Tells to enable safe mode.'
 		SafeMode = 'Advanced safe mode options.'
 		Updates = 'Update expressions. See New-MdbcUpdate (update).'
 	}
-	inputs = @{
-		type = 'MongoDB.Driver.IMongoQuery or objects treated as _id values.'
-		description = 'See InputObject'
-	}
-	outputs = $script:typeSafeModeResult
+	inputs = $script:QueryInputs
+	outputs = $script:TypeSafeModeResult
 	links = @(
 		@{ text = 'Connect-Mdbc' }
 		@{ text = 'New-MdbcUpdate' }
