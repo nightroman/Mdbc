@@ -43,11 +43,25 @@ namespace Mdbc.Commands
 				return;
 			}
 
+			if (Database.Length == 0)
+			{
+				foreach (var name in server.GetDatabaseNames())
+					WriteObject(server.GetDatabase(name));
+				return;
+			}
+
 			var database = server.GetDatabase(Database);
 
 			if (Collection == null)
 			{
 				WriteObject(database);
+				return;
+			}
+
+			if (Collection.Length == 0)
+			{
+				foreach (var name in database.GetCollectionNames())
+					WriteObject(database.GetCollection(name));
 				return;
 			}
 

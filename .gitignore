@@ -1,6 +1,7 @@
 *.dll
 *.suo
 *.user
+*.zip
 [B|b]in
 [D|d]ebug
 [O|o]bj

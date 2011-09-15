@@ -140,7 +140,7 @@ task ConvertMarkdown `
 
 # Make the public zip
 task Zip @{ConvertMarkdown=1}, @{UpdateScripts=1}, {
-	$zip = "Mdbc.1.0.0.rc1.zip"
+	$zip = "Mdbc.1.0.0.rc2.zip"
 
 	# make zip
 	exec { robocopy $ModuleRoot z\Mdbc /s } (0..3)
@@ -171,4 +171,8 @@ Compressing  Mdbc\Scripts\Get-MongoFile.ps1
 Compressing  Mdbc\Scripts\Update-MongoFiles.ps1
 
 '@))
+
+	# git status
+	$status = git status -s
+	if ($status) { Write-Warning $status }
 }

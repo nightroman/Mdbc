@@ -74,8 +74,8 @@ A document which _id is used for identification.
 	Example: "." (same as "mongodb://localhost").
 	Example: "mongodb://localhost:27017".
 '@
-		Database = 'Database name.'
-		Collection = 'Collection name.'
+		Database = 'Database name. Empty is used in order to get all database objects.'
+		Collection = 'Collection name. Empty is used in order to get all collection objects.'
 		NewCollection = 'Tells to drop the collection if it exists and create a new one.'
 	}
 	inputs = @()
@@ -126,6 +126,32 @@ A document which _id is used for identification.
 				. $args[0]
 				if ($server.GetType().Name -ne 'MongoServer') { throw }
 				if ($database.GetType().Name -ne 'MongoDatabase') { throw }
+			}
+		}
+		@{
+			code = {
+				# Connect and get all databases
+				Import-Module Mdbc
+				Connect-Mdbc . ''
+			}
+			test = {
+				$database = . $args[0]
+				# at least: admin, local, test
+				if ($database.Count -lt 3) { throw }
+				if ($database[0].GetType().Name -ne 'MongoDatabase') { throw }
+			}
+		}
+		@{
+			code = {
+				# Connect to the database 'test' and get its collections
+				Import-Module Mdbc
+				Connect-Mdbc . test ''
+			}
+			test = {
+				$collection = . $args[0]
+				# at least: test, process
+				if ($collection.Count -lt 2) { throw }
+				if ($collection[0].GetType().Name -ne 'MongoCollection`1') { throw }
 			}
 		}
 	)
