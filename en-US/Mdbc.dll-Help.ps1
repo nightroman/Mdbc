@@ -55,13 +55,13 @@ A document which _id is used for identification.
 ### Connect-Mdbc
 @{
 	command = 'Connect-Mdbc'
-	synopsis = 'Connects and gets a server, database, or collection object.'
+	synopsis = 'Connects and gets a server, database(s), or collection(s) object(s).'
 	description = @'
 	> Connect-Mdbc -ConnectionString
-	Gets the connected server object. Use GetDatabase(), ...
+	Gets the connected server object.
 
 	> Connect-Mdbc -ConnectionString -Database
-	Gets the connected database object. Use GetCollection(), ...
+	Gets the connected database object.
 
 	> Connect-Mdbc -ConnectionString -Database -Collection
 	Gets the connected collection object. Use Add-MdbcData, Get-MdbcData, Remove-MdbcData, Update-MdbcData.
@@ -74,8 +74,8 @@ A document which _id is used for identification.
 	Example: "." (same as "mongodb://localhost").
 	Example: "mongodb://localhost:27017".
 '@
-		Database = 'Database name. Empty is used in order to get all database objects.'
-		Collection = 'Collection name. Empty is used in order to get all collection objects.'
+		Database = 'Database name. * is used in order to get all database objects.'
+		Collection = 'Collection name. * is used in order to get all collection objects.'
 		NewCollection = 'Tells to drop the collection if it exists and create a new one.'
 	}
 	inputs = @()
@@ -130,22 +130,22 @@ A document which _id is used for identification.
 		}
 		@{
 			code = {
-				# Connect and get all databases
+				# Connect to the default server and get all databases
 				Import-Module Mdbc
-				Connect-Mdbc . ''
+				Connect-Mdbc . *
 			}
 			test = {
 				$database = . $args[0]
-				# at least: admin, local, test
-				if ($database.Count -lt 3) { throw }
+				# at least: local, test
+				if ($database.Count -lt 2) { throw }
 				if ($database[0].GetType().Name -ne 'MongoDatabase') { throw }
 			}
 		}
 		@{
 			code = {
-				# Connect to the database 'test' and get its collections
+				# Connect to the database 'test' and get all its collections
 				Import-Module Mdbc
-				Connect-Mdbc . test ''
+				Connect-Mdbc . test *
 			}
 			test = {
 				$collection = . $args[0]

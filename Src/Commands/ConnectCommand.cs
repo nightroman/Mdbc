@@ -43,7 +43,7 @@ namespace Mdbc.Commands
 				return;
 			}
 
-			if (Database.Length == 0)
+			if (Database == "*")
 			{
 				foreach (var name in server.GetDatabaseNames())
 					WriteObject(server.GetDatabase(name));
@@ -58,7 +58,7 @@ namespace Mdbc.Commands
 				return;
 			}
 
-			if (Collection.Length == 0)
+			if (Collection == "*")
 			{
 				foreach (var name in database.GetCollectionNames())
 					WriteObject(database.GetCollection(name));

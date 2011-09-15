@@ -12,9 +12,6 @@ The goal is to make it easier to use the official C# driver in scripts, not to
 replace it completely with cmdlets for everything. Most of C# API can be used
 in scripts directly as it is.
 
-Due to important recent driver changes the included driver assemblies are built
-from the latest sources (https://github.com/mongodb/mongo-csharp-driver).
-
 Quick Start
 -----------
 
