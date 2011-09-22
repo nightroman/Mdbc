@@ -129,17 +129,12 @@ task CleanDriver {
 # Pull the latest driver, build it, then build Mdbc, test and clean all
 task Driver PullDriver, BuildDriver, Build, Test, Clean, CleanDriver
 
-# Convert *.md files to *.htm files.
-# Requires Convert-Markdown.ps1, not yet public.
-task ConvertMarkdown `
--Inputs { Get-ChildItem -Filter *.md } `
--Outputs {process{ [System.IO.Path]::ChangeExtension($_, 'htm') }} `
-{process{
-	Convert-Markdown.ps1 $_ $$
-}}
+# <https://github.com/nightroman/Invoke-Build/wiki/Partial-Incremental-Tasks>
+try { Markdown.tasks.ps1 }
+catch { task ConvertMarkdown; task RemoveMarkdownHtml }
 
 # Make the public zip
-task Zip @{ConvertMarkdown=1}, @{UpdateScripts=1}, {
+task Zip ConvertMarkdown, @{UpdateScripts=1}, {
 	$zip = "Mdbc.1.0.0.rc2.zip"
 
 	# make zip
@@ -152,7 +147,6 @@ task Zip @{ConvertMarkdown=1}, @{UpdateScripts=1}, {
 	Copy-Item $zip ..
 	Pop-Location
 	Remove-Item z -Recurse -Force
-	Remove-Item *.htm
 
 	# test content if ConvertMarkdown is done
 	assert ((error ConvertMarkdown) -or ($content -eq @'
@@ -175,4 +169,5 @@ Compressing  Mdbc\Scripts\Update-MongoFiles.ps1
 	# git status
 	$status = git status -s
 	if ($status) { Write-Warning $status }
-}
+},
+RemoveMarkdownHtml
