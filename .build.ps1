@@ -40,9 +40,6 @@ $ModuleRoot = Join-Path ([Environment]::GetFolderPath('MyDocuments')) WindowsPow
 # Use MSBuild.
 use Framework\v4.0.30319 MSBuild
 
-# Build, test and clean all.
-task . Build, Test, TestHelp, Clean
-
 # Build all.
 task Build {
 	exec { MSBuild Src\Mdbc.csproj /t:Build /p:Configuration=Release }
@@ -66,13 +63,13 @@ task Help `
 -Inputs (Get-Item Src\Commands\*, en-US\Mdbc.dll-Help.ps1) `
 -Outputs $ModuleRoot\en-US\Mdbc.dll-Help.xml `
 {
-	Import-Module Helps
+	. Helps.ps1
 	Convert-Helps en-US\Mdbc.dll-Help.ps1 $Outputs
 }
 
 # Test help examples.
 task TestHelpExample {
-	Import-Module Helps
+	. Helps.ps1
 	Test-Helps en-US\Mdbc.dll-Help.ps1
 }
 
@@ -171,3 +168,6 @@ Compressing  Mdbc\Scripts\Update-MongoFiles.ps1
 	if ($status) { Write-Warning $status }
 },
 RemoveMarkdownHtml
+
+# Build, test and clean all.
+task . Build, Test, TestHelp, Clean

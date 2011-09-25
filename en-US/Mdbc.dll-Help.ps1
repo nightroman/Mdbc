@@ -1,7 +1,7 @@
 
 <#
 .Synopsis
-	Help script for [Helps](https://github.com/nightroman/Helps)
+	Help script (https://github.com/nightroman/Helps)
 #>
 
 # Import the module to make commands available for the builder.
