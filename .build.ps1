@@ -59,10 +59,7 @@ task PostBuild {
 @{Help=1}
 
 # Build module help by Helps (https://github.com/nightroman/Helps).
-task Help `
--Inputs (Get-Item Src\Commands\*, en-US\Mdbc.dll-Help.ps1) `
--Outputs $ModuleRoot\en-US\Mdbc.dll-Help.xml `
-{
+task Help -Incremental @{(Get-Item Src\Commands\*, en-US\Mdbc.dll-Help.ps1) = "$ModuleRoot\en-US\Mdbc.dll-Help.xml"} {
 	. Helps.ps1
 	Convert-Helps en-US\Mdbc.dll-Help.ps1 $Outputs
 }
@@ -88,10 +85,13 @@ task TestHelp Help, TestHelpExample, TestHelpSynopsis
 
 # Copy external scripts from their working location to the project.
 # It fails if the scripts are not available.
-task UpdateScripts `
--Inputs { Get-Command Update-MongoFiles.ps1, Get-MongoFile.ps1 | %{ $_.Definition } } `
--Outputs {process{ "Scripts\$(Split-Path -Leaf $_)" }} `
-{process{ Copy-Item $_ $$ }}
+task UpdateScripts -Partial @{{
+	Get-Command Update-MongoFiles.ps1, Get-MongoFile.ps1 | %{ $_.Definition }
+} = {process{
+	"Scripts\$(Split-Path -Leaf $_)"
+}}} {process{
+	Copy-Item $_ $$
+}}
 
 # Make a task for each script in the Tests directory and add to the jobs.
 task Test @(
