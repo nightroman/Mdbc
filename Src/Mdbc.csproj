@@ -83,8 +83,11 @@
     <Compile Include="Commands\UpdateDataCommand.cs" />
     <Compile Include="Collection.cs" />
     <Compile Include="Dictionary.cs" />
-    <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="AssemblyInfo.cs" />
+    <Compile Include="GlobalSuppressions.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <CodeAnalysisDictionary Include="CodeAnalysisDictionary.xml" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
