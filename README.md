@@ -1,26 +1,34 @@
-Mdbc module - Windows PowerShell cmdlets for MongoDB
-====================================================
+Mdbc module - MongoDB Cmdlets for PowerShell
+============================================
 
-![Powered by MongoDB](https://github.com/downloads/nightroman/Mdbc/PoweredMongoDBblue50.png)
+[Powered by MongoDB](https://github.com/downloads/nightroman/Mdbc/PoweredMongoDBblue50.png)
 
 *Mdbc* is the *Windows PowerShell* module built on top of the official
 [MongoDB C# driver](https://github.com/mongodb/mongo-csharp-driver).
 It provides a few cmdlets and PowerShell friendly features for basic
-operations on MongoDB data. They reduce tedious coding and hide some details.
+operations on MongoDB data.
 
 The goal is to make it easier to use the official C# driver in scripts, not to
 replace it completely with cmdlets for everything. Most of C# API can be used
 in scripts directly as it is.
 
-Quick Start
------------
+## Quick Start
 
-**Step 1:** Download and unzip *Mdbc* to one of the PowerShell module
+**Step 1:**
+An easy way to get and update the package is
+[NuGet.exe Command Line](http://nuget.codeplex.com/releases):
+
+    NuGet install Mdbc
+
+Alternatively, manually download and unzip the latest package from
+[Downloads](https://github.com/nightroman/Mdbc/downloads).
+
+Copy the directory *Mdbc* from the package to one of the PowerShell module
 directories (see `$env:PSModulePath`). For example:
 
     C:/Users/.../Documents/WindowsPowerShell/Modules/Mdbc
 
-**Step 2:** Import the module:
+**Step 2:** In a PowerShell command prompt import the module:
 
     Import-Module Mdbc
 
@@ -30,8 +38,8 @@ directories (see `$env:PSModulePath`). For example:
     help Connect-Mdbc -full
     ...
 
-**Step 4:** Invoke these operations line by line, reading the comments (make
-sure that mongod is started, otherwise `Connect-Mdbc` fails):
+**Step 4:** Invoke these operations line by line, reading the comments
+(make sure that mongod is started, otherwise `Connect-Mdbc` fails):
 
     # Import the module (if not yet):
     Import-Module Mdbc

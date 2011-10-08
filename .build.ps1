@@ -6,14 +6,13 @@
 .Description
 	How to use this script and build the module:
 
-	*) Copy MongoDB.Bson.dll and MongoDB.Driver.dll from the released zip to
-	the Module directory. The C# project Mdbc.csproj assumes they are there.
+	*) Copy MongoDB.Bson.dll and MongoDB.Driver.dll from the released package
+	to the Module directory. The project Mdbc.csproj assumes they are there.
 
 	*) Get the utility script Invoke-Build.ps1 from here:
-	https://github.com/nightroman/Invoke-Build
-
-	*) Copy it to any directory in the system path. Then set location to this
-	script directory and invoke the Build task:
+		https://github.com/nightroman/Invoke-Build
+	Copy it to any directory in the system path. Then set location to the
+	directory of this .build.ps1 and invoke the task Build:
 	PS> Invoke-Build Build
 
 	This command builds the module and installs it to the $ModuleRoot which is
@@ -42,12 +41,12 @@ use Framework\v4.0.30319 MSBuild
 
 # Build all.
 task Build {
-	exec { MSBuild Src\Mdbc.csproj /t:Build /p:Configuration=Release }
+	exec { MSBuild Src\Mdbc.csproj /t:Build /p:Configuration=$Configuration }
 }
 
 # Clean all.
-task Clean {
-	Remove-Item Src\bin, Src\obj, Module\Mdbc.dll -Recurse -Force -ErrorAction 0
+task Clean RemoveMarkdownHtml, {
+	Remove-Item z, Src\bin, Src\obj, Module\Mdbc.dll, Mdbc.*.zip, *.nupkg -Force -Recurse -ErrorAction 0
 }
 
 # Copy all to the module root directory and then build help.
@@ -85,13 +84,12 @@ task TestHelp Help, TestHelpExample, TestHelpSynopsis
 
 # Copy external scripts from their working location to the project.
 # It fails if the scripts are not available.
-task UpdateScripts -Partial @{{
-	Get-Command Update-MongoFiles.ps1, Get-MongoFile.ps1 | %{ $_.Definition }
-} = {process{
-	"Scripts\$(Split-Path -Leaf $_)"
-}}} {process{
-	Copy-Item $_ $$
-}}
+task UpdateScripts -Partial @{
+	{ Get-Command Update-MongoFiles.ps1, Get-MongoFile.ps1 | %{ $_.Definition } } =
+	{ process{ "Scripts\$(Split-Path -Leaf $_)" } }
+} {
+	process{ Copy-Item $_ $$ }
+}
 
 # Make a task for each script in the Tests directory and add to the jobs.
 task Test @(
@@ -126,48 +124,96 @@ task CleanDriver {
 # Pull the latest driver, build it, then build Mdbc, test and clean all
 task Driver PullDriver, BuildDriver, Build, Test, Clean, CleanDriver
 
+# Import markdown tasks ConvertMarkdown and RemoveMarkdownHtml.
 # <https://github.com/nightroman/Invoke-Build/wiki/Partial-Incremental-Tasks>
 try { Markdown.tasks.ps1 }
 catch { task ConvertMarkdown; task RemoveMarkdownHtml }
 
-# Make the public zip
-task Zip ConvertMarkdown, @{UpdateScripts=1}, {
-	$zip = "Mdbc.1.0.0.rc2.zip"
+# Make the package in z\tools for for Zip and NuGet
+task Package ConvertMarkdown, @{UpdateScripts=1}, {
+	# package directories
+	Remove-Item [z] -Force -Recurse
+	$null = mkdir z\tools\Mdbc\en-US, z\tools\Mdbc\Scripts
 
-	# make zip
-	exec { robocopy $ModuleRoot z\Mdbc /s } (0..3)
-	exec { robocopy Scripts z\Mdbc\Scripts } (0..3)
-	Copy-Item License.txt, *.htm z\Mdbc
-	Push-Location z
-	$content = exec { & 7z a $zip * } | ?{ $_ -match '^Compressing'} | Out-String
-	$content
-	Copy-Item $zip ..
-	Pop-Location
-	Remove-Item z -Recurse -Force
+	# copy project files
+	Copy-Item -Destination z\tools\Mdbc @(
+		'LICENSE.TXT'
+		"$ModuleRoot\LICENSE.MongoCSharpDriver.txt"
+		"$ModuleRoot\Mdbc.dll"
+		"$ModuleRoot\Mdbc.Format.ps1xml"
+		"$ModuleRoot\Mdbc.psd1"
+		"$ModuleRoot\Mdbc.psm1"
+		"$ModuleRoot\MongoDB.Bson.dll"
+		"$ModuleRoot\MongoDB.Driver.dll"
+	)
+	Copy-Item -Destination z\tools\Mdbc\en-US @(
+		"$ModuleRoot\en-US\about_Mdbc.help.txt"
+		"$ModuleRoot\en-US\Mdbc.dll-Help.xml"
+	)
+	Copy-Item -Destination z\tools\Mdbc\Scripts @(
+		'Scripts\Get-MongoFile.ps1'
+		'Scripts\Update-MongoFiles.ps1'
+	)
 
-	# test content if ConvertMarkdown is done
-	assert ((error ConvertMarkdown) -or ($content -eq @'
-Compressing  Mdbc\en-US\about_Mdbc.help.txt
-Compressing  Mdbc\en-US\Mdbc.dll-Help.xml
-Compressing  Mdbc\License.C# Driver.txt
-Compressing  Mdbc\License.txt
-Compressing  Mdbc\Mdbc.dll
-Compressing  Mdbc\Mdbc.Format.ps1xml
-Compressing  Mdbc\Mdbc.psd1
-Compressing  Mdbc\Mdbc.psm1
-Compressing  Mdbc\MongoDB.Bson.dll
-Compressing  Mdbc\MongoDB.Driver.dll
-Compressing  Mdbc\README.htm
-Compressing  Mdbc\Scripts\Get-MongoFile.ps1
-Compressing  Mdbc\Scripts\Update-MongoFiles.ps1
+	# move generated files
+	Move-Item -Destination z\tools\Mdbc @(
+		'README.htm'
+	)
+}
 
-'@))
+# Get version from the assembly and sets $script:Version
+task Version {
+	assert ((Get-Item $ModuleRoot\Mdbc.dll).VersionInfo.FileVersion -match '^(\d+\.\d+\.\d+)')
+	$script:Version = $matches[1]
+}
 
-	# git status
-	$status = git status -s
-	if ($status) { Write-Warning $status }
-},
-RemoveMarkdownHtml
+# Make the zip package
+task Zip Package, Version, {
+	Set-Location z\tools
+	exec { & 7z a ..\..\Mdbc.$Version.zip * }
+}
+
+# Make the NuGet package
+task NuGet Package, Version, {
+	# nuspec
+	Set-Content z\Package.nuspec @"
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+	<metadata>
+		<id>Mdbc</id>
+		<version>$Version</version>
+		<authors>Roman Kuzmin</authors>
+		<owners>Roman Kuzmin</owners>
+		<projectUrl>https://github.com/nightroman/Mdbc</projectUrl>
+		<licenseUrl>http://www.apache.org/licenses/LICENSE-2.0</licenseUrl>
+		<requireLicenseAcceptance>false</requireLicenseAcceptance>
+		<summary>
+Mdbc is the Windows PowerShell module built on top of the official MongoDB C#
+driver. It provides a few cmdlets and PowerShell friendly features for basic
+operations on MongoDB data.
+		</summary>
+		<description>
+Mdbc is the Windows PowerShell module built on top of the official MongoDB C#
+driver. It provides a few cmdlets and PowerShell friendly features for basic
+operations on MongoDB data.
+		</description>
+		<tags>Mongo MongoDB PowerShell Module</tags>
+	</metadata>
+</package>
+"@
+	# pack
+	exec { NuGet pack z\Package.nuspec }
+}
+
+# Check the files before commit. Called by .git/hooks/pre-commit.
+task pre-commit {
+	foreach ($file in git status -s) {
+		$file
+		if ($file -notmatch '\.(cs|csproj|md|ps1|psd1|psm1|ps1xml|sln|txt|xml|gitignore)$') {
+			throw "Commit is not allowed: '$file'."
+		}
+	}
+}
 
 # Build, test and clean all.
 task . Build, Test, TestHelp, Clean
