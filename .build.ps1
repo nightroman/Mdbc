@@ -91,37 +91,32 @@ task UpdateScripts -Partial @{
 	process{ Copy-Item $_ $$ }
 }
 
-# Make a task for each script in the Tests directory and add to the jobs.
-task Test @(
-	Get-ChildItem Tests -Filter Test-*.ps1 | .{process{
-		# add a task
-		task $_.Name (Invoke-Expression "{ $($_.FullName) }")
-		# add it as a job
-		$_.Name
-	}}
-)
+# Call tests.
+task Test {
+	Invoke-Build . Tests\Test.build.ps1
+}
 
-# git pull on the C# driver repo
+# Pull C# driver sources.
 task PullDriver {
 	assert $env:MongoDBCSharpDriverRepo
 	Set-Location $env:MongoDBCSharpDriverRepo
 	exec { git pull }
 }
 
-# Build the C# driver from sources and copy its assemblies to Module
+# Build driver assemblies and copy to Module.
 task BuildDriver {
 	assert $env:MongoDBCSharpDriverRepo
 	exec { MSBuild $env:MongoDBCSharpDriverRepo\CSharpDriver-2010.sln /t:Build /p:Configuration=Release }
 	Copy-Item $env:MongoDBCSharpDriverRepo\Driver\bin\Release\*.dll Module
 }
 
-# Clean the C# driver sources
+# Clean driver sources.
 task CleanDriver {
 	assert $env:MongoDBCSharpDriverRepo
 	exec { MSBuild $env:MongoDBCSharpDriverRepo\CSharpDriver-2010.sln /t:Clean /p:Configuration=Release }
 }
 
-# Pull the latest driver, build it, then build Mdbc, test and clean all
+# Pull the latest driver, build it, then build Mdbc, test and clean all.
 task Driver PullDriver, BuildDriver, Build, Test, Clean, CleanDriver
 
 # Import markdown tasks ConvertMarkdown and RemoveMarkdownHtml.
@@ -129,52 +124,53 @@ task Driver PullDriver, BuildDriver, Build, Test, Clean, CleanDriver
 try { Markdown.tasks.ps1 }
 catch { task ConvertMarkdown; task RemoveMarkdownHtml }
 
-# Make the package in z\tools for for Zip and NuGet
+# Make the package in z\tools for Zip and NuGet.
 task Package ConvertMarkdown, @{UpdateScripts=1}, {
-	# package directories
 	Remove-Item [z] -Force -Recurse
 	$null = mkdir z\tools\Mdbc\en-US, z\tools\Mdbc\Scripts
 
-	# copy project files
-	Copy-Item -Destination z\tools\Mdbc @(
-		'LICENSE.TXT'
-		"$ModuleRoot\LICENSE.MongoCSharpDriver.txt"
-		"$ModuleRoot\Mdbc.dll"
-		"$ModuleRoot\Mdbc.Format.ps1xml"
-		"$ModuleRoot\Mdbc.psd1"
-		"$ModuleRoot\Mdbc.psm1"
-		"$ModuleRoot\MongoDB.Bson.dll"
-		"$ModuleRoot\MongoDB.Driver.dll"
-	)
-	Copy-Item -Destination z\tools\Mdbc\en-US @(
-		"$ModuleRoot\en-US\about_Mdbc.help.txt"
-		"$ModuleRoot\en-US\Mdbc.dll-Help.xml"
-	)
-	Copy-Item -Destination z\tools\Mdbc\Scripts @(
-		'Scripts\Get-MongoFile.ps1'
-		'Scripts\Update-MongoFiles.ps1'
-	)
+	Copy-Item -Destination z\tools\Mdbc `
+	LICENSE.txt,
+	$ModuleRoot\LICENSE.MongoCSharpDriver.txt,
+	$ModuleRoot\Mdbc.dll,
+	$ModuleRoot\Mdbc.Format.ps1xml,
+	$ModuleRoot\Mdbc.psd1,
+	$ModuleRoot\Mdbc.psm1,
+	$ModuleRoot\MongoDB.Bson.dll,
+	$ModuleRoot\MongoDB.Driver.dll
 
-	# move generated files
-	Move-Item -Destination z\tools\Mdbc @(
-		'README.htm'
-	)
+	Copy-Item -Destination z\tools\Mdbc\en-US `
+	$ModuleRoot\en-US\about_Mdbc.help.txt,
+	$ModuleRoot\en-US\Mdbc.dll-Help.xml
+
+	Copy-Item -Destination z\tools\Mdbc\Scripts `
+	Scripts\Get-MongoFile.ps1,
+	Scripts\Update-MongoFiles.ps1
+
+	Move-Item -Destination z\tools\Mdbc `
+	README.htm,
+	Release-Notes.htm
 }
 
-# Get version from the assembly and sets $script:Version
+# Set $script:Version = assembly version
 task Version {
 	assert ((Get-Item $ModuleRoot\Mdbc.dll).VersionInfo.FileVersion -match '^(\d+\.\d+\.\d+)')
 	$script:Version = $matches[1]
 }
 
-# Make the zip package
+# Make zip package.
 task Zip Package, Version, {
 	Set-Location z\tools
 	exec { & 7z a ..\..\Mdbc.$Version.zip * }
 }
 
-# Make the NuGet package
+# Make NuGet package.
 task NuGet Package, Version, {
+	$text = @'
+Mdbc is the Windows PowerShell module built on top of the official MongoDB C#
+driver. It provides a few cmdlets and PowerShell friendly features for basic
+operations on MongoDB data.
+'@
 	# nuspec
 	Set-Content z\Package.nuspec @"
 <?xml version="1.0"?>
@@ -187,16 +183,8 @@ task NuGet Package, Version, {
 		<projectUrl>https://github.com/nightroman/Mdbc</projectUrl>
 		<licenseUrl>http://www.apache.org/licenses/LICENSE-2.0</licenseUrl>
 		<requireLicenseAcceptance>false</requireLicenseAcceptance>
-		<summary>
-Mdbc is the Windows PowerShell module built on top of the official MongoDB C#
-driver. It provides a few cmdlets and PowerShell friendly features for basic
-operations on MongoDB data.
-		</summary>
-		<description>
-Mdbc is the Windows PowerShell module built on top of the official MongoDB C#
-driver. It provides a few cmdlets and PowerShell friendly features for basic
-operations on MongoDB data.
-		</description>
+		<summary>$text</summary>
+		<description>$text</description>
 		<tags>Mongo MongoDB PowerShell Module</tags>
 	</metadata>
 </package>
@@ -205,14 +193,12 @@ operations on MongoDB data.
 	exec { NuGet pack z\Package.nuspec }
 }
 
-# Check the files before commit. Called by .git/hooks/pre-commit.
+# Check files on commit. Called by .git/hooks/pre-commit.
 task pre-commit {
-	foreach ($file in git status -s) {
-		$file
-		if ($file -notmatch '\.(cs|csproj|md|ps1|psd1|psm1|ps1xml|sln|txt|xml|gitignore)$') {
-			throw "Commit is not allowed: '$file'."
-		}
-	}
+	$Pattern = '\.(cs|csproj|md|ps1|psd1|psm1|ps1xml|sln|txt|xml|gitignore)$'
+	foreach ($file in git status -s) { if ($file -notmatch $Pattern) {
+		throw "Commit is not allowed: '$file'."
+	}}
 }
 
 # Build, test and clean all.

@@ -48,14 +48,14 @@ $n1 = Test-Query (query (query Name Readme.txt), (query LastWriteTime -GT $time1
 $n2 = Test-Query (query (query Name Readme.txt), (query LastWriteTime -LT $time1))
 if ($EQReadme -ne $n1 + $n2) { throw }
 
-Write-Host "Or In Matches"
+Write-Host "Or In Match"
 $n1 = Test-Query (query -Or (query Name Readme.txt), (query Name About.txt), (query Name LICENSE))
 $n2 = Test-Query (query Name -In Readme.txt, About.txt, LICENSE)
 if ($n1 -ne $n2) { throw }
 $n2 = Test-Query (query Name -Match '^(?:Readme\.txt|About\.txt|LICENSE)$')
 if ($n1 -ne $n2) { throw }
 
-Write-Host "Matches, ignore case"
+Write-Host "Match, ignore case"
 $n1 = Test-Query (query Name -Match '^(?i:Readme\.txt|About\.txt|LICENSE)$')
 $n2 = Test-Query (query Name -Match (New-Object regex '^(?:Readme\.txt|About\.txt|LICENSE)$', IgnoreCase))
 if ($n1 -ne $n2) { throw }
