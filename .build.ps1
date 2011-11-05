@@ -93,7 +93,7 @@ task UpdateScripts -Partial @{
 
 # Call tests.
 task Test {
-	Invoke-Build . Tests\Test.build.ps1
+	Invoke-Build * Tests\Test.build.ps1
 }
 
 # Pull C# driver sources.
