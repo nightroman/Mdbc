@@ -8,7 +8,7 @@ Import-Module Mdbc
 
 # Test: compare the expression with expected representation
 function test([Parameter()]$value, $expected) {
-	Write-Host "$value => $expected"
+	"$value => $expected"
 	$actual = (. $value).ToString()
 	if ($actual -cne $expected) {
 		$PSCmdlet.ThrowTerminatingError((New-Object System.Management.Automation.ErrorRecord ([Exception]"Actual:`n$actual"), $null, 'InvalidResult', $value))

@@ -193,6 +193,9 @@ operations on MongoDB data.
 	exec { NuGet pack z\Package.nuspec }
 }
 
+# Make both packages.
+task Pack Zip, NuGet
+
 # Check files on commit. Called by .git/hooks/pre-commit.
 task pre-commit {
 	$Pattern = '\.(cs|csproj|md|ps1|psd1|psm1|ps1xml|sln|txt|xml|gitignore)$'

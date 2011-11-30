@@ -1,6 +1,10 @@
 Mdbc Release Notes
 ==================
 
+## v1.0.2
+
+C# driver v1.3.1.
+
 ## v1.0.1
 
 C# driver v1.3.
