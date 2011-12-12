@@ -1,7 +1,7 @@
 
 @{
 	Author = 'Roman Kuzmin'
-	ModuleVersion = '1.0.0'
+	ModuleVersion = '1.0.3'
 	CompanyName = 'https://github.com/nightroman/Mdbc'
 	Description = 'Mdbc module - Windows PowerShell Cmdlets for MongoDB'
 	Copyright = '(C) 2011 Roman Kuzmin. All rights reserved.'

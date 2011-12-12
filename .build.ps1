@@ -6,13 +6,13 @@
 .Description
 	How to use this script and build the module:
 
-	*) Copy MongoDB.Bson.dll and MongoDB.Driver.dll from the released package
-	to the Module directory. The project Mdbc.csproj assumes they are there.
+	Copy MongoDB.Bson.dll and MongoDB.Driver.dll from the released package to
+	the Module directory. The project Mdbc.csproj assumes they are there.
 
-	*) Get the utility script Invoke-Build.ps1 from here:
-		https://github.com/nightroman/Invoke-Build
-	Copy it to any directory in the system path. Then set location to the
-	directory of this .build.ps1 and invoke the task Build:
+	Get the utility script Invoke-Build.ps1:
+	https://github.com/nightroman/Invoke-Build
+
+	Copy it to the path. Set location to this directory. Build:
 	PS> Invoke-Build Build
 
 	This command builds the module and installs it to the $ModuleRoot which is
@@ -20,7 +20,7 @@
 	currently in use. Ensure it is not and then repeat.
 
 	The build task Help fails if the help builder Helps is not installed.
-	Ignore this or better get and install the module (it is really easy):
+	Ignore this or better get and use the script (it is really easy):
 	https://github.com/nightroman/Helps
 
 	In order to deal with the latest C# driver sources set the environment
@@ -53,20 +53,20 @@ task Clean RemoveMarkdownHtml, {
 # It is called as the post-build event of Mdbc.csproj.
 task PostBuild {
 	Copy-Item Src\Bin\$Configuration\Mdbc.dll Module
-	exec { robocopy Module $ModuleRoot /s /np /r:0 } (0..3)
+	exec { robocopy Module $ModuleRoot /s /np /r:0 /xf *-Help.ps1 } (0..3)
 },
 @{Help=1}
 
 # Build module help by Helps (https://github.com/nightroman/Helps).
-task Help -Incremental @{(Get-Item Src\Commands\*, en-US\Mdbc.dll-Help.ps1) = "$ModuleRoot\en-US\Mdbc.dll-Help.xml"} {
+task Help -Incremental @{(Get-Item Src\Commands\*, Module\en-US\Mdbc.dll-Help.ps1) = "$ModuleRoot\en-US\Mdbc.dll-Help.xml"} {
 	. Helps.ps1
-	Convert-Helps en-US\Mdbc.dll-Help.ps1 $Outputs
+	Convert-Helps Module\en-US\Mdbc.dll-Help.ps1 $Outputs
 }
 
 # Test help examples.
 task TestHelpExample {
 	. Helps.ps1
-	Test-Helps en-US\Mdbc.dll-Help.ps1
+	Test-Helps Module\en-US\Mdbc.dll-Help.ps1
 }
 
 # Test synopsis of each cmdlet and warn about unexpected.
@@ -88,7 +88,7 @@ task UpdateScripts -Partial @{
 	{ Get-Command Update-MongoFiles.ps1, Get-MongoFile.ps1 | %{ $_.Definition } } =
 	{ process{ "Scripts\$(Split-Path -Leaf $_)" } }
 } {
-	process{ Copy-Item $_ $$ }
+	process{ Copy-Item $_ $2 }
 }
 
 # Call tests.
@@ -190,19 +190,19 @@ operations on MongoDB data.
 </package>
 "@
 	# pack
-	exec { NuGet pack z\Package.nuspec }
+	exec { NuGet pack z\Package.nuspec -NoPackageAnalysis }
 }
 
-# Make both packages.
+# Make all packages.
 task Pack Zip, NuGet
 
-# Check files on commit. Called by .git/hooks/pre-commit.
-task pre-commit {
+# Check files.
+task CheckFiles {
 	$Pattern = '\.(cs|csproj|md|ps1|psd1|psm1|ps1xml|sln|txt|xml|gitignore)$'
 	foreach ($file in git status -s) { if ($file -notmatch $Pattern) {
-		throw "Commit is not allowed: '$file'."
+		Write-Warning "Illegal file: '$file'."
 	}}
 }
 
 # Build, test and clean all.
-task . Build, Test, TestHelp, Clean
+task . Build, Test, TestHelp, Clean, CheckFiles
