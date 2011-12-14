@@ -1,6 +1,10 @@
 Mdbc Release Notes
 ==================
 
+## v1.0.4
+
+Bug: `Update-MongoFiles.ps1 -Split` does not remove missing file records. Fixed.
+
 ## v1.0.3
 
 New switch Split in the script Update-MongoFiles.ps1 tells to perform parallel

@@ -50,7 +50,7 @@ param
 )
 
 Set-StrictMode -Version 2
-$updated = [DateTime]::Now
+$Updated = [DateTime]::Now
 
 # Resolves exact case sensitive paths
 function Resolve-ExactCasePath($Path) {
@@ -80,7 +80,7 @@ function New-Document {process{
 	$document = New-MdbcData -DocumentId $_.FullName
 	$document.Name = $_.Name
 	$document.Extension = $_.Extension
-	$document.Updated = $updated
+	$document.Updated = $Updated
 	$document.CreationTime = $_.CreationTime
 	$document.LastWriteTime = $_.LastWriteTime
 	$document.Attributes = [int]$_.Attributes
@@ -96,7 +96,7 @@ Write-Host "Updating data for existing files in $Path ..."
 if ($Split) {
 	Import-Module SplitPipeline
 	Get-Input |
-	Split-Pipeline -Auto -Load 150 -Queue 10000 -Verbose -Module Mdbc -Function New-Document `
+	Split-Pipeline -Auto -Load 150 -Queue 10000 -Verbose -Module Mdbc -Function New-Document -Variable Updated `
 	-Begin {
 		$collection = Connect-Mdbc . test files
 	} `
@@ -111,7 +111,7 @@ else {
 ### Remove data of missing files
 $pattern = '^' + [regex]::Escape($Path)
 $query = query @(
-	query Updated -LT $updated
+	query Updated -LT $Updated
 	query _id -Match $pattern
 )
 Write-Host "Removing data of missing files in $Path ..."
