@@ -1,6 +1,16 @@
 Mdbc Release Notes
 ==================
 
+## v1.0.5
+
+C# driver v1.4.0.
+
+Amended conversion of `null` and `BsonNull`.
+
+## v1.0.5
+
+Update-MongoFiles.ps1 - updated for the latest version of Split-Pipeline.
+
 ## v1.0.4
 
 Bug: `Update-MongoFiles.ps1 -Split` does not remove missing file records. Fixed.

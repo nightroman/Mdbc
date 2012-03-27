@@ -1,5 +1,5 @@
 ﻿
-/* Copyright 2011 Roman Kuzmin
+/* Copyright 2011-2012 Roman Kuzmin
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -118,7 +118,7 @@ namespace Mdbc.Commands
 
 					bsonregex = new BsonRegularExpression(pattern, options);
 					break;
-				
+
 				default:
 					throw new PSInvalidOperationException("Expected one or two arguments for the -match parameter.");
 			}

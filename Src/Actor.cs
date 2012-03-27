@@ -1,5 +1,5 @@
 ﻿
-/* Copyright 2011 Roman Kuzmin
+/* Copyright 2011-2012 Roman Kuzmin
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ namespace Mdbc
 				case BsonType.Double: return ((BsonDouble)value).Value;
 				case BsonType.Int32: return ((BsonInt32)value).Value;
 				case BsonType.Int64: return ((BsonInt64)value).Value;
+				case BsonType.Null: return null;
 				case BsonType.String: return ((BsonString)value).Value;
 				default: return value;
 			}
@@ -47,7 +48,7 @@ namespace Mdbc
 		public static BsonValue ToBsonValue(object value)
 		{
 			if (value == null)
-				return null;
+				return BsonNull.Value;
 
 			var ps = value as PSObject;
 			if (ps != null)
@@ -211,7 +212,7 @@ namespace Mdbc
 			var pso = obj as PSObject;
 			if (pso != null)
 				return pso.BaseObject as T;
-			
+
 			return obj as T;
 		}
 	}

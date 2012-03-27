@@ -236,7 +236,7 @@ test { update Name -Pull (query Name2 value) } '{ "$pull" : { "Name" : { "Name2"
 test { update One -Rename Two } '{ "$rename" : { "One" : "Two" } }'
 
 ### $set
-test { update Name -Set $null } '{ "$set" : { } }'
+test { update Name -Set $null } '{ "$set" : { "Name" : null } }'
 test { update Name -Set one } '{ "$set" : { "Name" : "one" } }'
 
 ### $unset

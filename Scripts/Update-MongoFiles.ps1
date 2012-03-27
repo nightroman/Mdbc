@@ -96,7 +96,7 @@ Write-Host "Updating data for existing files in $Path ..."
 if ($Split) {
 	Import-Module SplitPipeline
 	Get-Input |
-	Split-Pipeline -Auto -Load 150 -Queue 10000 -Verbose -Module Mdbc -Function New-Document -Variable Updated `
+	Split-Pipeline -Auto -Load 100, 5000 -Verbose -Module Mdbc -Function New-Document -Variable Updated `
 	-Begin {
 		$collection = Connect-Mdbc . test files
 	} `

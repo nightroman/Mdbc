@@ -1,5 +1,5 @@
 ﻿
-/* Copyright 2011 Roman Kuzmin
+/* Copyright 2011-2012 Roman Kuzmin
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -71,7 +71,7 @@ namespace Mdbc.Commands
 		{
 			if (Band.BaseObject is int)
 				return Update.BitwiseAnd(Name, (int)Band.BaseObject);
-			
+
 			if (Band.BaseObject is long)
 				return Update.BitwiseAnd(Name, (long)Band.BaseObject);
 
@@ -81,23 +81,23 @@ namespace Mdbc.Commands
 		{
 			if (Bor.BaseObject is int)
 				return Update.BitwiseOr(Name, (int)Bor.BaseObject);
-			
+
 			if (Bor.BaseObject is long)
 				return Update.BitwiseOr(Name, (long)Bor.BaseObject);
-			
+
 			throw new PSInvalidCastException(ExpectedInteger);
 		}
 		UpdateBuilder BuildIncrement()
 		{
 			if (Increment.BaseObject is int)
 				return Update.Inc(Name, (int)Increment.BaseObject);
-			
+
 			if (Increment.BaseObject is long)
 				return Update.Inc(Name, (long)Increment.BaseObject);
-			
+
 			if (Increment.BaseObject is double)
 				return Update.Inc(Name, (double)Increment.BaseObject);
-			
+
 			throw new PSInvalidCastException(ExpectedNumber);
 		}
 		UpdateBuilder BuildPull()
@@ -105,7 +105,7 @@ namespace Mdbc.Commands
 			var query = Pull.BaseObject as IMongoQuery;
 			if (query == null)
 				return Update.Pull(Name, Actor.ToBsonValue(Pull));
-			
+
 			return Update.Pull(Name, query);
 		}
 		protected sealed override void BeginProcessing()
@@ -115,47 +115,47 @@ namespace Mdbc.Commands
 				case NAddToSet:
 					WriteObject(Update.AddToSet(Name, Actor.ToBsonValue(AddToSet)));
 					return;
-				
+
 				case NAddToSetEach:
 					WriteObject(Update.AddToSetEach(Name, Actor.ToBsonValues(AddToSetEach)));
 					return;
-				
+
 				case NBand:
 					WriteObject(BuildBand());
 					return;
-				
+
 				case NBor:
 					WriteObject(BuildBor());
 					return;
-				
+
 				case NIncrement:
 					WriteObject(BuildIncrement());
 					return;
-				
+
 				case NPopFirst:
 					WriteObject(Update.PopFirst(Name));
 					return;
-				
+
 				case NPopLast:
 					WriteObject(Update.PopLast(Name));
 					return;
-				
+
 				case NPull:
 					WriteObject(BuildPull());
 					return;
-				
+
 				case NPullAll:
 					WriteObject(Update.PullAll(Name, Actor.ToBsonValues(PullAll)));
 					return;
-				
+
 				case NPush:
 					WriteObject(Update.Push(Name, Actor.ToBsonValue(Push)));
 					return;
-				
+
 				case NPushAll:
 					WriteObject(Update.PushAll(Name, Actor.ToBsonValues(PushAll)));
 					return;
-				
+
 				case NRename:
 					WriteObject(Update.Rename(Name, Rename));
 					return;
@@ -163,7 +163,7 @@ namespace Mdbc.Commands
 				case NSet:
 					WriteObject(Update.Set(Name, Actor.ToBsonValue(Set)));
 					return;
-				
+
 				case NUnset:
 					WriteObject(Update.Unset(Name));
 					return;
