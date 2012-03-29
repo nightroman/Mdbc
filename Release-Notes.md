@@ -1,7 +1,7 @@
 Mdbc Release Notes
 ==================
 
-## v1.0.6
+## v1.0.6, v1.0.7
 
 Fixed weird silent PS errors on exporting module aliases.
 

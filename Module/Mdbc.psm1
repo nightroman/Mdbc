@@ -21,4 +21,5 @@ filter Convert-MdbcJson {
 	$_.Document().ToString()
 }
 
-Export-ModuleMember -Cmdlet * -Function * -Alias query, update
+Export-ModuleMember -Cmdlet * -Function *
+Export-ModuleMember -Alias query, update
