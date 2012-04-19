@@ -1,6 +1,14 @@
 Mdbc Release Notes
 ==================
 
+## v1.0.8
+
+C# driver v1.4.1 patched for [CSHARP-447](https://jira.mongodb.org/browse/CSHARP-447).
+
+Adapted for [CSHARP-446](https://jira.mongodb.org/browse/CSHARP-446).
+
+Amended tests.
+
 ## v1.0.6, v1.0.7
 
 Fixed weird silent PS errors on exporting module aliases.

@@ -58,10 +58,10 @@ test { query Name -NE 42 } '{ "Name" : { "$ne" : 42 } }'
 ### [ Ignore Case ]
 
 ### IEQ
-test { query Name -IEQ te*xt } '{ "Name" : /^te\\*xt$/i }'
+test { query Name -IEQ te*xt } '{ "Name" : /^te\*xt$/i }'
 
 ### NEQ
-test { query Name -INE te*xt } '{ "Name" : { "$not" : /^te\\*xt$/i } }'
+test { query Name -INE te*xt } '{ "Name" : { "$not" : /^te\*xt$/i } }'
 
 ### [ Misc ]
 

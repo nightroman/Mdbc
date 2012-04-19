@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 using System;
 
 [assembly: AssemblyProduct("Mdbc")]
-[assembly: AssemblyVersion("1.0.7")]
+[assembly: AssemblyVersion("1.0.8")]
 [assembly: AssemblyTitle("Mdbc module - MongoDB Cmdlets for PowerShell")]
 [assembly: AssemblyCompany("https://github.com/nightroman/Mdbc")]
 [assembly: AssemblyCopyright("Copyright (c) 2011-2012 Roman Kuzmin")]
