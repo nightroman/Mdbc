@@ -1,6 +1,10 @@
 Mdbc Release Notes
 ==================
 
+## v1.0.9
+
+C# driver 1.4.2.33691
+
 ## v1.0.8
 
 C# driver v1.4.1 patched for [CSHARP-447](https://jira.mongodb.org/browse/CSHARP-447).
