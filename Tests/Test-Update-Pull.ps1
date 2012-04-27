@@ -21,7 +21,7 @@ $$ | Add-MdbcData $collection
 
 # Pull expression
 #_110727_194907 "Array1" : [1, 2] -- argument is a single (!) item which is array (not two arguments!)
-$updates = (update Array1 -Pull @(1, 2)), (update Array2 -Pull @(1, 2))
+$updates = (New-MdbcUpdate Array1 -Pull @(1, 2)), (New-MdbcUpdate Array2 -Pull @(1, 2))
 
 # update and get back
 $$ | Update-MdbcData $collection $updates

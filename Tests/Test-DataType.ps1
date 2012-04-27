@@ -1,9 +1,9 @@
 
 <#
-.SYNOPSIS
+.Synopsis
 	Tests data types
 
-.NOTES
+.Notes
 	DateTime
 		(Get-Date) is used in order to test [DateTime] wrapped by [PSObject].
 		NB: [DateTime]::Now really gets [DateTime].

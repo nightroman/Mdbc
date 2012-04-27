@@ -33,10 +33,7 @@
 
 param
 (
-	[Parameter(Mandatory = $true)]
-	$Name
-	,
-	[Parameter()]
+	[Parameter(Mandatory = $true)]$Name,
 	[switch]$Match
 )
 
@@ -44,10 +41,10 @@ Import-Module Mdbc
 $collection = Connect-Mdbc . test files
 
 if ($Match) {
-	$query = query Name -Match $Name, 'i'
+	$query = New-MdbcQuery Name -Match $Name, 'i'
 }
 else {
-	$query = query Name -IEQ $Name
+	$query = New-MdbcQuery Name -IEQ $Name
 }
 
 Get-MdbcData $collection $query -Select @() | .{process{ $_._id }}

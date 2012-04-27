@@ -8,7 +8,7 @@ $$.Array = 1, 2, 3
 $$ | Add-MdbcData $collection
 
 # update (PopLast) and get back
-$$ | Update-MdbcData $collection (update Array -PopLast)
+$$ | Update-MdbcData $collection (New-MdbcUpdate Array -PopLast)
 $$ = Get-MdbcData $collection
 
 # test: 3 is removed; 1, 2 are there
@@ -17,7 +17,7 @@ if ($$.Array[0] -ne 1) { throw }
 if ($$.Array[1] -ne 2) { throw }
 
 # update (PopFirst) and get back
-$$ | Update-MdbcData $collection (update Array -PopFirst)
+$$ | Update-MdbcData $collection (New-MdbcUpdate Array -PopFirst)
 $$ = Get-MdbcData $collection
 
 # test: 1 is removed; 2 is there

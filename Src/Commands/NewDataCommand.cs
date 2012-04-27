@@ -32,9 +32,9 @@ namespace Mdbc.Commands
 		void WriteDocument(BsonDocument document)
 		{
 			if (DocumentId != null)
-				document.SetDocumentId(BsonValue.Create(DocumentId.BaseObject));
+				document["_id"] = BsonValue.Create(DocumentId.BaseObject);
 			else if (NewDocumentId)
-				document.SetDocumentId(BsonObjectId.GenerateNewId());
+				document["_id"] = BsonObjectId.GenerateNewId();
 
 			WriteObject(new Dictionary(document));
 		}

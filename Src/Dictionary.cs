@@ -31,7 +31,7 @@ namespace Mdbc
 		public Dictionary(string id)
 		{
 			_document = new BsonDocument();
-			_document.SetDocumentId(id);
+			_document["_id"] = id;
 		}
 		public Dictionary(BsonDocument document)
 		{

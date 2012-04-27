@@ -11,9 +11,9 @@ $$ | Add-MdbcData $collection
 
 # update 3 fields and get back
 $$ | Update-MdbcData $collection @(
-	update p1 -Set 2
-	update p2 -Set 2
-	update p3 -Set 2
+	New-MdbcUpdate p1 -Set 2
+	New-MdbcUpdate p2 -Set 2
+	New-MdbcUpdate p3 -Set 2
 )
 $$ = Get-MdbcData $collection
 
@@ -25,16 +25,16 @@ if ($$.p3 -ne 2) { throw }
 # update 2 fields and get back
 $something = $false
 $$ | Update-MdbcData $collection @(
-	update p1 -Set 3
+	New-MdbcUpdate p1 -Set 3
 	if ($something) {
-		update p2 -Set 3
+		New-MdbcUpdate p2 -Set 3
 	}
-	update p3 -Set 3
+	New-MdbcUpdate p3 -Set 3
 )
 $$ = Get-MdbcData $collection
 
 # update 1 field and get back
-$$ | Update-MdbcData $collection (update p2 -Set 3)
+$$ | Update-MdbcData $collection (New-MdbcUpdate p2 -Set 3)
 $$ = Get-MdbcData $collection
 
 # test: 3, 3, 3

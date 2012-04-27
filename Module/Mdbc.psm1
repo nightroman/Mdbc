@@ -1,9 +1,5 @@
 
-# A few features in addition to cmdlets.
-
-# Predefined aliases
-Set-Alias query New-MdbcQuery
-Set-Alias update New-MdbcUpdate
+# Helpers in addition to cmdlets.
 
 <#
 .Synopsis
@@ -20,6 +16,3 @@ filter Convert-MdbcData {
 filter Convert-MdbcJson {
 	$_.Document().ToString()
 }
-
-Export-ModuleMember -Cmdlet * -Function *
-Export-ModuleMember -Alias query, update

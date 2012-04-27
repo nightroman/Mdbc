@@ -41,6 +41,8 @@ directories (see `$env:PSModulePath`). For example:
 **Step 4:** Invoke these operations line by line, reading the comments
 (make sure that mongod is started, otherwise `Connect-Mdbc` fails):
 
+```powershell
+
     # Import the module (if not yet):
     Import-Module Mdbc
 
@@ -54,20 +56,21 @@ directories (see `$env:PSModulePath`). For example:
     Get-MdbcData $collection | Convert-MdbcData | Format-Table -AutoSize | Out-String
 
     # Get saved data of the process 'mongod' (there should be at least one document):
-    $data = Get-MdbcData $collection (query Name -EQ mongod)
+    $data = Get-MdbcData $collection (New-MdbcQuery Name -EQ mongod)
     $data
 
     # Update these data (let's just set the WorkingSet to 12345):
-    $data | Update-MdbcData $collection (update WorkingSet -Set 12345)
+    $data | Update-MdbcData $collection (New-MdbcUpdate WorkingSet -Set 12345)
 
     # Query again in order to take a look at the changed data:
-    Get-MdbcData $collection (query Name -EQ mongod)
+    Get-MdbcData $collection (New-MdbcQuery Name -EQ mongod)
 
     # Remove these data:
     $data | Remove-MdbcData $collection
 
     # Query again, just get the count, it should be 0:
-    Get-MdbcData $collection (query Name -EQ mongod) -Count
+    Get-MdbcData $collection (New-MdbcQuery Name -EQ mongod) -Count
+```
 
 This is it. If the code above works then the module is installed and ready to use.
 

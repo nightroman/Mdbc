@@ -1,6 +1,6 @@
 
 <#
-.SYNOPSIS
+.Synopsis
 	Tests the Mdbc module and custom objects
 #>
 

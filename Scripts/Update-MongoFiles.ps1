@@ -110,9 +110,9 @@ else {
 
 ### Remove data of missing files
 $pattern = '^' + [regex]::Escape($Path)
-$query = query @(
-	query Updated -LT $Updated
-	query _id -Match $pattern
+$query = New-MdbcQuery @(
+	New-MdbcQuery Updated -LT $Updated
+	New-MdbcQuery _id -Match $pattern
 )
 Write-Host "Removing data of missing files in $Path ..."
 $watch2 = [Diagnostics.Stopwatch]::StartNew()

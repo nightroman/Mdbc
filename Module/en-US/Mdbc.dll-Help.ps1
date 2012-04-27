@@ -71,8 +71,10 @@ A document which _id is used for identification.
 		ConnectionString = @'
 	Connection string (see the C# driver manual for details):
 	mongodb://[username:password@]hostname[:port][/[database][?options]]
-	Example: "." (same as "mongodb://localhost").
-	Example: "mongodb://localhost:27017".
+	"." is used for the default C# driver connection ("mongodb://localhost").
+	Examples:
+	mongodb://localhost:27017
+	mongodb://localhost/?safe=true
 '@
 		Database = 'Database name. * is used in order to get all database objects.'
 		Collection = 'Collection name. * is used in order to get all collection objects.'
