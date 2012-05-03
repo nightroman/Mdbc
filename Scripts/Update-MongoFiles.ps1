@@ -76,6 +76,7 @@ function Get-Input {
 }
 
 ### New documents from input items.
+#! Imported by Split-Pipeline as a function with the process block.
 function New-Document {process{
 	$document = New-MdbcData -DocumentId $_.FullName
 	$document.Name = $_.Name
@@ -108,14 +109,18 @@ else {
 	Get-Input | New-Document | Add-MdbcData -Update $collection -ErrorAction Continue
 }
 
+### Remove "unknown" data
+Write-Host "Removing unknown data..."
+$result = Remove-MdbcData -Safe $collection (New-MdbcQuery Updated -Exists $false)
+Write-Host $result.Response
+
 ### Remove data of missing files
 $pattern = '^' + [regex]::Escape($Path)
 $query = New-MdbcQuery @(
 	New-MdbcQuery Updated -LT $Updated
-	New-MdbcQuery _id -Match $pattern
+	New-MdbcQuery _id -Match $pattern, 'i'
 )
 Write-Host "Removing data of missing files in $Path ..."
-$watch2 = [Diagnostics.Stopwatch]::StartNew()
 $result = Remove-MdbcData -Safe $collection $query
-Write-Host "Response: $($result.Response)"
+Write-Host $result.Response
 Write-Host $time.Elapsed

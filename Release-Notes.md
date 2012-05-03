@@ -1,6 +1,12 @@
 Mdbc Release Notes
 ==================
 
+## v1.2.0
+
+New cmdlet `Add-MdbcCollection`, mostly for creation of capped collections.
+
+*Update-MongoFiles.ps1* - amended removal of unknown and orphan data.
+
 ## v1.1.0
 
 C# driver 1.4.2 (official).
@@ -13,7 +19,7 @@ Breaking change (easy to fix): removed aliases `query` and `update`. Replace
 them with `New-MdbcQuery` and `New-MdbcUpdate` or use your own aliases. The
 reasons: a) aliases are mostly for interactive use, up to a user; b) `query`
 conflicts with `query.exe` (the alias wins but...); c) these two particular
-aliases used cause subtle PowerShell issues on module updates.
+aliases used to cause subtle PowerShell issues on module updates.
 
 ## v1.0.9
 

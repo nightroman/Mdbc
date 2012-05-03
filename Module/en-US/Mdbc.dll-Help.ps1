@@ -605,3 +605,35 @@ Number of documents taking into account the Limit and Skip values.
 		@{ text = 'New-MdbcUpdate' }
 	)
 }
+
+### Add-MdbcCollection
+@{
+	command = 'Add-MdbcCollection'
+	synopsis = 'Creates a new collection in a database.'
+	description = @'
+	This cmdlet is needed only for creation of collections with extra options,
+	like capped collections. Ordinary collections do not have to be added
+	explicitly.
+'@
+	parameters = @{
+		Database = @'
+		The database where a new collection is created.
+'@
+		Name = @'
+		The name of a new collection.
+'@
+		MaxSize = @'
+		Sets the max size of a capped collection.
+'@
+		MaxDocuments = @'
+		Sets the max number of documents in a capped collection in addition to
+		MaxSize.
+'@
+		AutoIndexId = @'
+		It may be set to true or false to explicitly enable or disable
+		automatic creation of a unique key index on the _id field.
+'@
+	}
+	inputs = @()
+	outputs = @()
+}

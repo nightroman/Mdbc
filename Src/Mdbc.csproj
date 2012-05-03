@@ -76,6 +76,7 @@
     <Compile Include="Commands\AddDataCommand.cs" />
     <Compile Include="Commands\ConnectCommand.cs" />
     <Compile Include="Commands\GetDataCommand.cs" />
+    <Compile Include="Commands\AddCollectionCommand.cs" />
     <Compile Include="Commands\NewDataCommand.cs" />
     <Compile Include="Commands\NewQueryCommand.cs" />
     <Compile Include="Commands\NewUpdateCommand.cs" />

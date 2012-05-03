@@ -229,8 +229,9 @@ test { New-MdbcUpdate Name -PushAll $mdbcArray } '{ "$pushAll" : { "Name" : [1, 
 test { New-MdbcUpdate Name -Push $bsonArray } '{ "$push" : { "Name" : [1, 2, 3] } }'
 test { New-MdbcUpdate Name -PushAll $bsonArray } '{ "$pushAll" : { "Name" : [1, 2, 3] } }'
 
-#??? how to get this : { $pull : { field : {$gt: 3} }
+### $pull with queries
 test { New-MdbcUpdate Name -Pull (New-MdbcQuery Name2 value) } '{ "$pull" : { "Name" : { "Name2" : "value" } } }'
+test { New-MdbcUpdate Name -Pull (New-MdbcQuery Name2 -GT value) } '{ "$pull" : { "Name" : { "Name2" : { "$gt" : "value" } } } }'
 
 ### $rename
 test { New-MdbcUpdate One -Rename Two } '{ "$rename" : { "One" : "Two" } }'

@@ -6,4 +6,5 @@
 [D|d]ebug
 [O|o]bj
 [R|r]elease
+MongoDB.*
 Test.ps1
