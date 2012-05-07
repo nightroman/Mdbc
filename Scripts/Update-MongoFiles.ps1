@@ -116,10 +116,7 @@ Write-Host $result.Response
 
 ### Remove data of missing files
 $pattern = '^' + [regex]::Escape($Path)
-$query = New-MdbcQuery @(
-	New-MdbcQuery Updated -LT $Updated
-	New-MdbcQuery _id -Match $pattern, 'i'
-)
+$query = New-MdbcQuery -And (New-MdbcQuery Updated -LT $Updated), (New-MdbcQuery _id -Match $pattern)
 Write-Host "Removing data of missing files in $Path ..."
 $result = Remove-MdbcData -Safe $collection $query
 Write-Host $result.Response

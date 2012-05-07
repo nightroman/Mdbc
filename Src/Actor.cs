@@ -17,6 +17,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Management.Automation;
 using MongoDB.Bson;
 using MongoDB.Driver;
@@ -179,6 +180,9 @@ namespace Mdbc
 		}
 		public static IMongoQuery ObjectToQuery(object value)
 		{
+			if (value == null)
+				return Query.Null;
+
 			var ps = value as PSObject;
 			if (ps != null)
 				value = ps.BaseObject;
@@ -214,6 +218,57 @@ namespace Mdbc
 				return pso.BaseObject as T;
 
 			return obj as T;
+		}
+		/// <summary>
+		/// Converts PS objects to a SortBy object.
+		/// </summary>
+		/// <param name="values">Strings or @{Name=Boolean}. Null and empty is allowed.</param>
+		/// <returns>SortBy object, may be empty but not null.</returns>
+		public static IMongoSortBy ObjectsToSortBy(IEnumerable values)
+		{
+			if (values == null)
+				return SortBy.Null;
+			
+			var builder = new SortByBuilder();
+			foreach (var it in values)
+			{
+				var name = it as string;
+				if (name != null)
+				{
+					builder.Ascending(name);
+					continue;
+				}
+
+				var hash = it as IDictionary;
+				if (hash == null) throw new ArgumentException("SortBy: Invalid value type.");
+				if (hash.Count != 1) throw new ArgumentException("SortBy: Expected a dictionary with one entry.");
+
+				foreach (DictionaryEntry kv in hash)
+				{
+					name = kv.Key.ToString();
+					if (LanguagePrimitives.IsTrue(kv.Value))
+						builder.Ascending(name);
+					else
+						builder.Descending(name);
+				}
+			}
+			return builder;
+		}
+		public static IMongoUpdate ObjectToUpdate(PSObject value)
+		{
+			var update = value.BaseObject as IMongoUpdate;
+			if (update != null)
+				return update;
+
+			var dictionary = value.BaseObject as IDictionary;
+			if (dictionary != null)
+				return new UpdateDocument(Actor.ToBsonDocument(dictionary, null));
+
+			var enumerable = LanguagePrimitives.GetEnumerable(value.BaseObject);
+			if (enumerable != null)
+				return Update.Combine(enumerable.Cast<object>().Select(Actor.Cast<UpdateBuilder>));
+
+			throw new PSInvalidCastException("Invalid update type. Valid types: update, dictionary.");
 		}
 	}
 }

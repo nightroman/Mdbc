@@ -85,7 +85,7 @@ task TestHelp Help, TestHelpExample, TestHelpSynopsis
 # Copy external scripts from their working location to the project.
 # It fails if the scripts are not available.
 task UpdateScripts -Partial @{
-	{ Get-Command Update-MongoFiles.ps1, Get-MongoFile.ps1 | %{ $_.Definition } } =
+	{ Get-Command Mdbc.ps1, Update-MongoFiles.ps1, Get-MongoFile.ps1 | %{ $_.Definition } } =
 	{ process{ "Scripts\$(Split-Path -Leaf $_)" } }
 } {
 	process{ Copy-Item $_ $2 }
@@ -144,6 +144,7 @@ task Package ConvertMarkdown, @{UpdateScripts=1}, {
 	$ModuleRoot\en-US\Mdbc.dll-Help.xml
 
 	Copy-Item -Destination z\tools\Mdbc\Scripts `
+	Scripts\Mdbc.ps1,
 	Scripts\Get-MongoFile.ps1,
 	Scripts\Update-MongoFiles.ps1
 

@@ -59,6 +59,14 @@ $n2 = Get-MdbcData $collection -Count
 if ($n1 -ne $n2) { throw }
 "Count : $n1"
 
+### Distinct
+$set1 = $collection.Distinct('Name')
+$set2 = Get-MdbcData $collection -Distinct Name
+if ($set1.Count -ne $set2.Count) { throw }
+if ($set1[0].GetType().Name -ne 'BsonString') { throw }
+if ($set2[0].GetType().Name -ne 'String') { throw }
+"Distinct : $($set1.Count)"
+
 ### Get by name
 $1 = Get-MdbcData $collection (New-MdbcQuery Name svchost) -Count
 $2 = $collection.Find([MongoDB.Driver.QueryDocument]@{ Name = 'svchost' }).Count()
@@ -73,8 +81,7 @@ $2 = $collection.Find([MongoDB.Driver.Builders.Query]::Matches('Name', '^svc|^mo
 $3 = $collection.Find([MongoDB.Driver.QueryDocument]@{ '$where' = 'this.Name == "svchost" || this.Name == "mongod"' }).Count()
 if ($1 -ne $2) { throw }
 if ($1 -ne $3) { throw }
-"Find regex : $$"
-"Find where : $$"
+"Find match/where : $1"
 
 Get-MdbcData $collection (New-MdbcQuery Name mongod) | Update-MdbcData $collection (New-MdbcUpdate HandleCount -Increment 1)
 $document = Get-MdbcData $collection (New-MdbcQuery Name mongod)

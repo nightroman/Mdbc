@@ -21,7 +21,7 @@ using MongoDB.Driver;
 using MongoDB.Driver.Builders;
 namespace Mdbc.Commands
 {
-	public abstract class AbstractCollectionCommand : Cmdlet
+	public abstract class AbstractCollectionCommand : PSCmdlet
 	{
 		[Parameter(Position = 0, Mandatory = true)]
 		[ValidateNotNull]

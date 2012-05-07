@@ -14,33 +14,110 @@
 * limitations under the License.
 */
 
+using System;
 using System.Management.Automation;
 using MongoDB.Bson;
 using MongoDB.Driver;
 namespace Mdbc.Commands
 {
-	[Cmdlet(VerbsCommon.Get, "MdbcData")]
+	[Cmdlet(VerbsCommon.Get, "MdbcData", DefaultParameterSetName = "All")]
 	public sealed class GetDataCommand : AbstractCollectionCommand
 	{
 		[Parameter(Position = 1)]
 		public PSObject Query { get; set; }
-		[Parameter]
-		public string[] Select { get; set; }
-		[Parameter]
-		public QueryFlags Modes { get; set; }
-		[Parameter]
-		public int Limit { get; set; }
-		[Parameter]
-		public int Skip { get; set; }
-		[Parameter]
+		[Parameter(Mandatory = true, ParameterSetName = "Distinct")]
+		public string Distinct { get; set; }
+		[Parameter(Mandatory = true, ParameterSetName = "Count")]
 		public SwitchParameter Count { get; set; }
-		[Parameter]
+		[Parameter(Mandatory = true, ParameterSetName = "Cursor")]
 		public SwitchParameter Cursor { get; set; }
-		[Parameter]
-		public SwitchParameter Size { get; set; }
+		[Parameter(Mandatory = true, ParameterSetName = "Remove")]
+		public SwitchParameter Remove { get; set; }
+		[Parameter(Mandatory = true, ParameterSetName = "Update")]
+		public PSObject Update { get; set; }
+		[Parameter(ParameterSetName = "Update")]
+		public SwitchParameter New { get; set; }
+		[Parameter(ParameterSetName = "Update")]
+		public SwitchParameter Add { get; set; }
+		[Parameter(ParameterSetName = "All")]
+		[Parameter(ParameterSetName = "Count")]
+		[Parameter(ParameterSetName = "Cursor")]
+		[Parameter(ParameterSetName = "Remove")]
+		[Parameter(ParameterSetName = "Update")]
+		public QueryFlags Modes { get; set; }
+		[Parameter(ParameterSetName = "All")]
+		[Parameter(ParameterSetName = "Count")]
+		[Parameter(ParameterSetName = "Cursor")]
+		public int Limit { get; set; }
+		[Parameter(ParameterSetName = "All")]
+		[Parameter(ParameterSetName = "Count")]
+		[Parameter(ParameterSetName = "Cursor")]
+		public int Skip { get; set; }
+		[Parameter(ParameterSetName = "All")]
+		[Parameter(ParameterSetName = "Cursor")]
+		[Parameter(ParameterSetName = "Update")]
+		public string[] Select { get; set; }
+		[Parameter(ParameterSetName = "All")]
+		[Parameter(ParameterSetName = "Cursor")]
+		[Parameter(ParameterSetName = "Remove")]
+		[Parameter(ParameterSetName = "Update")]
+		public object[] SortBy { get; set; }
+		[Parameter(ParameterSetName = "All")]
+		[Parameter(ParameterSetName = "Cursor")]
+		public Type As { get; set; }
+		void DoCount()
+		{
+			WriteObject(Query == null ? Collection.Count() : Collection.Count(Actor.ObjectToQuery(Query)));
+		}
+		void DoDistinct()
+		{
+			var data = Query == null ? Collection.Distinct(Distinct) : Collection.Distinct(Distinct, Actor.ObjectToQuery(Query));
+			foreach (var it in data)
+				WriteObject(Actor.ToObject(it));
+		}
+		void DoModified(FindAndModifyResult result)
+		{
+			if (result.ModifiedDocument != null)
+				WriteObject(new Dictionary(result.ModifiedDocument));
+
+			if (!result.Ok)
+				WriteError(new ErrorRecord(new RuntimeException(result.ErrorMessage), "Driver", ErrorCategory.InvalidResult, result));
+		}
+		void DoRemove()
+		{
+			var result = Collection.FindAndRemove(Actor.ObjectToQuery(Query), Actor.ObjectsToSortBy(SortBy));
+			DoModified(result);
+		}
+		void DoUpdate()
+		{
+			var result = Collection.FindAndModify(Actor.ObjectToQuery(Query), Actor.ObjectsToSortBy(SortBy), Actor.ObjectToUpdate(Update), New, Add);
+			DoModified(result);
+		}
 		protected override void BeginProcessing()
 		{
-			MongoCursor cursor = Query == null ? Collection.FindAllAs(typeof(BsonDocument)) : Collection.FindAs(typeof(BsonDocument), Actor.ObjectToQuery(Query));
+			switch (ParameterSetName)
+			{
+				case "Count":
+					if (Limit > 0 || Skip > 0)
+						break;
+					DoCount();
+					return;
+
+				case "Distinct":
+					DoDistinct();
+					return;
+
+				case "Remove":
+					DoRemove();
+					return;
+
+				case "Update":
+					DoUpdate();
+					return;
+			}
+
+			var type = As ?? typeof(BsonDocument);
+			MongoCursor cursor = Query == null ? Collection.FindAllAs(type) : Collection.FindAs(type, Actor.ObjectToQuery(Query));
 
 			if (Select != null)
 				cursor.SetFields(Select);
@@ -56,15 +133,12 @@ namespace Mdbc.Commands
 
 			if (Count)
 			{
-				WriteObject(cursor.Count());
-				return;
-			}
-
-			if (Size)
-			{
 				WriteObject(cursor.Size());
 				return;
 			}
+
+			if (SortBy != null)
+				cursor.SetSortOrder(Actor.ObjectsToSortBy(SortBy));
 
 			if (Cursor)
 			{
@@ -72,8 +146,15 @@ namespace Mdbc.Commands
 				return;
 			}
 
-			foreach (BsonDocument bson in cursor)
-				WriteObject(new Dictionary(bson));
+			if (As == null)
+			{
+				foreach (BsonDocument bson in cursor)
+					WriteObject(new Dictionary(bson));
+			}
+			else
+			{
+				WriteObject(cursor, true);
+			}
 		}
 	}
 }

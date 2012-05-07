@@ -41,7 +41,7 @@ Import-Module Mdbc
 $collection = Connect-Mdbc . test files
 
 if ($Match) {
-	$query = New-MdbcQuery Name -Match $Name, 'i'
+	$query = New-MdbcQuery Name -Match $Name, i
 }
 else {
 	$query = New-MdbcQuery Name -IEQ $Name

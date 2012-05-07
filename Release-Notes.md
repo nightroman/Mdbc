@@ -1,6 +1,40 @@
 Mdbc Release Notes
 ==================
 
+## v1.3.0
+
+Cmdlet `New-MdbcQuery`
+
+- **Breaking change**. Revised parameters `And`, `Nor`, and `Or`. `And` cannot
+  be omitted now. `Nor` and `Or` are not switches but, just as `And`, arrays of
+  query expressions. This design is simpler and reduces chances of misuse.
+
+Cmdlet `Update-MdbcData`
+
+- **Obsolete parameter name**. The parameter `Updates` was renamed to `Update`.
+  The old name still works as an alias but it will be removed in vNext.
+
+Cmdlet `Get-MdbcData`
+
+- New parameter `As` for getting strongly typed data (existing or added
+  on-the-fly ad-hoc types, see *Test-Get-As.ps1*).
+- New parameters `Remove`, `Update`, `New`, `Add`. They provide `FindAndRemove`
+  and `FindAndModify` capabilities.
+- New parameters `Distinct` and `SortBy`. The latter is used for standard
+  queries and new `Update` and `Remove` modes.
+- Removed redundant switch `Size`. The switch `Count` does exactly the same job
+  when used together with `Limit` and `Skip`.
+- Introduced parameter sets which prevent abuse of parameters. CAUTION: This
+  change is potentially breaking, existing calls with meaningless parameter
+  combinations will fail.
+
+New helper script *Mdbc.ps1* adds helpers for interactive use. Use it only as
+the example and base for your own interactive helpers. This script reflects
+personal preferences, its features may not be suitable for all scenarios and
+they may change at any time.
+
+Added tests covering new features. Adapted scripts and tests to changes.
+
 ## v1.2.0
 
 New cmdlet `Add-MdbcCollection`, mostly for creation of capped collections.

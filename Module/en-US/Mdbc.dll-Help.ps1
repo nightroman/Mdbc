@@ -15,9 +15,10 @@ Collection parameter) or from returned database or server objects.
 
 # Description of the Query parameter.
 $script:QueryParameter = @'
-Specified the documents to be processed. It can be MongoDB.Driver.IMongoQuery
-(see New-MdbcQuery) or a document with _id (BsonDocument or Mdbc.Dictionary) or
-just a value treated as _id and converted into the query internally.
+Specifies documents to be processed. Supported types:
+1) MongoDB.Driver.IMongoQuery (see New-MdbcQuery);
+2) documents with _id (BsonDocument or Mdbc.Dictionary);
+3) other values are treated as _id and converted to queries.
 '@
 
 # Shared [Mdbc.Dictionary] type info.
@@ -244,7 +245,7 @@ Otherwise the document has the same fields and values as the input properties/ke
 				$data | Add-MdbcData $collection
 
 				# Query the document from the database
-				$result = Get-MdbcData $collection (query _id 12345)
+				$result = Get-MdbcData $collection (New-MdbcQuery _id 12345)
 				$result
 			}
 			test = {
@@ -295,17 +296,14 @@ See the server-side processing page for more information (official site).
 	}
 	parameters = @{
 		Where = '$where argument, JavaScript Boolean expression.'
-		Queries = @'
-Queries for logical And, Nor, and Or operations.
-By default it performs And. Use Nor and Or switches for other operations.
+		And = @'
+Queries for logical And.
 '@
 		Nor = @'
-Logical Nor query operator (MongoDB $nor).
-It is not combined with other query tests.
+Queries for logical Nor (MongoDB $nor).
 '@
 		Or = @'
-Logical Or query operator (MongoDB $or).
-It is not combined with other query tests.
+Queries for logical Or (MongoDB $or).
 '@
 		Name = @'
 Field name.
@@ -384,7 +382,6 @@ Checks if the field does not have any value in the specified set (MongoDB $nin).
 		description = 'Use it for Get-MdbcData, Remove-MdbcData, Update-MdbcData.'
 	}
 	links = @(
-		@{ text = 'query (alias)' }
 		@{ text = 'Get-MdbcData' }
 		@{ text = 'Remove-MdbcData' }
 		@{ text = 'Update-MdbcData' }
@@ -473,7 +470,6 @@ Deletes a given field.
 	inputs = @()
 	outputs = @{ type = 'Update expression'; description = 'Use these expression objects for Update-MdbcData.' }
 	links = @(
-		@{ text = 'update (alias)' }
 		@{ text = 'Update-MdbcData' }
 	)
 }
@@ -511,27 +507,59 @@ Deletes a given field.
 @{
 	command = 'Get-MdbcData'
 	synopsis = @'
-Gets documents from the database collection.
+Gets documents or data from the database collection.
 '@
-	description = @'
-Gets documents from the database collection.
-'@
+	sets = @{
+		All = 'Gets documents.'
+		Count = 'Gets document count.'
+		Cursor = 'Gets the result cursor.'
+		Distinct = 'Gets distinct field values.'
+		Remove = 'Removes and gets the first document specified by Query and SortBy.'
+		Update = 'Updates and gets the first document specified by Query and SortBy.'
+	}
 	parameters = @{
 		Collection = $script:CollectionParameter
 		Query = $script:QueryParameter
+		As = @'
+The custom type of returned documents.
+By default BsonDocument wrapped by Mdbc.Dictionary are returned.
+'@
 		Count = @'
-Tells to return the number of documents that match the query.
+Tells to return the number of all documents or documents that match a query.
+The Limit and Skip values are taken into account.
 '@
 		Cursor = @'
 Tells to return a cursor to be used for further operations.
 See the C# driver manual.
 '@
+		Distinct = @'
+Tells to return distinct values for a given field for all documents or
+documents that match a query.
+'@
+		Remove = @'
+Tells to remove and get the first document specified by Query and SortBy.
+'@
+		Update = @'
+Tells to update and get the first document specified by Query and SortBy.
+'@
+		New = @'
+Tells to return the new document on Update.
+By default the old document is returned.
+'@
+		Add = @'
+Tells to add a new document on Update if the old document does not exist.
+'@
 		Select = @'
 Subset of fields to be retrieved.
-Note: document _id is always included.
+The document _id is always included, thus, @() and _id are the same.
+'@
+		SortBy = @'
+Specifies sorting field names and directions. Values are either field names or
+hashtables with single entries: @{Field = <Boolean>}. True and false or their
+equivalents (say, 1 and 0) are for ascending and descending directions.
 '@
 		Modes = @'
-Additional query flags.
+Additional query options.
 See the C# driver manual.
 '@
 		Limit = @'
@@ -539,9 +567,6 @@ Maximum number of documents to be returned.
 '@
 		Skip = @'
 Number of documents to skip.
-'@
-		Size = @'
-Number of documents taking into account the Limit and Skip values.
 '@
 	}
 	inputs = @()
@@ -551,11 +576,15 @@ Number of documents taking into account the Limit and Skip values.
 			description = 'If the Count or Size switch is specified.'
 		}
 		@{
+			type = 'object[]'
+			description = 'If the Distinct field name is specified.'
+		}
+		@{
 			type = 'MongoDB.Driver.MongoCursor'
 			description = 'If the Cursor switch is specified.'
 		}
 		@{
-			type = 'Mdbc.Dictionary'
+			type = 'Mdbc.Dictionary[]'
 			description = 'Query results, BSON document wrapper objects.'
 		}
 	)
@@ -596,7 +625,7 @@ Number of documents taking into account the Limit and Skip values.
 		Modes = 'Additional update flags. See the C# driver manual.'
 		Safe = 'Tells to enable safe mode.'
 		SafeMode = 'Advanced safe mode options.'
-		Updates = 'Update expressions. See New-MdbcUpdate (update).'
+		Update = 'Update expressions. See New-MdbcUpdate.'
 	}
 	inputs = $script:QueryInputs
 	outputs = $script:TypeSafeModeResult
@@ -611,27 +640,25 @@ Number of documents taking into account the Limit and Skip values.
 	command = 'Add-MdbcCollection'
 	synopsis = 'Creates a new collection in a database.'
 	description = @'
-	This cmdlet is needed only for creation of collections with extra options,
-	like capped collections. Ordinary collections do not have to be added
-	explicitly.
+This cmdlet is needed only for creation of collections with extra options, like
+capped collections. Ordinary collections do not have to be added explicitly.
 '@
 	parameters = @{
 		Database = @'
-		The database where a new collection is created.
+The database where a new collection is created.
 '@
 		Name = @'
-		The name of a new collection.
+The name of a new collection.
 '@
 		MaxSize = @'
-		Sets the max size of a capped collection.
+Sets the max size of a capped collection.
 '@
 		MaxDocuments = @'
-		Sets the max number of documents in a capped collection in addition to
-		MaxSize.
+Sets the max number of documents in a capped collection in addition to MaxSize.
 '@
 		AutoIndexId = @'
-		It may be set to true or false to explicitly enable or disable
-		automatic creation of a unique key index on the _id field.
+It may be set to true or false to explicitly enable or disable automatic
+creation of a unique key index on the _id field.
 '@
 	}
 	inputs = @()

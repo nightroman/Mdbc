@@ -33,8 +33,8 @@ LONG DESCRIPTION
 
 SEE ALSO
     MongoDB: http://www.mongodb.org
-    C# driver: http://www.mongodb.org/display/DOCS/CSharp+Language+Center
-    C# driver repository: https://github.com/mongodb/mongo-csharp-driver
+    Driver manuals: http://www.mongodb.org/display/DOCS/CSharp+Language+Center
+    Driver repository: https://github.com/mongodb/mongo-csharp-driver
     Connect-Mdbc
     Add-MdbcData
     Get-MdbcData

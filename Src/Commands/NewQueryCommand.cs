@@ -25,9 +25,12 @@ namespace Mdbc.Commands
 	public sealed class NewQueryCommand : PSCmdlet
 	{
 		const string ErrorAndNorOr = "-Or and -Nor switches cannot be used together.";
-		//! Do not set Mandatory = true; fail, do not prompt.
-		[Parameter(Position = 0, ParameterSetName = "Query")]
-		public IMongoQuery[] Queries { get; set; }
+		[Parameter(Mandatory = true, ParameterSetName = "And")]
+		public IMongoQuery[] And { get; set; }
+		[Parameter(Mandatory = true, ParameterSetName = "Nor")]
+		public IMongoQuery[] Nor { get; set; }
+		[Parameter(Mandatory = true, ParameterSetName = "Or")]
+		public IMongoQuery[] Or { get; set; }
 		[Parameter(Position = 0, ParameterSetName = "EQ")]
 		[Parameter(Position = 0, ParameterSetName = "IEQ")]
 		[Parameter(Position = 0, ParameterSetName = "INE")]
@@ -35,12 +38,6 @@ namespace Mdbc.Commands
 		[Parameter(Position = 0, ParameterSetName = "List")]
 		[ValidateNotNullOrEmpty]
 		public string Name { get; set; }
-		#region [ Query ]
-		[Parameter(ParameterSetName = "Query")]
-		public SwitchParameter Nor { get; set; }
-		[Parameter(ParameterSetName = "Query")]
-		public SwitchParameter Or { get; set; }
-		#endregion
 		#region [ One ]
 		[Parameter(Position = 1, ParameterSetName = "EQ")]
 		public PSObject EQ { get; set; }
@@ -124,23 +121,6 @@ namespace Mdbc.Commands
 			}
 
 			WriteObject(Not ? Query.Not(Name).Matches(bsonregex) : Query.Matches(Name, bsonregex));
-		}
-		void DoQuery()
-		{
-			if (Nor)
-			{
-				if (Or) throw new PSInvalidOperationException(ErrorAndNorOr);
-				WriteObject(Query.Nor(Queries));
-				return;
-			}
-
-			if (Or)
-			{
-				WriteObject(Query.Or(Queries));
-				return;
-			}
-
-			WriteObject(Query.And(Queries));
 		}
 		void DoList(QueryConditionList list)
 		{
@@ -232,6 +212,15 @@ namespace Mdbc.Commands
 		{
 			switch (ParameterSetName)
 			{
+				case "And":
+					WriteObject(Query.And(And));
+					return;
+				case "Nor":
+					WriteObject(Query.Nor(Nor));
+					return;
+				case "Or":
+					WriteObject(Query.Or(Or));
+					return;
 				case "EQ":
 					WriteObject(Query.EQ(Name, Actor.ToBsonValue(EQ)));
 					return;
@@ -246,9 +235,6 @@ namespace Mdbc.Commands
 					return;
 				case "Where":
 					WriteObject(Query.Where(Where));
-					return;
-				case "Query":
-					DoQuery();
 					return;
 			}
 

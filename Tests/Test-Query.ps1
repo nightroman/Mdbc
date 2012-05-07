@@ -98,7 +98,7 @@ test { New-MdbcQuery Name -Match $regex } '{ "Name" : /^text$/imxs }'
 test { New-MdbcQuery Name -Match $regex -Not } '{ "Name" : { "$not" : /^text$/imxs } }'
 
 ### Matches
-test { New-MdbcQuery Name -Matches (New-MdbcQuery (New-MdbcQuery a 1), (New-MdbcQuery b 2)) } '{ "Name" : { "$elemMatch" : { "a" : 1, "b" : 2 } } }'
+test { New-MdbcQuery Name -Matches (New-MdbcQuery -And (New-MdbcQuery a 1), (New-MdbcQuery b 2)) } '{ "Name" : { "$elemMatch" : { "a" : 1, "b" : 2 } } }'
 
 ### [ Sets ]
 
@@ -159,7 +159,7 @@ test { New-MdbcQuery Name -NotIn text, more } '{ "Name" : { "$nin" : ["text", "m
 ### [ Query Operators ]
 
 ### And
-test { New-MdbcQuery (New-MdbcQuery x 1), (New-MdbcQuery y 2) } '{ "x" : 1, "y" : 2 }'
+test { New-MdbcQuery -And (New-MdbcQuery x 1), (New-MdbcQuery y 2) } '{ "x" : 1, "y" : 2 }'
 
 ### Nor
 test { New-MdbcQuery -Nor (New-MdbcQuery x 1), (New-MdbcQuery y 2) } '{ "$nor" : [{ "x" : 1 }, { "y" : 2 }] }'

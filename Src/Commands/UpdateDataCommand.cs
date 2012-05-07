@@ -15,7 +15,6 @@
 */
 
 using System.Collections;
-using System.Linq;
 using System.Management.Automation;
 using MongoDB.Driver;
 using MongoDB.Driver.Builders;
@@ -25,7 +24,8 @@ namespace Mdbc.Commands
 	public sealed class UpdateDataCommand : AbstractCollectionCommand
 	{
 		[Parameter(Position = 1, Mandatory = true)]
-		public PSObject Updates { get; set; }
+		[Alias("Updates")]
+		public PSObject Update { get; set; }
 		[Parameter(Position = 2, Mandatory = true, ValueFromPipeline = true)]
 		public PSObject Query { get; set; }
 		[Parameter]
@@ -34,22 +34,6 @@ namespace Mdbc.Commands
 		public SafeMode SafeMode { get; set; }
 		[Parameter]
 		public SwitchParameter Safe { get; set; }
-		static IMongoUpdate ToUpdate(PSObject value)
-		{
-			var update = value.BaseObject as IMongoUpdate;
-			if (update != null)
-				return update;
-
-			var dictionary = value.BaseObject as IDictionary;
-			if (dictionary != null)
-				return new UpdateDocument(Actor.ToBsonDocument(dictionary, null));
-
-			var enumerable = LanguagePrimitives.GetEnumerable(value.BaseObject);
-			if (enumerable != null)
-				return Update.Combine(enumerable.Cast<object>().Select(Actor.Cast<UpdateBuilder>));
-
-			throw new PSInvalidCastException("Invalid update type. Valid types: update, dictionary.");
-		}
 		protected override void ProcessRecord()
 		{
 			var query = Actor.ObjectToQuery(Query);
@@ -57,7 +41,7 @@ namespace Mdbc.Commands
 			if (Safe)
 				SafeMode = new SafeMode(Safe);
 
-			var update = ToUpdate(Updates);
+			var update = Actor.ObjectToUpdate(Update);
 
 			SafeModeResult result = SafeMode == null ? Collection.Update(query, update, Modes) : Collection.Update(query, update, Modes, SafeMode);
 

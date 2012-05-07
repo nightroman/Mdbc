@@ -44,8 +44,8 @@ $n3 = Test-Query (New-MdbcQuery LastWriteTime -LE $time1)
 if ($total -ne -$n1 + $n2 + $n3) { throw }
 
 "And"
-$n1 = Test-Query (New-MdbcQuery (New-MdbcQuery Name Readme.txt), (New-MdbcQuery LastWriteTime -GT $time1))
-$n2 = Test-Query (New-MdbcQuery (New-MdbcQuery Name Readme.txt), (New-MdbcQuery LastWriteTime -LT $time1))
+$n1 = Test-Query (New-MdbcQuery -And (New-MdbcQuery Name Readme.txt), (New-MdbcQuery LastWriteTime -GT $time1))
+$n2 = Test-Query (New-MdbcQuery -And (New-MdbcQuery Name Readme.txt), (New-MdbcQuery LastWriteTime -LT $time1))
 if ($EQReadme -ne $n1 + $n2) { throw }
 
 "Or In Match"
