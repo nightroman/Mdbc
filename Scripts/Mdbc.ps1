@@ -12,13 +12,13 @@
 	and installs helper aliases and variables designed for interactive use.
 
 	Global aliases:
-		ma - Add-MdbcData
-		mg - Get-MdbcData
-		mr - Remove-MdbcData
-		mu - Update-MdbcData
-		nd - New-MdbcData
-		nq - New-MdbcQuery
-		nu - New-MdbcUpdate
+		amd - Add-MdbcData
+		gmd - Get-MdbcData
+		rmd - Remove-MdbcData
+		umd - Update-MdbcData
+		nmd - New-MdbcData
+		nmq - New-MdbcQuery
+		nmu - New-MdbcUpdate
 
 	Global variables:
 		$mserver   - the server
@@ -36,7 +36,7 @@
 		mdbc
 
 		# get documents from 'files' where Length > 1GB
-		mg $mfiles (mq Length -gt 1gb)
+		gmd $mfiles (nmq Length -gt 1gb)
 
 .Parameter ConnectionString
 		Connection string (see the C# driver manual for details).
@@ -57,13 +57,13 @@ param
 Import-Module Mdbc
 
 # Aliases
-Set-Alias -Scope global -Name ma -Value Add-MdbcData
-Set-Alias -Scope global -Name mg -Value Get-MdbcData
-Set-Alias -Scope global -Name mr -Value Remove-MdbcData
-Set-Alias -Scope global -Name mu -Value Update-MdbcData
-Set-Alias -Scope global -Name nd -Value New-MdbcData
-Set-Alias -Scope global -Name nq -Value New-MdbcQuery
-Set-Alias -Scope global -Name nu -Value New-MdbcUpdate
+Set-Alias -Scope global -Name amd -Value Add-MdbcData
+Set-Alias -Scope global -Name gmd -Value Get-MdbcData
+Set-Alias -Scope global -Name rmd -Value Remove-MdbcData
+Set-Alias -Scope global -Name umd -Value Update-MdbcData
+Set-Alias -Scope global -Name nmd -Value New-MdbcData
+Set-Alias -Scope global -Name nmq -Value New-MdbcQuery
+Set-Alias -Scope global -Name nmu -Value New-MdbcUpdate
 
 # Server variable
 $global:mserver = Connect-Mdbc $ConnectionString

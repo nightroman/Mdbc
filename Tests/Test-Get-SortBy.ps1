@@ -11,7 +11,7 @@ $mtest = Connect-Mdbc . test test -NewCollection
 9..0 | %{@{Value1 = $_; Value2 = $_ % 2}} | Add-MdbcData $mtest
 
 # sort by Value1
-$data = Get-MdbcData $mtest -SortBy Value1 -Limit 1
+$data = Get-MdbcData $mtest -SortBy Value1 -First 1
 if ($data.Value1 -ne 0) {throw}
 
 # sort by two values, ascending by default

@@ -31,10 +31,10 @@ $mtest = Connect-Mdbc . test test -NewCollection
 1..5 | %{@{_id = $_; data = $_ % 2; time = Get-Date}} | Add-MdbcData $mtest
 
 # get full data
-Get-MdbcData $mtest -As ([TestGetMdbcDataAs1]) -Limit 1
+Get-MdbcData $mtest -As ([TestGetMdbcDataAs1]) -First 1
 
 # get subset of fields
-Get-MdbcData $mtest -Select data -As ([TestGetMdbcDataAs2]) -Limit 1
+Get-MdbcData $mtest -Property data -As ([TestGetMdbcDataAs2]) -First 1
 
 $null = $mtest.Drop()
 
@@ -42,7 +42,7 @@ $null = $mtest.Drop()
 1..5 | %{@{data = $_}} | Add-MdbcData $mtest
 
 # get data, the extra field `time` is not an issue
-Get-MdbcData $mtest -As ([TestGetMdbcDataAs3]) -Limit 1
+Get-MdbcData $mtest -As ([TestGetMdbcDataAs3]) -First 1
 
 # get strongly typed data using a cursor
 Get-MdbcData $mtest -As ([TestGetMdbcDataAs3]) -Cursor -Skip 3

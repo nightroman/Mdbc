@@ -50,10 +50,10 @@ directories (see `$env:PSModulePath`). For example:
     $collection = Connect-Mdbc . test test -NewCollection
 
     # Add some data (Name and WorkingSet of currently running processes):
-    Get-Process | New-MdbcData -DocumentId {$_.Id} -Select Name, WorkingSet | Add-MdbcData $collection
+    Get-Process | New-MdbcData -DocumentId {$_.Id} -Property Name, WorkingSet | Add-MdbcData $collection
 
     # Query all saved data back and print them formatted:
-    Get-MdbcData $collection | Convert-MdbcData | Format-Table -AutoSize | Out-String
+    Get-MdbcData $collection -AsCustomObject | Format-Table -AutoSize | Out-String
 
     # Get saved data of the process 'mongod' (there should be at least one document):
     $data = Get-MdbcData $collection (New-MdbcQuery Name -EQ mongod)

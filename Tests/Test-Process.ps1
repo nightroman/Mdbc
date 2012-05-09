@@ -84,7 +84,6 @@ if ($1 -ne $3) { throw }
 "Find match/where : $1"
 
 Get-MdbcData $collection (New-MdbcQuery Name mongod) | Update-MdbcData $collection (New-MdbcUpdate HandleCount -Increment 1)
-$document = Get-MdbcData $collection (New-MdbcQuery Name mongod)
+$document = Get-MdbcData $collection (New-MdbcQuery Name mongod) -AsCustomObject
 
-$document | Convert-MdbcData | Format-List | Out-String
-$document | Convert-MdbcJson
+$document | Format-List | Out-String

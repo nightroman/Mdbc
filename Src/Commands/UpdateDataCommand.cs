@@ -24,7 +24,6 @@ namespace Mdbc.Commands
 	public sealed class UpdateDataCommand : AbstractCollectionCommand
 	{
 		[Parameter(Position = 1, Mandatory = true)]
-		[Alias("Updates")]
 		public PSObject Update { get; set; }
 		[Parameter(Position = 2, Mandatory = true, ValueFromPipeline = true)]
 		public PSObject Query { get; set; }

@@ -192,7 +192,7 @@ It makes sense when a document is being created.
 		InputObject = @'
 .NET value to be converted to its BSON analogue.
 '@
-		Select = @'
+		Property = @'
 Property or key names which values are to be included into new documents.
 This parameter is used when input objects are converted into documents (see examples).
 '@
@@ -261,7 +261,7 @@ Otherwise the document has the same fields and values as the input properties/ke
 
 				# Create data from input objects and add to the database
 				Get-Process mongod |
-				New-MdbcData -DocumentId {$_.Id} -Select Name, WorkingSet, StartTime |
+				New-MdbcData -DocumentId {$_.Id} -Property Name, WorkingSet, StartTime |
 				Add-MdbcData $collection
 
 				# Query the data
@@ -509,6 +509,21 @@ Deletes a given field.
 	synopsis = @'
 Gets documents or data from the database collection.
 '@
+	Description = @'
+Gets documents or other information from the database collection.
+
+By default documents are represented by the Mdbc.Dictionary type which wraps
+BsonDocument objects. This is the fastest way to obtain query results and the
+type is friendly enough for using in scripts.
+
+It is sometimes more convenient to get data as custom types (use the parameter
+As) or as PS objects (use the switch AsCustomObject). Note that use of custom
+types is not always possible and performance of PS objects is not always good
+enough. Moreover, PS object property names are case insensitive unlike document
+field names.
+
+--------------------------------------------------
+'@
 	sets = @{
 		All = 'Gets documents.'
 		Count = 'Gets document count.'
@@ -521,12 +536,16 @@ Gets documents or data from the database collection.
 		Collection = $script:CollectionParameter
 		Query = $script:QueryParameter
 		As = @'
-The custom type of returned documents.
-By default BsonDocument wrapped by Mdbc.Dictionary are returned.
+The custom type of returned documents. The type members must be compatible with
+a query unless a custom serialization is registered for the type.
+'@
+		AsCustomObject = @'
+Tells to return documents represented by PSObject. PS objects are convenient in
+some scenarios, especially interactive. Performance is not always good enough.
 '@
 		Count = @'
 Tells to return the number of all documents or documents that match a query.
-The Limit and Skip values are taken into account.
+The First and Skip values are taken into account.
 '@
 		Cursor = @'
 Tells to return a cursor to be used for further operations.
@@ -549,9 +568,9 @@ By default the old document is returned.
 		Add = @'
 Tells to add a new document on Update if the old document does not exist.
 '@
-		Select = @'
-Subset of fields to be retrieved.
-The document _id is always included, thus, @() and _id are the same.
+		Property = @'
+Subset of fields to be retrieved. The document _id is always included, thus,
+expressions @() and _id are the same.
 '@
 		SortBy = @'
 Specifies sorting field names and directions. Values are either field names or
@@ -562,11 +581,15 @@ equivalents (say, 1 and 0) are for ascending and descending directions.
 Additional query options.
 See the C# driver manual.
 '@
-		Limit = @'
-Maximum number of documents to be returned.
+		First = @'
+Specifies the number of first documents to be returned.
+'@
+		Last = @'
+Specifies the number of last documents to be returned.
 '@
 		Skip = @'
-Number of documents to skip.
+Number of documents to skip from the beginning or from the end if Last is
+specified.
 '@
 	}
 	inputs = @()

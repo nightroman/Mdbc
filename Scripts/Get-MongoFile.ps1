@@ -47,4 +47,4 @@ else {
 	$query = New-MdbcQuery Name -IEQ $Name
 }
 
-Get-MdbcData $collection $query -Select @() | .{process{ $_._id }}
+Get-MdbcData $collection $query -Property @() | .{process{ $_._id }}

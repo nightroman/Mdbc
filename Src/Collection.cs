@@ -35,13 +35,9 @@ namespace Mdbc
 		{
 			return _array;
 		}
-		IEnumerable Enumerate()
-		{
-			return _array.Select(Actor.ToObject);
-		}
 		public IEnumerator GetEnumerator()
 		{
-			return Enumerate().GetEnumerator();
+			return _array.Select(Actor.ToObject).GetEnumerator();
 		}
 		public bool IsSynchronized { get { return false; } }
 		public object SyncRoot { get { return null; } }

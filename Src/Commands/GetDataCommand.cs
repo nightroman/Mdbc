@@ -48,7 +48,12 @@ namespace Mdbc.Commands
 		[Parameter(ParameterSetName = "All")]
 		[Parameter(ParameterSetName = "Count")]
 		[Parameter(ParameterSetName = "Cursor")]
-		public int Limit { get; set; }
+		[Alias("Limit")]
+		public int First { get; set; }
+		[Parameter(ParameterSetName = "All")]
+		[Parameter(ParameterSetName = "Count")]
+		[Parameter(ParameterSetName = "Cursor")]
+		public int Last { get; set; }
 		[Parameter(ParameterSetName = "All")]
 		[Parameter(ParameterSetName = "Count")]
 		[Parameter(ParameterSetName = "Cursor")]
@@ -56,7 +61,8 @@ namespace Mdbc.Commands
 		[Parameter(ParameterSetName = "All")]
 		[Parameter(ParameterSetName = "Cursor")]
 		[Parameter(ParameterSetName = "Update")]
-		public string[] Select { get; set; }
+		[Alias("Select")]
+		public string[] Property { get; set; }
 		[Parameter(ParameterSetName = "All")]
 		[Parameter(ParameterSetName = "Cursor")]
 		[Parameter(ParameterSetName = "Remove")]
@@ -65,13 +71,16 @@ namespace Mdbc.Commands
 		[Parameter(ParameterSetName = "All")]
 		[Parameter(ParameterSetName = "Cursor")]
 		public Type As { get; set; }
+		[Parameter(ParameterSetName = "All")]
+		[Parameter(ParameterSetName = "Cursor")]
+		public SwitchParameter AsCustomObject { get; set; }
 		void DoCount()
 		{
-			WriteObject(Query == null ? Collection.Count() : Collection.Count(Actor.ObjectToQuery(Query)));
+			WriteObject(Collection.Count(Actor.ObjectToQuery(Query)));
 		}
 		void DoDistinct()
 		{
-			var data = Query == null ? Collection.Distinct(Distinct) : Collection.Distinct(Distinct, Actor.ObjectToQuery(Query));
+			var data = Collection.Distinct(Distinct, Actor.ObjectToQuery(Query));
 			foreach (var it in data)
 				WriteObject(Actor.ToObject(it));
 		}
@@ -93,12 +102,16 @@ namespace Mdbc.Commands
 			var result = Collection.FindAndModify(Actor.ObjectToQuery(Query), Actor.ObjectsToSortBy(SortBy), Actor.ObjectToUpdate(Update), New, Add);
 			DoModified(result);
 		}
+		Type GetDocumentType()
+		{
+			return AsCustomObject ? typeof(PSObject) : As ?? typeof(BsonDocument);
+		}
 		protected override void BeginProcessing()
 		{
 			switch (ParameterSetName)
 			{
 				case "Count":
-					if (Limit > 0 || Skip > 0)
+					if (First > 0 || Skip > 0)
 						break;
 					DoCount();
 					return;
@@ -116,18 +129,33 @@ namespace Mdbc.Commands
 					return;
 			}
 
-			var type = As ?? typeof(BsonDocument);
-			MongoCursor cursor = Query == null ? Collection.FindAllAs(type) : Collection.FindAs(type, Actor.ObjectToQuery(Query));
-
-			if (Select != null)
-				cursor.SetFields(Select);
+			var documentType = GetDocumentType();
+			var query = Actor.ObjectToQuery(Query);
+			var cursor = Collection.FindAs(documentType, query);
 
 			if (Modes != QueryFlags.None)
 				cursor.SetFlags(Modes);
 
-			if (Limit > 0)
-				cursor.SetLimit(Limit);
+			if (Last > 0)
+			{
+				Skip = (int)Collection.Count(query) - Skip - Last;
+				First = Last;
+				if (Skip < 0)
+				{
+					First += Skip;
+					if (First <= 0)
+					{
+						if (Count)
+							WriteObject(0);
+						return;
+					}
+					Skip = 0;
+				}
+			}
 
+			if (First > 0)
+				cursor.SetLimit(First);
+			
 			if (Skip > 0)
 				cursor.SetSkip(Skip);
 
@@ -140,19 +168,25 @@ namespace Mdbc.Commands
 			if (SortBy != null)
 				cursor.SetSortOrder(Actor.ObjectsToSortBy(SortBy));
 
+			if (Property != null)
+				cursor.SetFields(Property);
+
 			if (Cursor)
 			{
 				WriteObject(cursor);
 				return;
 			}
 
-			if (As == null)
+			if (documentType == typeof(BsonDocument))
 			{
 				foreach (BsonDocument bson in cursor)
 					WriteObject(new Dictionary(bson));
 			}
 			else
 			{
+				if (documentType == typeof(PSObject))
+					PSObjectSerializer.Register();
+
 				WriteObject(cursor, true);
 			}
 		}

@@ -86,6 +86,7 @@
     <Compile Include="Dictionary.cs" />
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="GlobalSuppressions.cs" />
+    <Compile Include="PSObjectSerializer.cs" />
   </ItemGroup>
   <ItemGroup>
     <CodeAnalysisDictionary Include="CodeAnalysisDictionary.xml" />

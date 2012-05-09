@@ -19,7 +19,7 @@
 Set-StrictMode -Version 2
 
 Import-Module Mdbc
-$collection = Connect-Mdbc mongodb://localhost test test -NewCollection
+$mnested = Connect-Mdbc . test nested -NewCollection
 
 function Test-Document($document) {
 
@@ -74,10 +74,10 @@ $data.Document = @{ _id = 12345; DateTime = (Get-Date) }
 Test-Document $data
 
 # add the existing document
-$data | Add-MdbcData $collection
+$data | Add-MdbcData $mnested
 
 # create/add a document on-the-fly
-Add-MdbcData $collection @{
+Add-MdbcData $mnested @{
 	Boolean = $false
 	DateTime = (Get-Date)
 	Double = 2.2
@@ -88,16 +88,22 @@ Add-MdbcData $collection @{
 	Array = @(
 		$false
 		(Get-Date)
+		@{ Boolean = $false; DateTime = (Get-Date) }
 	)
 	Document = @{
 		Boolean = $false
 		DateTime = (Get-Date)
+		Array = $false, (Get-Date)
 	}
 }
 
 # get the documents back
-$data = Get-MdbcData $collection
+$data = Get-MdbcData $mnested
 if ($data.Count -ne 2) { throw }
 
 # test requested documents
 $data | %{ Test-Document $_ }
+
+# get as PS objects
+$data = Get-MdbcData $mnested -AsCustomObject
+if ($data.Count -ne 2) { throw }

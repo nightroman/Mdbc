@@ -1,6 +1,29 @@
 Mdbc Release Notes
 ==================
 
+## v1.3.1
+
+**Obsolete parameters**: The following parameters were renamed or removed in
+order to follow PS guidelines; renamed still work but they will be removed in
+vNext:
+
+- `Update-MdbcData` - removed obsolete `Updates`, use `Update`.
+- `Get-MdbcData` - renamed `Limit -> First`, `Select -> Property`;
+- `New-MdbcData` - renamed `Select -> Property`.
+
+Cmdlet `Get-MdbcData`
+
+- New switch `AsCustomObject` tells to get documents represented by PS objects.
+  They are more convenient in some use cases, especially interactive.
+- New parameter `Last`. There is no analogue in the driver but in PowerShell it
+  seems to be useful, especially in interactive sessions.
+
+Removed the module script *Mdbc.psm1* with its functions `Convert-MdbcData`
+(redundant, `Get-MdbcData` can now do this much more effectively) and
+`Convert-MdbcJson` (not really useful in PowerShell).
+
+Demo helper *Mdbc.ps1*: renamed aliases for conformance with PS guidelines.
+
 ## v1.3.0
 
 Cmdlet `New-MdbcQuery`

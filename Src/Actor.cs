@@ -26,7 +26,7 @@ namespace Mdbc
 {
 	static class Actor
 	{
-		public static object ToObject(BsonValue value)
+		public static object ToObject(BsonValue value) //_120509_173140 keep consistent
 		{
 			if (value == null)
 				return null;
@@ -34,7 +34,7 @@ namespace Mdbc
 			switch (value.BsonType)
 			{
 				case BsonType.Array: return new Collection((BsonArray)value); // wrapper
-				case BsonType.Binary: return value.RawValue ?? value; // gets Guid or self
+				case BsonType.Binary: return value.RawValue ?? value; // byte[] or Guid else self
 				case BsonType.Boolean: return value.RawValue;
 				case BsonType.DateTime: return ((BsonDateTime)value).Value;
 				case BsonType.Document: return new Dictionary((BsonDocument)value); // wrapper

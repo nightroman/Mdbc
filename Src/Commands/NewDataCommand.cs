@@ -28,7 +28,8 @@ namespace Mdbc.Commands
 		[Parameter]
 		public SwitchParameter NewDocumentId { get; set; }
 		[Parameter]
-		public string[] Select { get; set; }
+		[Alias("Select")]
+		public string[] Property { get; set; }
 		void WriteDocument(BsonDocument document)
 		{
 			if (DocumentId != null)
@@ -46,9 +47,9 @@ namespace Mdbc.Commands
 				return;
 			}
 
-			if (Select != null)
+			if (Property != null)
 			{
-				WriteDocument(Actor.ToBsonDocument(InputObject, Select));
+				WriteDocument(Actor.ToBsonDocument(InputObject, Property));
 				return;
 			}
 

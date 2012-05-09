@@ -1,13 +1,12 @@
 
 @{
 	Author = 'Roman Kuzmin'
-	ModuleVersion = '1.3.0'
+	ModuleVersion = '1.4.0'
 	CompanyName = 'https://github.com/nightroman/Mdbc'
-	Description = 'Mdbc module - Windows PowerShell Cmdlets for MongoDB'
+	Description = 'Mdbc module - MongoDB Cmdlets for PowerShell'
 	Copyright = '(C) 2011-2012 Roman Kuzmin. All rights reserved.'
 
 	NestedModules = 'Mdbc.dll'
-	ModuleToProcess = 'Mdbc.psm1'
 	FormatsToProcess = 'Mdbc.Format.ps1xml'
 	RequiredAssemblies = 'Mdbc.dll', 'MongoDB.Driver.dll', 'MongoDB.Bson.dll'
 

@@ -135,7 +135,6 @@ task Package ConvertMarkdown, @{UpdateScripts=1}, {
 	$ModuleRoot\Mdbc.dll,
 	$ModuleRoot\Mdbc.Format.ps1xml,
 	$ModuleRoot\Mdbc.psd1,
-	$ModuleRoot\Mdbc.psm1,
 	$ModuleRoot\MongoDB.Bson.dll,
 	$ModuleRoot\MongoDB.Driver.dll
 
