@@ -28,7 +28,6 @@ namespace Mdbc.Commands
 		[Parameter]
 		public SwitchParameter NewDocumentId { get; set; }
 		[Parameter]
-		[Alias("Select")]
 		public string[] Property { get; set; }
 		void WriteDocument(BsonDocument document)
 		{

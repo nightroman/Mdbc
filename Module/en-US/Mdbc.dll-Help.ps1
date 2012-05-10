@@ -7,34 +7,48 @@
 # Import the module to make commands available for the builder.
 Import-Module Mdbc
 
-# Description of the Collection parameter.
-$script:CollectionParameter = @'
+### Shared descriptions
+
+$CollectionParameter = @'
 Collection object. It is obtained by Connect-Mdbc directly (using the
 Collection parameter) or from returned database or server objects.
 '@
 
-# Description of the Query parameter.
-$script:QueryParameter = @'
-Specifies documents to be processed. Supported types:
+$QueryTypes = @'
+Supported types:
 1) MongoDB.Driver.IMongoQuery (see New-MdbcQuery);
-2) documents with _id (BsonDocument or Mdbc.Dictionary);
-3) other values are treated as _id and converted to queries.
+2) _id holders (Mdbc.Dictionary, BsonDocument, custom objects);
+3) hashtables representing MongoDB JSON-like query expressions;
+4) other values are treated as _id and converted to _id queries.
+'@
+$QueryParameter = "Specifies documents to be processed. $QueryTypes"
+
+$AsParameter = @'
+The custom type of returned documents. The type members must be compatible with
+a query unless a custom serialization is registered for the type.
+'@
+$AsCustomObjectParameter = @'
+Tells to return documents represented by PSObject. PS objects are convenient in
+some scenarios, especially interactive. Performance is not always good enough.
 '@
 
-# Shared [Mdbc.Dictionary] type info.
-$script:TypeMdbcDictionary = @{
+$SortByParameter = @'
+Specifies sorting field names and directions. Values are either field names or
+hashtables with single entries: @{Field = <Boolean>}. True and false or their
+equivalents (say, 1 and 0) are for ascending and descending directions.
+'@
+
+$TypeMdbcDictionary = @{
 	type = '[Mdbc.Dictionary]'
 	description = 'Objects created by New-MdbcData or obtained by Get-MdbcData.'
 }
 
-# Shared SafeModeResult type info.
-$script:TypeSafeModeResult = @{
+$TypeSafeModeResult = @{
 	type = '[MongoDB.Driver.SafeModeResult]'
 	description = 'The result is returned if safe mode if enabled.'
 }
 
-# Query inputs.
-$script:QueryInputs = @(
+$QueryInputs = @(
 	@{
 		type = '[MongoDB.Driver.IMongoQuery]'
 		description = 'Query expression. See New-MdbcQuery (query).'
@@ -51,7 +65,6 @@ A document which _id is used for identification.
 		description = 'Any other value is treated as _id for identification.'
 	}
 )
-
 
 ### Connect-Mdbc
 @{
@@ -296,15 +309,18 @@ See the server-side processing page for more information (official site).
 	}
 	parameters = @{
 		Where = '$where argument, JavaScript Boolean expression.'
-		And = @'
-Queries for logical And.
-'@
-		Nor = @'
-Queries for logical Nor (MongoDB $nor).
-'@
-		Or = @'
-Queries for logical Or (MongoDB $or).
-'@
+		And = @"
+Queries for logical And (including MongoDB `$and).
+$QueryTypes
+"@
+		Nor = @"
+Queries for logical Nor (MongoDB `$nor).
+$QueryTypes
+"@
+		Or = @"
+Queries for logical Or (MongoDB `$or).
+$QueryTypes
+"@
 		Name = @'
 Field name.
 '@
@@ -479,14 +495,14 @@ Deletes a given field.
 	command = 'Add-MdbcData'
 	synopsis = 'Adds new documents to the database collection or updates existing.'
 	parameters = @{
-		Collection = $script:CollectionParameter
+		Collection = $CollectionParameter
 		InputObject = 'Document (Mdbc.Dictionary, BsonDocument, or PSCustomObject).'
 		Safe = 'Tells to enable safe mode.'
 		SafeMode = 'Advanced safe mode options.'
 		Update = 'Tells to update existing documents with the same _id or add new documents otherwise.'
 	}
 	inputs = @(
-		$script:TypeMdbcDictionary
+		$TypeMdbcDictionary
 		@{
 			type = '[PSCustomObject]'
 			description = 'Custom objects often created by Select-Object but not only.'
@@ -496,7 +512,7 @@ Deletes a given field.
 			description = 'This type is supported but normally it should not be used directly.'
 		}
 	)
-	outputs = $script:TypeSafeModeResult
+	outputs = $TypeSafeModeResult
 	links = @(
 		@{ text = 'New-MdbcData' }
 		@{ text = 'Select-Object' }
@@ -533,16 +549,10 @@ field names.
 		Update = 'Updates and gets the first document specified by Query and SortBy.'
 	}
 	parameters = @{
-		Collection = $script:CollectionParameter
-		Query = $script:QueryParameter
-		As = @'
-The custom type of returned documents. The type members must be compatible with
-a query unless a custom serialization is registered for the type.
-'@
-		AsCustomObject = @'
-Tells to return documents represented by PSObject. PS objects are convenient in
-some scenarios, especially interactive. Performance is not always good enough.
-'@
+		Collection = $CollectionParameter
+		Query = $QueryParameter
+		As = $AsParameter
+		AsCustomObject = $AsCustomObjectParameter
 		Count = @'
 Tells to return the number of all documents or documents that match a query.
 The First and Skip values are taken into account.
@@ -572,11 +582,7 @@ Tells to add a new document on Update if the old document does not exist.
 Subset of fields to be retrieved. The document _id is always included, thus,
 expressions @() and _id are the same.
 '@
-		SortBy = @'
-Specifies sorting field names and directions. Values are either field names or
-hashtables with single entries: @{Field = <Boolean>}. True and false or their
-equivalents (say, 1 and 0) are for ascending and descending directions.
-'@
+		SortBy = $SortByParameter
 		Modes = @'
 Additional query options.
 See the C# driver manual.
@@ -623,14 +629,14 @@ specified.
 	synopsis = 'Removes specified documents from the collection.'
 	description = ''
 	parameters = @{
-		Collection = $script:CollectionParameter
-		Query = $script:QueryParameter
+		Collection = $CollectionParameter
+		Query = $QueryParameter
 		Modes = 'Additional removal flags. See the C# driver manual.'
 		Safe = 'Tells to enable safe mode.'
 		SafeMode = 'Advanced safe mode options.'
 	}
-	inputs = $script:QueryInputs
-	outputs = $script:TypeSafeModeResult
+	inputs = $QueryInputs
+	outputs = $TypeSafeModeResult
 	links = @(
 		@{ text = 'Connect-Mdbc' }
 		@{ text = 'New-MdbcQuery' }
@@ -643,15 +649,15 @@ specified.
 	synopsis = 'Updates the specified documents.'
 	description = ''
 	parameters = @{
-		Collection = $script:CollectionParameter
-		Query = $script:QueryParameter
+		Collection = $CollectionParameter
+		Query = $QueryParameter
 		Modes = 'Additional update flags. See the C# driver manual.'
 		Safe = 'Tells to enable safe mode.'
 		SafeMode = 'Advanced safe mode options.'
 		Update = 'Update expressions. See New-MdbcUpdate.'
 	}
-	inputs = $script:QueryInputs
-	outputs = $script:TypeSafeModeResult
+	inputs = $QueryInputs
+	outputs = $TypeSafeModeResult
 	links = @(
 		@{ text = 'Connect-Mdbc' }
 		@{ text = 'New-MdbcUpdate' }
@@ -686,4 +692,70 @@ creation of a unique key index on the _id field.
 	}
 	inputs = @()
 	outputs = @()
+}
+
+### Invoke-MdbcMapReduce command help
+@{
+	command = 'Invoke-MdbcMapReduce'
+	synopsis = 'Invokes a Map/Reduce command.'
+	description = ''
+	parameters = @{
+		As = $AsParameter, @'
+This parameter is used with inline output only.
+'@
+		AsCustomObject = $AsCustomObjectParameter, @'
+This parameter is used with inline output only.
+'@
+		Collection = $CollectionParameter
+		First = @'
+The maximum number of input documents.
+It is used together with Query and normally with SortBy.
+'@
+		Function = @'
+Two (Map and Reduce) or three (Map, Reduce, Finalize) JavaScript snippets which
+define the functions. Use Scope in order to set variables that can be used in
+the functions.
+'@
+		JSMode = @'
+Tells to use JS mode which avoids some conversions BSON <-> JS. The execution
+time may be significantly reduced. Note that this mode is limited by JS heap
+size and a maximum of 500k unique keys.
+'@
+		OutCollection = @'
+Name of the output collection. If it is omitted then inline output mode is
+used, result documents are written to the output directly.
+'@
+		OutDatabase = @'
+Name of the output database, used together with Collection.
+By default the database of the input collection is used.
+'@
+		OutMode = @'
+Specifies the output mode, used together with Collection. The default value is
+Replace (all the existing data are replaced with new). Other valid values are
+Merge and Reduce. Merge: new data are either added or replace existing data
+with the same keys. Reduce: the Reduce function is applied.
+'@
+		Query = $QueryParameter
+		Result = @'
+Tells to get the result object as a variable with the specified name. The
+result object type is MapReduceResult. Some properties: Ok, ErrorMessage,
+InputCount, EmitCount, OutputCount, Duration.
+'@
+		Scope = @'
+Specifies the variables that can be used by Map, Reduce, and Finalize functions.
+'@
+		SortBy = $SortByParameter, @'
+This parameter is used together with Query.
+'@
+	}
+	inputs = @()
+	outputs = @(
+		@{
+			type = 'Mdbc.Dictionary or custom objects'
+			description = 'Result documents of Map/Reduce on inline output.'
+		}
+	)
+	links = @(
+		@{ text = 'MapReduce'; URI = 'http://www.mongodb.org/display/DOCS/MapReduce' }
+	)
 }

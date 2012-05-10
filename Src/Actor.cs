@@ -185,7 +185,19 @@ namespace Mdbc
 
 			var ps = value as PSObject;
 			if (ps != null)
+			{
 				value = ps.BaseObject;
+				
+				var psco = value as PSCustomObject;
+				if (psco != null)
+				{
+					var id = ps.Properties["_id"];
+					if (id == null)
+						throw new InvalidOperationException("Custom object: expected property _id.");
+					
+					return Query.EQ("_id", BsonValue.Create(id.Value));
+				}
+			}
 
 			var query = value as IMongoQuery;
 			if (query != null)
@@ -254,19 +266,23 @@ namespace Mdbc
 			}
 			return builder;
 		}
-		public static IMongoUpdate ObjectToUpdate(PSObject value)
+		public static IMongoUpdate ObjectToUpdate(object value)
 		{
-			var update = value.BaseObject as IMongoUpdate;
+			var ps = value as PSObject;
+			if (ps != null)
+				value = ps.BaseObject;
+			
+			var update = value as IMongoUpdate;
 			if (update != null)
 				return update;
 
-			var dictionary = value.BaseObject as IDictionary;
+			var dictionary = value as IDictionary;
 			if (dictionary != null)
 				return new UpdateDocument(Actor.ToBsonDocument(dictionary, null));
 
-			var enumerable = LanguagePrimitives.GetEnumerable(value.BaseObject);
+			var enumerable = LanguagePrimitives.GetEnumerable(value);
 			if (enumerable != null)
-				return Update.Combine(enumerable.Cast<object>().Select(Actor.Cast<UpdateBuilder>));
+				return Update.Combine(enumerable.Cast<object>().Select(Actor.ObjectToUpdate).Cast<UpdateBuilder>());
 
 			throw new PSInvalidCastException("Invalid update type. Valid types: update, dictionary.");
 		}

@@ -1,7 +1,30 @@
 Mdbc Release Notes
 ==================
 
-## v1.3.1
+## v1.5.0
+
+New cmdlet `Invoke-MdbcMapReduce`. The parameters are not yet stabilized and
+may change. **NOTE:** the `SortBy` requires an index though this is not
+documented well (or it might be a bug).
+
+Removed obsolete parameter aliases: `Limit` and `Select` of `Get-MdbcData` (use
+`First` and `Property`) and `Select` of `New-MdbcData` (use `Property`).
+
+Custom objects with the property `_id` can be used where a query is expected.
+For example, objects from `Get-MdbcData -AsCustomObject` can be passed in
+`Remove-MdbcData`, `Update-MdbcData`, and `Get-MdbcData` as queries.
+
+`New-MdbcQuery -And|Or|Nor` - in addition to query objects arguments can be any
+expressions convertible to queries (e.g. `@{Length = @{'$gt' = 1gb}}, @{..}`).
+
+*Mdbc.ps1*
+
+- The parameter `DatabaseName` accepts wildcards. If it is not resolved to an
+  existing database name then the script prints all database names and exits.
+- New operator helpers `$name = '$name'` for query and update operators may
+  reduce typing and typos and make expressions to look more like JSON.
+
+## v1.4.0
 
 **Obsolete parameters**: The following parameters were renamed or removed in
 order to follow PS guidelines; renamed still work but they will be removed in

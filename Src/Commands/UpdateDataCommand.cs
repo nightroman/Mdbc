@@ -14,19 +14,19 @@
 * limitations under the License.
 */
 
-using System.Collections;
 using System.Management.Automation;
 using MongoDB.Driver;
-using MongoDB.Driver.Builders;
 namespace Mdbc.Commands
 {
 	[Cmdlet(VerbsData.Update, "MdbcData")]
 	public sealed class UpdateDataCommand : AbstractCollectionCommand
 	{
 		[Parameter(Position = 1, Mandatory = true)]
-		public PSObject Update { get; set; }
+		public object Update { get { return null; } set { _Update = Actor.ObjectToUpdate(value); } }
+		IMongoUpdate _Update;
 		[Parameter(Position = 2, Mandatory = true, ValueFromPipeline = true)]
-		public PSObject Query { get; set; }
+		public object Query { get { return null; } set { _Query = Actor.ObjectToQuery(value); } }
+		IMongoQuery _Query;
 		[Parameter]
 		public UpdateFlags Modes { get; set; }
 		[Parameter]
@@ -35,14 +35,10 @@ namespace Mdbc.Commands
 		public SwitchParameter Safe { get; set; }
 		protected override void ProcessRecord()
 		{
-			var query = Actor.ObjectToQuery(Query);
-
 			if (Safe)
 				SafeMode = new SafeMode(Safe);
 
-			var update = Actor.ObjectToUpdate(Update);
-
-			SafeModeResult result = SafeMode == null ? Collection.Update(query, update, Modes) : Collection.Update(query, update, Modes, SafeMode);
+			SafeModeResult result = SafeMode == null ? Collection.Update(_Query, _Update, Modes) : Collection.Update(_Query, _Update, Modes, SafeMode);
 
 			if (result != null)
 				WriteObject(result);

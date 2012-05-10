@@ -84,7 +84,7 @@ task TestHelp Help, TestHelpExample, TestHelpSynopsis
 
 # Copy external scripts from their working location to the project.
 # It fails if the scripts are not available.
-task UpdateScripts -Partial @{
+task UpdateScript -Partial @{
 	{ Get-Command Mdbc.ps1, Update-MongoFiles.ps1, Get-MongoFile.ps1 | %{ $_.Definition } } =
 	{ process{ "Scripts\$(Split-Path -Leaf $_)" } }
 } {
@@ -125,7 +125,7 @@ try { Markdown.tasks.ps1 }
 catch { task ConvertMarkdown; task RemoveMarkdownHtml }
 
 # Make the package in z\tools for Zip and NuGet.
-task Package ConvertMarkdown, @{UpdateScripts=1}, {
+task Package ConvertMarkdown, @{UpdateScript=1}, {
 	Remove-Item [z] -Force -Recurse
 	$null = mkdir z\tools\Mdbc\en-US, z\tools\Mdbc\Scripts
 
@@ -185,7 +185,7 @@ operations on MongoDB data.
 		<requireLicenseAcceptance>false</requireLicenseAcceptance>
 		<summary>$text</summary>
 		<description>$text</description>
-		<tags>Mongo MongoDB PowerShell Module</tags>
+		<tags>Mongo MongoDB PowerShell Module Database</tags>
 	</metadata>
 </package>
 "@

@@ -24,7 +24,8 @@ namespace Mdbc.Commands
 	public sealed class GetDataCommand : AbstractCollectionCommand
 	{
 		[Parameter(Position = 1)]
-		public PSObject Query { get; set; }
+		public object Query { get { return null; } set { _Query = Actor.ObjectToQuery(value); } }
+		IMongoQuery _Query;
 		[Parameter(Mandatory = true, ParameterSetName = "Distinct")]
 		public string Distinct { get; set; }
 		[Parameter(Mandatory = true, ParameterSetName = "Count")]
@@ -34,7 +35,8 @@ namespace Mdbc.Commands
 		[Parameter(Mandatory = true, ParameterSetName = "Remove")]
 		public SwitchParameter Remove { get; set; }
 		[Parameter(Mandatory = true, ParameterSetName = "Update")]
-		public PSObject Update { get; set; }
+		public object Update { get { return null; } set { _Update = Actor.ObjectToUpdate(value); } }
+		IMongoUpdate _Update;
 		[Parameter(ParameterSetName = "Update")]
 		public SwitchParameter New { get; set; }
 		[Parameter(ParameterSetName = "Update")]
@@ -48,7 +50,6 @@ namespace Mdbc.Commands
 		[Parameter(ParameterSetName = "All")]
 		[Parameter(ParameterSetName = "Count")]
 		[Parameter(ParameterSetName = "Cursor")]
-		[Alias("Limit")]
 		public int First { get; set; }
 		[Parameter(ParameterSetName = "All")]
 		[Parameter(ParameterSetName = "Count")]
@@ -61,13 +62,13 @@ namespace Mdbc.Commands
 		[Parameter(ParameterSetName = "All")]
 		[Parameter(ParameterSetName = "Cursor")]
 		[Parameter(ParameterSetName = "Update")]
-		[Alias("Select")]
 		public string[] Property { get; set; }
 		[Parameter(ParameterSetName = "All")]
 		[Parameter(ParameterSetName = "Cursor")]
 		[Parameter(ParameterSetName = "Remove")]
 		[Parameter(ParameterSetName = "Update")]
-		public object[] SortBy { get; set; }
+		public object[] SortBy { get { return null; } set { _SortBy = Actor.ObjectsToSortBy(value); } }
+		IMongoSortBy _SortBy;
 		[Parameter(ParameterSetName = "All")]
 		[Parameter(ParameterSetName = "Cursor")]
 		public Type As { get; set; }
@@ -76,11 +77,11 @@ namespace Mdbc.Commands
 		public SwitchParameter AsCustomObject { get; set; }
 		void DoCount()
 		{
-			WriteObject(Collection.Count(Actor.ObjectToQuery(Query)));
+			WriteObject(Collection.Count(_Query));
 		}
 		void DoDistinct()
 		{
-			var data = Collection.Distinct(Distinct, Actor.ObjectToQuery(Query));
+			var data = Collection.Distinct(Distinct, _Query);
 			foreach (var it in data)
 				WriteObject(Actor.ToObject(it));
 		}
@@ -94,12 +95,12 @@ namespace Mdbc.Commands
 		}
 		void DoRemove()
 		{
-			var result = Collection.FindAndRemove(Actor.ObjectToQuery(Query), Actor.ObjectsToSortBy(SortBy));
+			var result = Collection.FindAndRemove(_Query, _SortBy);
 			DoModified(result);
 		}
 		void DoUpdate()
 		{
-			var result = Collection.FindAndModify(Actor.ObjectToQuery(Query), Actor.ObjectsToSortBy(SortBy), Actor.ObjectToUpdate(Update), New, Add);
+			var result = Collection.FindAndModify(_Query, _SortBy, _Update, New, Add);
 			DoModified(result);
 		}
 		Type GetDocumentType()
@@ -130,15 +131,14 @@ namespace Mdbc.Commands
 			}
 
 			var documentType = GetDocumentType();
-			var query = Actor.ObjectToQuery(Query);
-			var cursor = Collection.FindAs(documentType, query);
+			var cursor = Collection.FindAs(documentType, _Query);
 
 			if (Modes != QueryFlags.None)
 				cursor.SetFlags(Modes);
 
 			if (Last > 0)
 			{
-				Skip = (int)Collection.Count(query) - Skip - Last;
+				Skip = (int)Collection.Count(_Query) - Skip - Last;
 				First = Last;
 				if (Skip < 0)
 				{
@@ -155,7 +155,7 @@ namespace Mdbc.Commands
 
 			if (First > 0)
 				cursor.SetLimit(First);
-			
+
 			if (Skip > 0)
 				cursor.SetSkip(Skip);
 
@@ -165,8 +165,8 @@ namespace Mdbc.Commands
 				return;
 			}
 
-			if (SortBy != null)
-				cursor.SetSortOrder(Actor.ObjectsToSortBy(SortBy));
+			if (_SortBy != null)
+				cursor.SetSortOrder(_SortBy);
 
 			if (Property != null)
 				cursor.SetFields(Property);

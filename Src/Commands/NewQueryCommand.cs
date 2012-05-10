@@ -14,6 +14,7 @@
 * limitations under the License.
 */
 
+using System.Linq;
 using System.Management.Automation;
 using System.Text.RegularExpressions;
 using MongoDB.Bson;
@@ -26,11 +27,11 @@ namespace Mdbc.Commands
 	{
 		const string ErrorAndNorOr = "-Or and -Nor switches cannot be used together.";
 		[Parameter(Mandatory = true, ParameterSetName = "And")]
-		public IMongoQuery[] And { get; set; }
+		public object[] And { get; set; }
 		[Parameter(Mandatory = true, ParameterSetName = "Nor")]
-		public IMongoQuery[] Nor { get; set; }
+		public object[] Nor { get; set; }
 		[Parameter(Mandatory = true, ParameterSetName = "Or")]
-		public IMongoQuery[] Or { get; set; }
+		public object[] Or { get; set; }
 		[Parameter(Position = 0, ParameterSetName = "EQ")]
 		[Parameter(Position = 0, ParameterSetName = "IEQ")]
 		[Parameter(Position = 0, ParameterSetName = "INE")]
@@ -46,6 +47,7 @@ namespace Mdbc.Commands
 		[Parameter(ParameterSetName = "INE")]
 		public string INE { get; set; }
 		[Parameter(ParameterSetName = "Match")]
+		[ValidateCount(1, 2)]
 		public PSObject[] Match { get; set; }
 		[Parameter(ParameterSetName = "Where")]
 		public string Where { get; set; }
@@ -75,6 +77,7 @@ namespace Mdbc.Commands
 		[Parameter(ParameterSetName = "List")]
 		public BsonType Type { get; set; }
 		[Parameter(ParameterSetName = "List")]
+		[ValidateCount(2, 2)]
 		public int[] Mod { get; set; }
 		[Parameter(ParameterSetName = "List")]
 		public PSObject Matches { get; set; }
@@ -87,7 +90,7 @@ namespace Mdbc.Commands
 		#endregion
 		void DoMatch()
 		{
-			BsonRegularExpression bsonregex;
+			BsonRegularExpression bsonregex = null;
 			switch (Match.Length)
 			{
 				case 1:
@@ -115,9 +118,6 @@ namespace Mdbc.Commands
 
 					bsonregex = new BsonRegularExpression(pattern, options);
 					break;
-
-				default:
-					throw new PSInvalidOperationException("Expected one or two arguments for the -match parameter.");
 			}
 
 			WriteObject(Not ? Query.Not(Name).Matches(bsonregex) : Query.Matches(Name, bsonregex));
@@ -213,13 +213,13 @@ namespace Mdbc.Commands
 			switch (ParameterSetName)
 			{
 				case "And":
-					WriteObject(Query.And(And));
+					WriteObject(Query.And(And.Select(Actor.ObjectToQuery).ToArray()));
 					return;
 				case "Nor":
-					WriteObject(Query.Nor(Nor));
+					WriteObject(Query.Nor(Nor.Select(Actor.ObjectToQuery).ToArray()));
 					return;
 				case "Or":
-					WriteObject(Query.Or(Or));
+					WriteObject(Query.Or(Or.Select(Actor.ObjectToQuery).ToArray()));
 					return;
 				case "EQ":
 					WriteObject(Query.EQ(Name, Actor.ToBsonValue(EQ)));
@@ -237,9 +237,6 @@ namespace Mdbc.Commands
 					WriteObject(Query.Where(Where));
 					return;
 			}
-
-			if (Mod != null && Mod.Length != 2)
-				throw new PSInvalidOperationException("The -Mod parameter must have two arguments.");
 
 			if (Not)
 				DoListNot(new QueryNotConditionList(Name));

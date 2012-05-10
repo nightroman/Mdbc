@@ -22,7 +22,8 @@ namespace Mdbc.Commands
 	public sealed class RemoveDataCommand : AbstractCollectionCommand
 	{
 		[Parameter(Position = 1, Mandatory = true, ValueFromPipeline = true)]
-		public PSObject Query { get; set; }
+		public object Query { get { return null; } set { _Query = Actor.ObjectToQuery(value); } }
+		IMongoQuery _Query;
 		[Parameter]
 		public RemoveFlags Modes { get; set; }
 		[Parameter]
@@ -31,12 +32,10 @@ namespace Mdbc.Commands
 		public SwitchParameter Safe { get; set; }
 		protected override void ProcessRecord()
 		{
-			var query = Actor.ObjectToQuery(Query);
-
 			if (Safe)
 				SafeMode = new SafeMode(Safe);
 
-			SafeModeResult result = SafeMode == null ? Collection.Remove(query, Modes) : Collection.Remove(query, Modes, SafeMode);
+			SafeModeResult result = SafeMode == null ? Collection.Remove(_Query, Modes) : Collection.Remove(_Query, Modes, SafeMode);
 
 			if (result != null)
 				WriteObject(result);
