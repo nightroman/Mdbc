@@ -23,7 +23,7 @@ namespace Mdbc.Commands
 	[Cmdlet(VerbsCommon.Get, "MdbcData", DefaultParameterSetName = "All")]
 	public sealed class GetDataCommand : AbstractCollectionCommand
 	{
-		[Parameter(Position = 1)]
+		[Parameter(Position = 0)]
 		public object Query { get { return null; } set { _Query = Actor.ObjectToQuery(value); } }
 		IMongoQuery _Query;
 		[Parameter(Mandatory = true, ParameterSetName = "Distinct")]

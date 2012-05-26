@@ -21,12 +21,28 @@ using MongoDB.Driver.Builders;
 namespace Mdbc.Commands
 {
 	[Cmdlet(VerbsCommon.Add, "MdbcCollection")]
-	public sealed class AddCollectionCommand : Cmdlet
+	public sealed class AddCollectionCommand : PSCmdlet
 	{
 		[Parameter(Position = 0, Mandatory = true)]
-		public MongoDatabase Database { get; set; }
-		[Parameter(Position = 1, Mandatory = true)]
 		public string Name { get; set; }
+		[Parameter]
+		public MongoDatabase Database
+		{
+			get
+			{
+				if (_Database == null)
+				{
+					_Database = GetVariableValue(Actor.DatabaseVariable) as MongoDatabase;
+					if (_Database == null) throw new PSArgumentException("Specify database or set default $Database.", "Database");
+				}
+				return _Database;
+			}
+			set
+			{
+				_Database = value;
+			}
+		}
+		MongoDatabase _Database;
 		[Parameter]
 		public long MaxSize { get; set; }
 		[Parameter]

@@ -19,7 +19,7 @@
 Set-StrictMode -Version 2
 
 Import-Module Mdbc
-$mnested = Connect-Mdbc . test nested -NewCollection
+Connect-Mdbc . test nested -NewCollection
 
 function Test-Document($document) {
 
@@ -74,10 +74,10 @@ $data.Document = @{ _id = 12345; DateTime = (Get-Date) }
 Test-Document $data
 
 # add the existing document
-$data | Add-MdbcData $mnested
+$data | Add-MdbcData
 
 # create/add a document on-the-fly
-Add-MdbcData $mnested @{
+Add-MdbcData @{
 	Boolean = $false
 	DateTime = (Get-Date)
 	Double = 2.2
@@ -98,12 +98,12 @@ Add-MdbcData $mnested @{
 }
 
 # get the documents back
-$data = Get-MdbcData $mnested
+$data = Get-MdbcData
 if ($data.Count -ne 2) { throw }
 
 # test requested documents
 $data | %{ Test-Document $_ }
 
 # get as PS objects
-$data = Get-MdbcData $mnested -AsCustomObject
+$data = Get-MdbcData -AsCustomObject
 if ($data.Count -ne 2) { throw }

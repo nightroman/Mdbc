@@ -20,7 +20,7 @@ using MongoDB.Driver.Builders;
 namespace Mdbc.Commands
 {
 	[Cmdlet(VerbsCommon.New, "MdbcUpdate")]
-	public sealed class NewUpdateCommand : AbstractUpdate
+	public sealed class NewUpdateCommand : PSCmdlet
 	{
 		const string NAddToSet = "AddToSet";
 		const string NAddToSetEach = "AddToSetEach";
@@ -38,6 +38,8 @@ namespace Mdbc.Commands
 		const string NUnset = "Unset";
 		const string ExpectedInteger = "Invalid value type. Expected types: int, long.";
 		const string ExpectedNumber = "Invalid value type. Expected types: int, long, double.";
+		[Parameter(Position = 0, Mandatory = true)]
+		public string Name { get; set; }
 		[Parameter(Position = 1, Mandatory = true, ParameterSetName = NAddToSet)]
 		public PSObject AddToSet { get; set; }
 		[Parameter(Position = 1, Mandatory = true, ParameterSetName = NAddToSetEach)]

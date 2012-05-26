@@ -1,15 +1,15 @@
 
 Import-Module Mdbc
-$collection = Connect-Mdbc . test test -NewCollection
+Connect-Mdbc . test test -NewCollection
 
 # make and add a document
-$$ = New-MdbcData -DocumentId 1
+$$ = New-MdbcData -Id 1
 $$.Array = 1, 2, 3, 4, 1, 2, 3, 4
-$$ | Add-MdbcData $collection
+$$ | Add-MdbcData
 
 # update (PullAll) and get back
-$$ | Update-MdbcData $collection (New-MdbcUpdate Array -PullAll 1, 2)
-$$ = Get-MdbcData $collection
+$$ | Update-MdbcData (New-MdbcUpdate Array -PullAll 1, 2)
+$$ = Get-MdbcData
 
 # test: 1, 2 are removed; 3, 4 are there
 if ($$.Array.Count -ne 4) { throw }
@@ -19,8 +19,8 @@ if ($$.Array[2] -ne 3) { throw }
 if ($$.Array[3] -ne 4) { throw }
 
 # update (Pull) and get back
-$$ | Update-MdbcData $collection (New-MdbcUpdate Array -Pull 3)
-$$ = Get-MdbcData $collection
+$$ | Update-MdbcData (New-MdbcUpdate Array -Pull 3)
+$$ = Get-MdbcData
 
 # test: 3 is removed; 4 is there
 if ($$.Array.Count -ne 2) { throw }

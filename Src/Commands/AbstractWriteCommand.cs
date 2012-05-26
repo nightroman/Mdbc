@@ -18,30 +18,33 @@ using System.Management.Automation;
 using MongoDB.Driver;
 namespace Mdbc.Commands
 {
-	[Cmdlet(VerbsCommon.Add, "MdbcData")]
-	public sealed class AddDataCommand : AbstractWriteCommand
+	public abstract class AbstractWriteCommand : AbstractCollectionCommand
 	{
-		[Parameter(Position = 0, ValueFromPipeline = true)]
-		public PSObject InputObject { get; set; }
 		[Parameter]
-		public SwitchParameter Update { get; set; }
-		protected override void ProcessRecord()
+		public SafeMode SafeMode { get; set; }
+		[Parameter]
+		public SwitchParameter Safe { get; set; }
+		[Parameter]
+		public SwitchParameter Result { get; set; }
+		protected void WriteSafeModeResult(CommandResult value)
 		{
-			if (InputObject == null)
+			if (value == null)
 				return;
 
-			var bson = Actor.ToBsonDocument(InputObject, null);
+			if (Result)
+				WriteObject(value);
 
-			if (Safe)
-				SafeMode = new SafeMode(Safe);
+			if (!value.Ok)
+				WriteError(new ErrorRecord(new RuntimeException(value.ErrorMessage), "Driver", ErrorCategory.InvalidResult, value));
+		}
+		protected SafeMode MySafeMode()
+		{
+			var mode = SafeMode ?? new SafeMode(false);
 
-			SafeModeResult result;
-			if (Update)
-				result = SafeMode == null ? Collection.Save(bson) : Collection.Save(bson, SafeMode);
-			else
-				result = SafeMode == null ? Collection.Insert(bson) : Collection.Insert(bson, SafeMode);
+			if (Safe || Result)
+				mode.Enabled = true;
 
-			WriteSafeModeResult(result);
+			return mode;
 		}
 	}
 }

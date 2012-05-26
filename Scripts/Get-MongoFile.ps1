@@ -38,7 +38,7 @@ param
 )
 
 Import-Module Mdbc
-$collection = Connect-Mdbc . test files
+Connect-Mdbc . test files
 
 if ($Match) {
 	$query = New-MdbcQuery Name -Match $Name, i
@@ -47,4 +47,4 @@ else {
 	$query = New-MdbcQuery Name -IEQ $Name
 }
 
-Get-MdbcData $collection $query -Property @() | .{process{ $_._id }}
+Get-MdbcData $query -Property @() | .{process{ $_._id }}

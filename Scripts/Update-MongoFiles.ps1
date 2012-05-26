@@ -68,7 +68,7 @@ if (!$Path.EndsWith('\')) {
 }
 
 Import-Module Mdbc
-$collection = Connect-Mdbc . test files
+Connect-Mdbc . test files
 
 ### Gets input items.
 function Get-Input {
@@ -78,7 +78,7 @@ function Get-Input {
 ### New documents from input items.
 #! Imported by Split-Pipeline as a function with the process block.
 function New-Document {process{
-	$document = New-MdbcData -DocumentId $_.FullName
+	$document = New-MdbcData -Id $_.FullName
 	$document.Name = $_.Name
 	$document.Extension = $_.Extension
 	$document.Updated = $Updated
@@ -99,25 +99,25 @@ if ($Split) {
 	Get-Input |
 	Split-Pipeline -Auto -Load 100, 5000 -Verbose -Module Mdbc -Function New-Document -Variable Updated `
 	-Begin {
-		$collection = Connect-Mdbc . test files
+		Connect-Mdbc . test files
 	} `
 	-Script {
-		$input | New-Document | Add-MdbcData -Update $collection -ErrorAction Continue
+		$input | New-Document | Add-MdbcData -Update -ErrorAction Continue
 	}
 }
 else {
-	Get-Input | New-Document | Add-MdbcData -Update $collection -ErrorAction Continue
+	Get-Input | New-Document | Add-MdbcData -Update -ErrorAction Continue
 }
 
 ### Remove "unknown" data
 Write-Host "Removing unknown data..."
-$result = Remove-MdbcData -Safe $collection (New-MdbcQuery Updated -Exists $false)
+$result = Remove-MdbcData (New-MdbcQuery Updated -Exists $false) -Result
 Write-Host $result.Response
 
 ### Remove data of missing files
 $pattern = '^' + [regex]::Escape($Path)
 $query = New-MdbcQuery -And (New-MdbcQuery Updated -LT $Updated), (New-MdbcQuery _id -Match $pattern)
 Write-Host "Removing data of missing files in $Path ..."
-$result = Remove-MdbcData -Safe $collection $query
+$result = Remove-MdbcData $query -Result
 Write-Host $result.Response
 Write-Host $time.Elapsed

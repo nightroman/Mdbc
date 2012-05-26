@@ -21,21 +21,14 @@
 		nmu - New-MdbcUpdate
 
 	Global variables:
-		$mserver    - the server
-		$mdatabase  - the database
+		$Server     - connected server
+		$Database   - connected database
+		$Collection - connected collection
 		$m<name>    - collection <name> (for each collection)
 		$<operator> - operator shortcuts for JSON-like expressions
 
 	With a large number of collections their names are not displayed. Command
 	Get-Variable m*..* is useful for finding a collection by its name pattern.
-
-	EXAMPLE
-		# connect to the default server and the database 'test'
-		mdbc
-
-		# get from 'files' where Length > 1GB
-		gmd $mfiles (nmq Length -gt 1gb)
-		gmd $mfiles @{Length = @{$gt = 1gb}}
 
 .Parameter ConnectionString
 		Connection string (see the C# driver manual for details).
@@ -45,13 +38,18 @@
 		Database name or wildcard pattern. If it is not resolved to an existing
 		database name then the script prints all database names and exits. The
 		default name is 'test'.
+
+.Parameter CollectionName
+		The name of a collection to be connected, that is stored as $Collection.
+		The default is 'test', not necessarily existing.
 #>
 
 param
 (
 	[Parameter()]
 	$ConnectionString = '.',
-	$DatabaseName = 'test'
+	$DatabaseName = 'test',
+	$CollectionName = 'test'
 )
 
 Import-Module Mdbc
@@ -101,25 +99,27 @@ $global:set = '$set'
 $global:unset = '$unset'
 
 # Server variable
-$global:mserver = Connect-Mdbc $ConnectionString
-Write-Host "Server `$mserver $($mserver.Settings.Server)"
+Connect-Mdbc $ConnectionString
+$global:Server = $Server
+Write-Host "Server `$Server $($Server.Settings.Server)"
 
 # Database variable
-$name = @($mserver.GetDatabaseNames() -like $DatabaseName)
+$name = @($Server.GetDatabaseNames() -like $DatabaseName)
 if ($name.Count -ne 1) {
-	Write-Host "Server databases: $($mserver.GetDatabaseNames())"
+	Write-Host "Server databases: $($Server.GetDatabaseNames())"
 	return
 }
-Write-Host "Database `$mdatabase $name"
-$global:mdatabase = $mserver.GetDatabase($name)
+Write-Host "Database `$Database $name"
+$global:Database = $Server.GetDatabase($name)
 
 # Collection variables
-$collections = @($mdatabase.GetCollectionNames())
+$global:Collection = $Database.GetCollection($CollectionName)
+$collections = @($Database.GetCollectionNames())
 Write-Host "$($collections.Count) collections"
 $global:MaximumVariableCount = 32kb
 foreach($name in $collections) {
 	if (!$name.StartsWith('system.')) {
 		if ($collections.Count -lt 50) { Write-Host "Collection `$m$name" }
-		New-Variable -Scope global -Name "m$name" -Value $mDatabase.GetCollection($name) -ErrorAction Continue -Force
+		New-Variable -Scope global -Name "m$name" -Value $Database.GetCollection($name) -ErrorAction Continue -Force
 	}
 }

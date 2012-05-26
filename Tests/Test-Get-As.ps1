@@ -25,24 +25,24 @@ public class TestGetMdbcDataAs3 {
 }
 '@
 
-$mtest = Connect-Mdbc . test test -NewCollection
+Connect-Mdbc . test test -NewCollection
 
 # add data with custom _id
-1..5 | %{@{_id = $_; data = $_ % 2; time = Get-Date}} | Add-MdbcData $mtest
+1..5 | %{@{_id = $_; data = $_ % 2; time = Get-Date}} | Add-MdbcData
 
 # get full data
-Get-MdbcData $mtest -As ([TestGetMdbcDataAs1]) -First 1
+Get-MdbcData -As ([TestGetMdbcDataAs1]) -First 1
 
 # get subset of fields
-Get-MdbcData $mtest -Property data -As ([TestGetMdbcDataAs2]) -First 1
+Get-MdbcData -Property data -As ([TestGetMdbcDataAs2]) -First 1
 
-$null = $mtest.Drop()
+$null = $Collection.Drop()
 
 # add data with default _id
-1..5 | %{@{data = $_}} | Add-MdbcData $mtest
+1..5 | %{@{data = $_}} | Add-MdbcData
 
 # get data, the extra field `time` is not an issue
-Get-MdbcData $mtest -As ([TestGetMdbcDataAs3]) -First 1
+Get-MdbcData -As ([TestGetMdbcDataAs3]) -First 1
 
 # get strongly typed data using a cursor
-Get-MdbcData $mtest -As ([TestGetMdbcDataAs3]) -Cursor -Skip 3
+Get-MdbcData -As ([TestGetMdbcDataAs3]) -Cursor -Skip 3

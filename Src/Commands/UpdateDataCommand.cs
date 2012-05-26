@@ -19,29 +19,24 @@ using MongoDB.Driver;
 namespace Mdbc.Commands
 {
 	[Cmdlet(VerbsData.Update, "MdbcData")]
-	public sealed class UpdateDataCommand : AbstractCollectionCommand
+	public sealed class UpdateDataCommand : AbstractWriteCommand
 	{
-		[Parameter(Position = 1, Mandatory = true)]
+		[Parameter(Position = 0, Mandatory = true)]
 		public object Update { get { return null; } set { _Update = Actor.ObjectToUpdate(value); } }
 		IMongoUpdate _Update;
-		[Parameter(Position = 2, Mandatory = true, ValueFromPipeline = true)]
+		[Parameter(Position = 1, Mandatory = true, ValueFromPipeline = true)]
 		public object Query { get { return null; } set { _Query = Actor.ObjectToQuery(value); } }
 		IMongoQuery _Query;
 		[Parameter]
 		public UpdateFlags Modes { get; set; }
-		[Parameter]
-		public SafeMode SafeMode { get; set; }
-		[Parameter]
-		public SwitchParameter Safe { get; set; }
 		protected override void ProcessRecord()
 		{
 			if (Safe)
 				SafeMode = new SafeMode(Safe);
 
 			SafeModeResult result = SafeMode == null ? Collection.Update(_Query, _Update, Modes) : Collection.Update(_Query, _Update, Modes, SafeMode);
-
-			if (result != null)
-				WriteObject(result);
+			
+			WriteSafeModeResult(result);
 		}
 	}
 }

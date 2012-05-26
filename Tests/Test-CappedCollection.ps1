@@ -5,18 +5,18 @@
 #>
 
 Import-Module Mdbc
-$database = Connect-Mdbc . test
-$null = $database.DropCollection('capped')
+Connect-Mdbc . test
+$null = $Database.DropCollection('capped')
 
 # add a capped collection (10 documents)
-Add-MdbcCollection $database capped -MaxSize 1mb -MaxDocuments 10
+Add-MdbcCollection capped -MaxSize 1mb -MaxDocuments 10
 
 # add 20 documents
-$collection = $database.GetCollection('capped')
-1..20 | %{@{Value=$_}} | Add-MdbcData $collection
+$Collection = $Database.GetCollection('capped')
+1..20 | %{@{Value=$_}} | Add-MdbcData
 
 # test: expected 10 last documents
-$data = Get-MdbcData $collection
+$data = Get-MdbcData
 if ($data.Count -ne 10) {throw}
 if ($data[0].Value -ne 11) {throw}
 if ($data[9].Value -ne 20) {throw}
@@ -24,7 +24,7 @@ if ($data[9].Value -ne 20) {throw}
 # try to add again, test the error
 $message = ''
 try {
-	Add-MdbcCollection $database capped -MaxSize 1mb -MaxDocuments 10
+	Add-MdbcCollection capped -MaxSize 1mb -MaxDocuments 10
 }
 catch {
 	$message = "$_"

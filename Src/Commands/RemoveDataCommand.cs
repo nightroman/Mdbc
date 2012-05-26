@@ -19,26 +19,18 @@ using MongoDB.Driver;
 namespace Mdbc.Commands
 {
 	[Cmdlet(VerbsCommon.Remove, "MdbcData")]
-	public sealed class RemoveDataCommand : AbstractCollectionCommand
+	public sealed class RemoveDataCommand : AbstractWriteCommand
 	{
-		[Parameter(Position = 1, Mandatory = true, ValueFromPipeline = true)]
+		[Parameter(Position = 0, Mandatory = true, ValueFromPipeline = true)]
 		public object Query { get { return null; } set { _Query = Actor.ObjectToQuery(value); } }
 		IMongoQuery _Query;
 		[Parameter]
 		public RemoveFlags Modes { get; set; }
-		[Parameter]
-		public SafeMode SafeMode { get; set; }
-		[Parameter]
-		public SwitchParameter Safe { get; set; }
 		protected override void ProcessRecord()
 		{
-			if (Safe)
-				SafeMode = new SafeMode(Safe);
-
-			SafeModeResult result = SafeMode == null ? Collection.Remove(_Query, Modes) : Collection.Remove(_Query, Modes, SafeMode);
-
-			if (result != null)
-				WriteObject(result);
+			SafeModeResult result = Collection.Remove(_Query, Modes, MySafeMode());
+			
+			WriteSafeModeResult(result);
 		}
 	}
 }

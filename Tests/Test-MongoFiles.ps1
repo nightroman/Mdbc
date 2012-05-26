@@ -8,17 +8,17 @@ Set-StrictMode -Version 2
 $time1 = [DateTime]'2010-01-01'
 
 Import-Module Mdbc
-$collection = Connect-Mdbc . test files
+Connect-Mdbc . test files
 
 function Test-Query($query) {
 	Write-Verbose -Verbose $query.ToString()
 	$watch = [System.Diagnostics.Stopwatch]::StartNew()
-	$count = Get-MdbcData -Count $collection $query
+	$count = Get-MdbcData -Count $query
 	Write-Verbose -Verbose "$count for $($watch.Elapsed)"
 	$count
 }
 
-$total = $collection.Count()
+$total = $Collection.Count()
 "$total documents"
 
 "EQ NE"

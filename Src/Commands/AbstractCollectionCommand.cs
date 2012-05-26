@@ -18,30 +18,26 @@ using System.Management.Automation;
 using MongoDB.Driver;
 namespace Mdbc.Commands
 {
-	[Cmdlet(VerbsCommon.Add, "MdbcData")]
-	public sealed class AddDataCommand : AbstractWriteCommand
+	public abstract class AbstractCollectionCommand : PSCmdlet
 	{
-		[Parameter(Position = 0, ValueFromPipeline = true)]
-		public PSObject InputObject { get; set; }
 		[Parameter]
-		public SwitchParameter Update { get; set; }
-		protected override void ProcessRecord()
+		[ValidateNotNull]
+		public MongoCollection Collection
 		{
-			if (InputObject == null)
-				return;
-
-			var bson = Actor.ToBsonDocument(InputObject, null);
-
-			if (Safe)
-				SafeMode = new SafeMode(Safe);
-
-			SafeModeResult result;
-			if (Update)
-				result = SafeMode == null ? Collection.Save(bson) : Collection.Save(bson, SafeMode);
-			else
-				result = SafeMode == null ? Collection.Insert(bson) : Collection.Insert(bson, SafeMode);
-
-			WriteSafeModeResult(result);
+			get
+			{
+				if (_Collection == null)
+				{
+					_Collection = GetVariableValue(Actor.CollectionVariable) as MongoCollection;
+					if (_Collection == null) throw new PSArgumentException("Specify collection or set default $Collection.", "Collection");
+				}
+				return _Collection;
+			}
+			set
+			{
+				_Collection = value;
+			}
 		}
+		MongoCollection _Collection;
 	}
 }

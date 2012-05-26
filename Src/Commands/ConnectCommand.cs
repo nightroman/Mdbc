@@ -19,43 +19,48 @@ using MongoDB.Driver;
 namespace Mdbc.Commands
 {
 	[Cmdlet(VerbsCommunications.Connect, "Mdbc")]
-	public sealed class ConnectCommand : Cmdlet
+	public sealed class ConnectCommand : PSCmdlet
 	{
 		[Parameter(Position = 0, Mandatory = true)]
 		public string ConnectionString { get; set; }
 		[Parameter(Position = 1)]
-		public string Database { get; set; }
+		public string DatabaseName { get; set; }
 		[Parameter(Position = 2)]
-		public string Collection { get; set; }
+		public string CollectionName { get; set; }
+		[Parameter]
+		[ValidateNotNull]
+		public string ServerVariable { get; set; }
+		[Parameter]
+		[ValidateNotNull]
+		public string DatabaseVariable { get; set; }
+		[Parameter]
+		[ValidateNotNull]
+		public string CollectionVariable { get; set; }
 		[Parameter]
 		public SwitchParameter NewCollection { get; set; }
 		protected override void BeginProcessing()
 		{
 			var server = ConnectionString == "." ? MongoServer.Create() : MongoServer.Create(ConnectionString);
 			server.Connect();
+			SessionState.PSVariable.Set(ServerVariable ?? Actor.ServerVariable, server);
 
-			if (Database == null)
-			{
-				WriteObject(server);
+			if (DatabaseName == null)
 				return;
-			}
 
-			if (Database == "*")
+			if (DatabaseName == "*")
 			{
 				foreach (var name in server.GetDatabaseNames())
 					WriteObject(server.GetDatabase(name));
 				return;
 			}
 
-			var database = server.GetDatabase(Database);
+			var database = server.GetDatabase(DatabaseName);
+			SessionState.PSVariable.Set(DatabaseVariable ?? Actor.DatabaseVariable, database);
 
-			if (Collection == null)
-			{
-				WriteObject(database);
+			if (CollectionName == null)
 				return;
-			}
 
-			if (Collection == "*")
+			if (CollectionName == "*")
 			{
 				foreach (var name in database.GetCollectionNames())
 					WriteObject(database.GetCollection(name));
@@ -63,9 +68,10 @@ namespace Mdbc.Commands
 			}
 
 			if (NewCollection)
-				database.DropCollection(Collection);
+				database.DropCollection(CollectionName);
 
-			WriteObject(database.GetCollection(Collection));
+			var collection = database.GetCollection(CollectionName);
+			SessionState.PSVariable.Set(CollectionVariable ?? Actor.CollectionVariable, collection);
 		}
 	}
 }

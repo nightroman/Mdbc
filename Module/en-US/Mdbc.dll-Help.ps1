@@ -10,8 +10,8 @@ Import-Module Mdbc
 ### Shared descriptions
 
 $CollectionParameter = @'
-Collection object. It is obtained by Connect-Mdbc directly (using the
-Collection parameter) or from returned database or server objects.
+Collection object. It is obtained by Connect-Mdbc or from database or server
+objects. If it is not specified then the current variable $Collection is used.
 '@
 
 $QueryTypes = @'
@@ -69,16 +69,14 @@ A document which _id is used for identification.
 ### Connect-Mdbc
 @{
 	command = 'Connect-Mdbc'
-	synopsis = 'Connects and gets a server, database(s), or collection(s) object(s).'
+	synopsis = 'Connects a server, database, and collection.'
 	description = @'
-	> Connect-Mdbc -ConnectionString
-	Gets the connected server object.
+The cmdlet connects the specified server, database, and collection and creates
+their reference variables in the current scope, with default names they are
+$Server, $Database, and $Collection.
 
-	> Connect-Mdbc -ConnectionString -Database
-	Gets the connected database object.
-
-	> Connect-Mdbc -ConnectionString -Database -Collection
-	Gets the connected collection object. Use Add-MdbcData, Get-MdbcData, Remove-MdbcData, Update-MdbcData.
+The * used as a name tells to get all database names for a server or collection
+names for a database.
 '@
 
 	parameters = @{
@@ -90,58 +88,59 @@ A document which _id is used for identification.
 	mongodb://localhost:27017
 	mongodb://localhost/?safe=true
 '@
-		Database = 'Database name. * is used in order to get all database objects.'
-		Collection = 'Collection name. * is used in order to get all collection objects.'
-		NewCollection = 'Tells to drop the collection if it exists and create a new one.'
+		DatabaseName = 'Database name. * is used in order to get all database objects.'
+		CollectionName = 'Collection name. * is used in order to get all collection objects.'
+		NewCollection = 'Tells to connect a new collection dropping the existing if there is any.'
+		ServerVariable = 'Name of a new variable in the current scope with the connected server. The default variable is $Server.'
+		DatabaseVariable = 'Name of a new variable in the current scope with the connected database. The default variable is $Database.'
+		CollectionVariable = 'Name of a new variable in the current scope with the connected collection. The default variable is $Collection.'
 	}
 	inputs = @()
 	outputs = @(
-		@{ type = '[MongoDB.Driver.MongoServer]' }
-		@{ type = '[MongoDB.Driver.MongoDatabase]' }
-		@{ type = '[MongoDB.Driver.MongoCollection]' }
+		@{ type = 'None or database or collection names.' }
 	)
 	examples = @(
 		@{
 			code = {
-				# Connect and get the collection (drop existing, create new)
+				# Connect to a new collection (drop existing)
 				Import-Module Mdbc
-				$collection = Connect-Mdbc . test test -NewCollection
+				Connect-Mdbc . test test -NewCollection
 			}
 			test = {
 				. $args[0]
-				if ($collection.GetType().Name -ne 'MongoCollection`1') { throw }
+				if ($Collection.GetType().Name -ne 'MongoCollection`1') { throw }
 			}
 		}
 		@{
 			code = {
-				# Connect and get the database
+				# Connect to the database
 				Import-Module Mdbc
-				$database = Connect-Mdbc . test
+				Connect-Mdbc . test
 
 				# Then get collections
-				$collection1 = $database.GetCollection('test')
-				$collection2 = $database.GetCollection('process')
+				$collection1 = $Database.GetCollection('test')
+				$collection2 = $Database.GetCollection('process')
 			}
 			test = {
 				. $args[0]
-				if ($database.GetType().Name -ne 'MongoDatabase') { throw }
+				if ($Database.GetType().Name -ne 'MongoDatabase') { throw }
 				if ($collection1.FullName -ne 'test.test' ) { throw }
 				if ($collection2.FullName -ne 'test.process' ) { throw }
 			}
 		}
 		@{
 			code = {
-				# Connect and get the server
+				# Connect to the server
 				Import-Module Mdbc
-				$server = Connect-Mdbc mongodb://localhost
+				Connect-Mdbc mongodb://localhost
 
 				# Then get the database
-				$database = $server.GetDatabase('test')
+				$Database = $Server.GetDatabase('test')
 			}
 			test = {
 				. $args[0]
-				if ($server.GetType().Name -ne 'MongoServer') { throw }
-				if ($database.GetType().Name -ne 'MongoDatabase') { throw }
+				if ($Server.GetType().Name -ne 'MongoServer') { throw }
+				if ($Database.GetType().Name -ne 'MongoDatabase') { throw }
 			}
 		}
 		@{
@@ -151,10 +150,10 @@ A document which _id is used for identification.
 				Connect-Mdbc . *
 			}
 			test = {
-				$database = . $args[0]
+				$databases = . $args[0]
 				# at least: local, test
-				if ($database.Count -lt 2) { throw }
-				if ($database[0].GetType().Name -ne 'MongoDatabase') { throw }
+				if ($databases.Count -lt 2) { throw }
+				if ($databases[0].GetType().Name -ne 'MongoDatabase') { throw }
 			}
 		}
 		@{
@@ -164,10 +163,10 @@ A document which _id is used for identification.
 				Connect-Mdbc . test *
 			}
 			test = {
-				$collection = . $args[0]
+				$collections = . $args[0]
 				# at least: test, process
-				if ($collection.Count -lt 2) { throw }
-				if ($collection[0].GetType().Name -ne 'MongoCollection`1') { throw }
+				if ($collections.Count -lt 2) { throw }
+				if ($collections[0].GetType().Name -ne 'MongoCollection`1') { throw }
 			}
 		}
 	)
@@ -190,7 +189,7 @@ This command is mostly used in order to create documents to be stored in the dat
 Without input objects it creates PowerShell friendly wrappers of C# driver documents.
 '@
 	parameters = @{
-		DocumentId = @'
+		Id = @'
 Sets the document _id to the specified value.
 It makes sense when a document is being created.
 
@@ -198,7 +197,7 @@ With pipeline input it can be a script block that returns an ID value.
 If this ID is an existing property/key value then the Select list should be specified.
 Otherwise the same value is included twice as the document ID and the property/key value.
 '@
-		NewDocumentId = @'
+		NewId = @'
 Tells to generate and set a new document _id.
 It makes sense when a document is being created.
 '@
@@ -245,20 +244,20 @@ Otherwise the document has the same fields and values as the input properties/ke
 	examples = @(
 		@{
 			code = {
-				# Connect and get the collection
+				# Connect to the collection
 				Import-Module Mdbc
-				$collection = Connect-Mdbc . test test -NewCollection
+				Connect-Mdbc . test test -NewCollection
 
 				# Create a new document, set some data
-				$data = New-MdbcData -DocumentId 12345
+				$data = New-MdbcData -Id 12345
 				$data.Text = 'Hello world'
 				$data.Date = Get-Date
 
 				# Add the document to the database
-				$data | Add-MdbcData $collection
+				$data | Add-MdbcData
 
 				# Query the document from the database
-				$result = Get-MdbcData $collection (New-MdbcQuery _id 12345)
+				$result = Get-MdbcData (New-MdbcQuery _id 12345)
 				$result
 			}
 			test = {
@@ -268,17 +267,17 @@ Otherwise the document has the same fields and values as the input properties/ke
 		}
 		@{
 			code = {
-				# Connect and get the collection
+				# Connect to the collection
 				Import-Module Mdbc
-				$collection = Connect-Mdbc . test test -NewCollection
+				Connect-Mdbc . test test -NewCollection
 
 				# Create data from input objects and add to the database
 				Get-Process mongod |
-				New-MdbcData -DocumentId {$_.Id} -Property Name, WorkingSet, StartTime |
-				Add-MdbcData $collection
+				New-MdbcData -Id {$_.Id} -Property Name, WorkingSet, StartTime |
+				Add-MdbcData
 
 				# Query the data
-				$result = Get-MdbcData $collection
+				$result = Get-MdbcData
 				$result
 			}
 			test = {
@@ -490,15 +489,28 @@ Deletes a given field.
 	)
 }
 
+### AbstractCollection
+$AbstractCollection = @{
+	parameters = @{
+		Collection = $CollectionParameter
+	}
+}
+
+### AbstractWrite
+$AbstractWrite = Merge-Helps $AbstractCollection @{
+	parameters = @{
+		Safe = 'Tells to enable safe mode.'
+		SafeMode = 'Advanced safe mode options.'
+		Result = 'Tells to enable safe mode and output result objects.'
+	}
+}
+
 ### Add-MdbcData
-@{
+Merge-Helps $AbstractWrite @{
 	command = 'Add-MdbcData'
 	synopsis = 'Adds new documents to the database collection or updates existing.'
 	parameters = @{
-		Collection = $CollectionParameter
 		InputObject = 'Document (Mdbc.Dictionary, BsonDocument, or PSCustomObject).'
-		Safe = 'Tells to enable safe mode.'
-		SafeMode = 'Advanced safe mode options.'
 		Update = 'Tells to update existing documents with the same _id or add new documents otherwise.'
 	}
 	inputs = @(
@@ -520,12 +532,12 @@ Deletes a given field.
 }
 
 ### Get-MdbcData
-@{
+Merge-Helps $AbstractCollection @{
 	command = 'Get-MdbcData'
 	synopsis = @'
 Gets documents or data from the database collection.
 '@
-	Description = @'
+	description = @'
 Gets documents or other information from the database collection.
 
 By default documents are represented by the Mdbc.Dictionary type which wraps
@@ -549,7 +561,6 @@ field names.
 		Update = 'Updates and gets the first document specified by Query and SortBy.'
 	}
 	parameters = @{
-		Collection = $CollectionParameter
 		Query = $QueryParameter
 		As = $AsParameter
 		AsCustomObject = $AsCustomObjectParameter
@@ -624,16 +635,13 @@ specified.
 }
 
 ### Remove-MdbcData
-@{
+Merge-Helps $AbstractWrite @{
 	command = 'Remove-MdbcData'
 	synopsis = 'Removes specified documents from the collection.'
 	description = ''
 	parameters = @{
-		Collection = $CollectionParameter
 		Query = $QueryParameter
 		Modes = 'Additional removal flags. See the C# driver manual.'
-		Safe = 'Tells to enable safe mode.'
-		SafeMode = 'Advanced safe mode options.'
 	}
 	inputs = $QueryInputs
 	outputs = $TypeSafeModeResult
@@ -644,16 +652,13 @@ specified.
 }
 
 ### Update-MdbcData
-@{
+Merge-Helps $AbstractWrite @{
 	command = 'Update-MdbcData'
 	synopsis = 'Updates the specified documents.'
 	description = ''
 	parameters = @{
-		Collection = $CollectionParameter
 		Query = $QueryParameter
 		Modes = 'Additional update flags. See the C# driver manual.'
-		Safe = 'Tells to enable safe mode.'
-		SafeMode = 'Advanced safe mode options.'
 		Update = 'Update expressions. See New-MdbcUpdate.'
 	}
 	inputs = $QueryInputs
@@ -675,6 +680,7 @@ capped collections. Ordinary collections do not have to be added explicitly.
 	parameters = @{
 		Database = @'
 The database where a new collection is created.
+If it is not specified then the current variable $Database is used.
 '@
 		Name = @'
 The name of a new collection.
@@ -736,7 +742,7 @@ Merge and Reduce. Merge: new data are either added or replace existing data
 with the same keys. Reduce: the Reduce function is applied.
 '@
 		Query = $QueryParameter
-		Result = @'
+		ResultVariable = @'
 Tells to get the result object as a variable with the specified name. The
 result object type is MapReduceResult. Some properties: Ok, ErrorMessage,
 InputCount, EmitCount, OutputCount, Duration.

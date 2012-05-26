@@ -25,10 +25,10 @@ namespace Mdbc.Commands
 	[Cmdlet(VerbsLifecycle.Invoke, "MdbcMapReduce")]
 	public sealed class InvokeMapReduceCommand : AbstractCollectionCommand
 	{
-		[Parameter(Position = 1, Mandatory = true)]
+		[Parameter(Position = 0, Mandatory = true)]
 		[ValidateCount(2, 3)]
 		public string[] Function { get; set; }
-		[Parameter(Position = 2)]
+		[Parameter(Position = 1)]
 		public object Query { get { return null; } set { _Query = Actor.ObjectToQuery(value); } }
 		IMongoQuery _Query;
 		[Parameter]
@@ -41,7 +41,7 @@ namespace Mdbc.Commands
 		[Parameter]
 		public SwitchParameter JSMode { get; set; }
 		[Parameter]
-		public string Result { get; set; }
+		public string ResultVariable { get; set; }
 		[Parameter]
 		public MapReduceOutputMode OutMode { get; set; }
 		[Parameter]
@@ -88,8 +88,8 @@ namespace Mdbc.Commands
 
 			var result = Collection.MapReduce(new BsonJavaScript(Function[0]), new BsonJavaScript(Function[1]), options);
 			
-			if (Result != null)
-				SessionState.PSVariable.Set(Result, result);
+			if (ResultVariable != null)
+				SessionState.PSVariable.Set(ResultVariable, result);
 
 			if (OutMode != MapReduceOutputMode.Inline)
 				return;

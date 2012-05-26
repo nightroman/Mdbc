@@ -26,6 +26,9 @@ namespace Mdbc
 {
 	static class Actor
 	{
+		internal const string ServerVariable = "Server";
+		internal const string DatabaseVariable = "Database";
+		internal const string CollectionVariable = "Collection";
 		public static object ToObject(BsonValue value) //_120509_173140 keep consistent
 		{
 			if (value == null)

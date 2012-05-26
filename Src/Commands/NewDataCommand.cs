@@ -24,16 +24,16 @@ namespace Mdbc.Commands
 		[Parameter(Position = 0, ValueFromPipeline = true)]
 		public PSObject InputObject { get; set; }
 		[Parameter(ValueFromPipelineByPropertyName = true)]
-		public PSObject DocumentId { get; set; }
+		public PSObject Id { get; set; }
 		[Parameter]
-		public SwitchParameter NewDocumentId { get; set; }
+		public SwitchParameter NewId { get; set; }
 		[Parameter]
 		public string[] Property { get; set; }
 		void WriteDocument(BsonDocument document)
 		{
-			if (DocumentId != null)
-				document["_id"] = BsonValue.Create(DocumentId.BaseObject);
-			else if (NewDocumentId)
+			if (Id != null)
+				document["_id"] = BsonValue.Create(Id.BaseObject);
+			else if (NewId)
 				document["_id"] = BsonObjectId.GenerateNewId();
 
 			WriteObject(new Dictionary(document));

@@ -72,7 +72,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Actor.cs" />
-    <Compile Include="Commands\AbstractCommands.cs" />
+    <Compile Include="Commands\AbstractCollectionCommand.cs" />
+    <Compile Include="Commands\AbstractWriteCommand.cs" />
     <Compile Include="Commands\AddDataCommand.cs" />
     <Compile Include="Commands\ConnectCommand.cs" />
     <Compile Include="Commands\GetDataCommand.cs" />
