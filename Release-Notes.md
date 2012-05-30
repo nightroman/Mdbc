@@ -1,6 +1,18 @@
 Mdbc Release Notes
 ==================
 
+## v2.1.0
+
+New cmdlet `Invoke-MdbcCommand` for invoking any MongoDB commands including not
+covered by Mdbc or C# driver helpers. Mdbc becomes an interactive MongoDB shell
+on PowerShell steroids. NOTE: The parameters are not perhaps stabilized, they
+may depend on the feedback and suggestions.
+
+Interactive profile *Mdbc.ps1*
+
+- New global function `Get-MdbcHelp` gets help for MongoDB commands.
+- New aliases `imc ~ Invoke-MdbcCommand, gmh ~ Get-MdbcHelp`.
+
 ## v2.0.0
 
 ### New concept of the default server, database, and collection

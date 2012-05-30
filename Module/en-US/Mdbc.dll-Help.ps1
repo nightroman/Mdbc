@@ -180,6 +180,32 @@ names for a database.
 	)
 }
 
+### AbstractDatabase
+$AbstractDatabase = @{
+	parameters = @{
+		Database = @'
+The database instance. If it is not specified then the variable $Database is
+used: it is defined by Connect-Mdbc or assigned explicitly before the call.
+'@
+	}
+}
+
+### AbstractCollection
+$AbstractCollection = @{
+	parameters = @{
+		Collection = $CollectionParameter
+	}
+}
+
+### AbstractWrite
+$AbstractWrite = Merge-Helps $AbstractCollection @{
+	parameters = @{
+		Safe = 'Tells to enable safe mode.'
+		SafeMode = 'Advanced safe mode options.'
+		Result = 'Tells to enable safe mode and output result objects.'
+	}
+}
+
 ### New-MdbcData
 @{
 	command = 'New-MdbcData'
@@ -489,22 +515,6 @@ Deletes a given field.
 	)
 }
 
-### AbstractCollection
-$AbstractCollection = @{
-	parameters = @{
-		Collection = $CollectionParameter
-	}
-}
-
-### AbstractWrite
-$AbstractWrite = Merge-Helps $AbstractCollection @{
-	parameters = @{
-		Safe = 'Tells to enable safe mode.'
-		SafeMode = 'Advanced safe mode options.'
-		Result = 'Tells to enable safe mode and output result objects.'
-	}
-}
-
 ### Add-MdbcData
 Merge-Helps $AbstractWrite @{
 	command = 'Add-MdbcData'
@@ -669,39 +679,8 @@ Merge-Helps $AbstractWrite @{
 	)
 }
 
-### Add-MdbcCollection
-@{
-	command = 'Add-MdbcCollection'
-	synopsis = 'Creates a new collection in a database.'
-	description = @'
-This cmdlet is needed only for creation of collections with extra options, like
-capped collections. Ordinary collections do not have to be added explicitly.
-'@
-	parameters = @{
-		Database = @'
-The database where a new collection is created.
-If it is not specified then the current variable $Database is used.
-'@
-		Name = @'
-The name of a new collection.
-'@
-		MaxSize = @'
-Sets the max size of a capped collection.
-'@
-		MaxDocuments = @'
-Sets the max number of documents in a capped collection in addition to MaxSize.
-'@
-		AutoIndexId = @'
-It may be set to true or false to explicitly enable or disable automatic
-creation of a unique key index on the _id field.
-'@
-	}
-	inputs = @()
-	outputs = @()
-}
-
 ### Invoke-MdbcMapReduce command help
-@{
+Merge-Helps $AbstractCollection @{
 	command = 'Invoke-MdbcMapReduce'
 	synopsis = 'Invokes a Map/Reduce command.'
 	description = ''
@@ -712,7 +691,6 @@ This parameter is used with inline output only.
 		AsCustomObject = $AsCustomObjectParameter, @'
 This parameter is used with inline output only.
 '@
-		Collection = $CollectionParameter
 		First = @'
 The maximum number of input documents.
 It is used together with Query and normally with SortBy.
@@ -763,5 +741,111 @@ This parameter is used together with Query.
 	)
 	links = @(
 		@{ text = 'MapReduce'; URI = 'http://www.mongodb.org/display/DOCS/MapReduce' }
+	)
+}
+
+### Add-MdbcCollection
+Merge-Helps $AbstractDatabase @{
+	command = 'Add-MdbcCollection'
+	synopsis = 'Creates a new collection in a database.'
+	description = @'
+This cmdlet is needed only for creation of collections with extra options, like
+capped collections. Ordinary collections do not have to be added explicitly.
+'@
+	parameters = @{
+		Name = @'
+The name of a new collection.
+'@
+		MaxSize = @'
+Sets the max size of a capped collection.
+'@
+		MaxDocuments = @'
+Sets the max number of documents in a capped collection in addition to MaxSize.
+'@
+		AutoIndexId = @'
+It may be set to true or false to explicitly enable or disable automatic
+creation of a unique key index on the _id field.
+'@
+	}
+	inputs = @()
+	outputs = @()
+}
+
+### Invoke-MdbcCommand
+Merge-Helps $AbstractDatabase @{
+	command = 'Invoke-MdbcCommand'
+	synopsis = 'Invokes a command for a database.'
+	description = @'
+This cmdlet is normally used in order to invoke commands not covered by C#
+driver or Mdbc helpers. See MongoDB manuals for available commands and their
+parameters.
+'@
+	parameters = @{
+		Command = @'
+Either the name of command with no arguments or one argument or a JSON-like
+hashtable that defines a more complex command.
+'@
+		Value = @'
+The argument value required by the command with one argument.
+'@
+	}
+	inputs = @()
+	outputs = @{
+		type = 'Mdbc.Dictionary'
+		description = 'The response document wrapped by Mdbc.Dictionary.'
+	}
+	links = @(
+		@{ text = 'Commands'; URI = 'http://www.mongodb.org/display/DOCS/Commands' }
+	)
+	examples = @(
+		@{
+			code = {
+				# Invoke the command `serverStatus` just by name.
+
+				Connect-Mdbc . test
+				Invoke-MdbcCommand serverStatus
+			}
+			test = {
+				$response = . $args[0]
+				if ($response.host -ne $env:COMPUTERNAME) {throw}
+			}
+		}
+		@{
+			code = {
+				# Connect to the database `test` and invoke the command with a
+				# single parameter `global` with the `admin` database specified
+				# explicitly (because the current is `test` and the command is
+				# admin-only)
+
+				Connect-Mdbc . test
+				Invoke-MdbcCommand getLog global -Database $Server['admin']
+			}
+			test = {
+				$response = . $args[0]
+				if (!$response.log) {throw}
+			}
+		}
+		@{
+			code = {
+				# Commands with more then one argument use JSON-like hashes.
+				# The example command creates a capped collection with maximum
+				# set to 5 documents, adds 10 documents, then gets all back (5
+				# documents are expected).
+
+				Connect-Mdbc . test z -NewCollection
+				$null = Invoke-MdbcCommand @{create = 'z'; capped = $true; size = 1kb; max = 5 }
+
+				# set the default collection
+				$Collection = $Database['z']
+
+				# use it in two command implicitly
+				1..10 | %{@{_id = $_}} | Add-MdbcData
+				Get-MdbcData
+			}
+			test = {
+				$data = . $args[0]
+				if ($data.Count -ne 5) {throw}
+			}
+		}
 	)
 }

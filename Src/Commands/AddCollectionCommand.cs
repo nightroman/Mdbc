@@ -14,35 +14,15 @@
 * limitations under the License.
 */
 
-using System;
 using System.Management.Automation;
-using MongoDB.Driver;
 using MongoDB.Driver.Builders;
 namespace Mdbc.Commands
 {
 	[Cmdlet(VerbsCommon.Add, "MdbcCollection")]
-	public sealed class AddCollectionCommand : PSCmdlet
+	public sealed class AddCollectionCommand : AbstractDatabaseCommand
 	{
 		[Parameter(Position = 0, Mandatory = true)]
 		public string Name { get; set; }
-		[Parameter]
-		public MongoDatabase Database
-		{
-			get
-			{
-				if (_Database == null)
-				{
-					_Database = GetVariableValue(Actor.DatabaseVariable) as MongoDatabase;
-					if (_Database == null) throw new PSArgumentException("Specify database or set default $Database.", "Database");
-				}
-				return _Database;
-			}
-			set
-			{
-				_Database = value;
-			}
-		}
-		MongoDatabase _Database;
 		[Parameter]
 		public long MaxSize { get; set; }
 		[Parameter]

@@ -167,9 +167,8 @@ task Zip Package, Version, {
 # Make NuGet package.
 task NuGet Package, Version, {
 	$text = @'
-Mdbc is the Windows PowerShell module built on top of the official MongoDB C#
-driver. It provides a few cmdlets and PowerShell friendly features for basic
-operations on MongoDB data.
+Mdbc is the Windows PowerShell module based on the official MongoDB C# driver.
+It makes MongoDB scripting easy and represents yet another MongoDB shell.
 '@
 	# nuspec
 	Set-Content z\Package.nuspec @"

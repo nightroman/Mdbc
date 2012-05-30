@@ -3,14 +3,9 @@ Mdbc module - MongoDB Cmdlets for PowerShell
 
 ![Powered by MongoDB](https://github.com/downloads/nightroman/Mdbc/PoweredMongoDBblue50.png)
 
-*Mdbc* is the *Windows PowerShell* module built on top of the official
+*Mdbc* is the *Windows PowerShell* module based on the official
 [MongoDB C# driver](https://github.com/mongodb/mongo-csharp-driver).
-It provides a few cmdlets and PowerShell friendly features for basic
-operations on MongoDB data.
-
-The goal is not to replace the driver API with cmdlets for everything but to
-make it easier to use the driver in PowerShell scripts and interactively (see
-the helper script *Mdbc.ps1*).
+It makes MongoDB scripting easy and represents yet another MongoDB shell.
 
 ## Quick Start
 
@@ -77,8 +72,8 @@ Next Steps
 Read cmdlet help topics and take a look at their examples, they show some basic
 use cases to start with.
 
-Take a look at the scripts in the *Scripts* directory. They are rather toys but
-can be useful, too, at least for learning.
+Take a look at the scripts in the *Scripts* directory, the interactive profile
+*Mdbc.ps1* in the first place. Other scripts are rather toys but may be useful.
 
 Even more examples can be found in the *Tests* directory. Download the sources.
 These tests cover all the cmdlets and most of other helper features.

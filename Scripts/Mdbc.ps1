@@ -1,29 +1,34 @@
 
 <#
 .Synopsis
-	Connects to a database and adds interactive helpers.
+	Interactive profile with helpers for the Mdbc module.
 
 .Description
-	Use it only as the example and base for your own interactive helpers. This
-	script reflects personal preferences, its features may not be suitable for
-	all scenarios and they may change at any time.
+	NOTE: This script is a profile for interactive use, it reflects personal
+	preferences, features may not be suitable for all scenarios and they may
+	change. Consider this as the base for your own interactive profiles.
 
 	The script imports the Mdbc module, connects to the server and database,
-	and installs helper aliases and variables designed for interactive use.
+	and installs aliases, functions, and variables for interactive use.
 
-	Global aliases:
+	Aliases:
 		amd - Add-MdbcData
 		gmd - Get-MdbcData
-		rmd - Remove-MdbcData
-		umd - Update-MdbcData
+		gmh - Get-MdbcHelp
+		imc - Invoke-MdbcCommand
 		nmd - New-MdbcData
 		nmq - New-MdbcQuery
 		nmu - New-MdbcUpdate
+		rmd - Remove-MdbcData
+		umd - Update-MdbcData
 
-	Global variables:
+	Functions:
+		Get-MdbcHelp
+
+	Variables:
 		$Server     - connected server
-		$Database   - connected database
-		$Collection - connected collection
+		$Database   - default database
+		$Collection - default collection
 		$m<name>    - collection <name> (for each collection)
 		$<operator> - operator shortcuts for JSON-like expressions
 
@@ -40,8 +45,8 @@
 		default name is 'test'.
 
 .Parameter CollectionName
-		The name of a collection to be connected, that is stored as $Collection.
-		The default is 'test', not necessarily existing.
+		Name of the default collection which instance is refrenced by
+		$Collection. The default is 'test', not necessarily existing.
 #>
 
 param
@@ -54,16 +59,60 @@ param
 
 Import-Module Mdbc
 
-# Aliases
+<#
+.Synopsis
+	Gets help information for MongoDB command(s).
+
+.Description
+	Command format: {Name} {L}{S}{A} {Help}.
+	L - lockType  R:read-lock W:write-lock
+	S - slaveOk   S:slave-ok
+	A - adminOnly A:admin-only
+
+.Parameter Name
+		Command name or wildcard pattern.
+		The default is '*' (all commands).
+
+.Parameter Database
+		Target database.
+		The default is $Database.
+
+.Parameter All
+		Tells to get all commands including internal.
+
+.Link
+	http://www.mongodb.org/display/DOCS/Commands
+#>
+function global:Get-MdbcHelp([Parameter()]$Name='*', $Database=$Database, [switch]$All)
+{
+	$commands = (Invoke-MdbcCommand listCommands -Database $Database).commands
+	foreach($cmd in $commands.Keys | .{process{if ($_ -like $Name) {$_}}}) {
+		$c = $commands[$cmd]
+		$help = $c.help.Trim()
+		if (!$All -and ($cmd[0] -eq '_' -or $help -match '^Internal')) {continue}
+		$lock = switch($c.lockType) {-1 {'R'} 1 {'W'} 0 {'-'}}
+		$slave = if ($c.slaveOk) {'S'} else {'-'}
+		$admin = if($c.adminOnly) {'A'} else {'-'}
+		@"
+$('-'*($cmd.Length))
+$cmd $lock$slave$admin
+$help
+"@
+	}
+}
+
+### Aliases
 Set-Alias -Scope global -Name amd -Value Add-MdbcData
 Set-Alias -Scope global -Name gmd -Value Get-MdbcData
-Set-Alias -Scope global -Name rmd -Value Remove-MdbcData
-Set-Alias -Scope global -Name umd -Value Update-MdbcData
+Set-Alias -Scope global -Name gmh -Value Get-MdbcHelp
+Set-Alias -Scope global -Name imc -Value Invoke-MdbcCommand
 Set-Alias -Scope global -Name nmd -Value New-MdbcData
 Set-Alias -Scope global -Name nmq -Value New-MdbcQuery
 Set-Alias -Scope global -Name nmu -Value New-MdbcUpdate
+Set-Alias -Scope global -Name rmd -Value Remove-MdbcData
+Set-Alias -Scope global -Name umd -Value Update-MdbcData
 
-# Query operators
+### Query operators
 $global:all = '$all'
 $global:and = '$and'
 $global:elemMatch = '$elemMatch'
@@ -84,7 +133,7 @@ $global:regex = '$regex'
 $global:size = '$size'
 $global:type = '$type'
 
-# Update operators
+### Update operators
 $global:addToSet = '$addToSet'
 $global:bit = '$bit'
 $global:each = '$each'

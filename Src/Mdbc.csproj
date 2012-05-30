@@ -73,11 +73,13 @@
   <ItemGroup>
     <Compile Include="Actor.cs" />
     <Compile Include="Commands\AbstractCollectionCommand.cs" />
+    <Compile Include="Commands\AbstractDatabaseCommand.cs" />
     <Compile Include="Commands\AbstractWriteCommand.cs" />
     <Compile Include="Commands\AddDataCommand.cs" />
     <Compile Include="Commands\ConnectCommand.cs" />
     <Compile Include="Commands\GetDataCommand.cs" />
     <Compile Include="Commands\AddCollectionCommand.cs" />
+    <Compile Include="Commands\InvokeCommandCommand.cs" />
     <Compile Include="Commands\InvokeMapReduceCommand.cs" />
     <Compile Include="Commands\NewDataCommand.cs" />
     <Compile Include="Commands\NewQueryCommand.cs" />
