@@ -87,6 +87,9 @@ names for a database.
 	Examples:
 	mongodb://localhost:27017
 	mongodb://localhost/?safe=true
+'@, @'
+Mdbc convention: if the string starts with /? then it is treated as options for
+the local host. E.g. /?safe=true is the same as mongodb://localhost/?safe=true
 '@
 		DatabaseName = 'Database name. * is used in order to get all database objects.'
 		CollectionName = 'Collection name. * is used in order to get all collection objects.'
