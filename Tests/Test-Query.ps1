@@ -161,9 +161,6 @@ test { New-MdbcQuery Name -NotIn text, more } '{ "Name" : { "$nin" : ["text", "m
 ### And
 test { New-MdbcQuery -And (New-MdbcQuery x 1), (New-MdbcQuery y 2) } '{ "x" : 1, "y" : 2 }'
 
-### Nor
-test { New-MdbcQuery -Nor (New-MdbcQuery x 1), (New-MdbcQuery y 2) } '{ "$nor" : [{ "x" : 1 }, { "y" : 2 }] }'
-
 ### Or
 test { New-MdbcQuery -Or (New-MdbcQuery x 1), (New-MdbcQuery y 2) } '{ "$or" : [{ "x" : 1 }, { "y" : 2 }] }'
 

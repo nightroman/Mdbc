@@ -25,11 +25,8 @@ namespace Mdbc.Commands
 	[Cmdlet(VerbsCommon.New, "MdbcQuery")]
 	public sealed class NewQueryCommand : PSCmdlet
 	{
-		const string ErrorAndNorOr = "-Or and -Nor switches cannot be used together.";
 		[Parameter(Mandatory = true, ParameterSetName = "And")]
 		public object[] And { get; set; }
-		[Parameter(Mandatory = true, ParameterSetName = "Nor")]
-		public object[] Nor { get; set; }
 		[Parameter(Mandatory = true, ParameterSetName = "Or")]
 		public object[] Or { get; set; }
 		[Parameter(Position = 0, ParameterSetName = "EQ")]
@@ -120,106 +117,17 @@ namespace Mdbc.Commands
 					break;
 			}
 
-			WriteObject(Not ? Query.Not(Name).Matches(bsonregex) : Query.Matches(Name, bsonregex));
-		}
-		void DoList(QueryConditionList list)
-		{
-			if (NE != null)
-				list = list.NE(Actor.ToBsonValue(NE));
-
-			if (GE != null)
-				list = list.GTE(Actor.ToBsonValue(GE));
-
-			if (GT != null)
-				list = list.GT(Actor.ToBsonValue(GT));
-
-			if (LE != null)
-				list = list.LTE(Actor.ToBsonValue(LE));
-
-			if (LT != null)
-				list = list.LT(Actor.ToBsonValue(LT));
-
-			if (_existsSet)
-				list = list.Exists(_exists);
-
-			if (_sizeSet)
-				list = list.Size(_size);
-
-			if (Type != 0)
-				list = list.Type(Type);
-
-			if (Mod != null)
-				list = list.Mod(Mod[0], Mod[1]);
-
-			if (Matches != null)
-				list = list.ElemMatch(Actor.ObjectToQuery(Matches));
-
-			if (All != null)
-				list = list.All(Actor.ToBsonValues(All));
-
-			if (In != null)
-				list = list.In(Actor.ToBsonValues(In));
-
-			if (NotIn != null)
-				list = list.NotIn(Actor.ToBsonValues(NotIn));
-
-			WriteObject(list);
-		}
-		void DoListNot(QueryNotConditionList list)
-		{
-			if (NE != null)
-				list = list.NE(Actor.ToBsonValue(NE));
-
-			if (GE != null)
-				list = list.GTE(Actor.ToBsonValue(GE));
-
-			if (GT != null)
-				list = list.GT(Actor.ToBsonValue(GT));
-
-			if (LE != null)
-				list = list.LTE(Actor.ToBsonValue(LE));
-
-			if (LT != null)
-				list = list.LT(Actor.ToBsonValue(LT));
-
-			if (_existsSet)
-				list = list.Exists(_exists);
-
-			if (_sizeSet)
-				list = list.Size(_size);
-
-			if (Type != 0)
-				list = list.Type(Type);
-
-			if (Mod != null)
-				list = list.Mod(Mod[0], Mod[1]);
-
-			if (Matches != null)
-				list = list.ElemMatch(Actor.ObjectToQuery(Matches));
-
-			if (All != null)
-				list = list.All(Actor.ToBsonValues(All));
-
-			if (In != null)
-				list = list.In(Actor.ToBsonValues(In));
-
-			if (NotIn != null)
-				list = list.NotIn(Actor.ToBsonValues(NotIn));
-
-			WriteObject(list);
+			WriteObject(Not ? Query.Not(Query.Matches(Name, bsonregex)) : Query.Matches(Name, bsonregex));
 		}
 		protected override void BeginProcessing()
 		{
 			switch (ParameterSetName)
 			{
 				case "And":
-					WriteObject(Query.And(And.Select(Actor.ObjectToQuery).ToArray()));
-					return;
-				case "Nor":
-					WriteObject(Query.Nor(Nor.Select(Actor.ObjectToQuery).ToArray()));
+					WriteObject(Query.And(And.Select(Actor.ObjectToQuery)));
 					return;
 				case "Or":
-					WriteObject(Query.Or(Or.Select(Actor.ObjectToQuery).ToArray()));
+					WriteObject(Query.Or(Or.Select(Actor.ObjectToQuery)));
 					return;
 				case "EQ":
 					WriteObject(Query.EQ(Name, Actor.ToBsonValue(EQ)));
@@ -228,7 +136,7 @@ namespace Mdbc.Commands
 					WriteObject(Query.Matches(Name, new BsonRegularExpression("^" + Regex.Escape(IEQ) + "$", "i")));
 					return;
 				case "INE":
-					WriteObject(Query.Not(Name).Matches(new BsonRegularExpression("^" + Regex.Escape(INE) + "$", "i")));
+					WriteObject(Query.Not(Query.Matches(Name, new BsonRegularExpression("^" + Regex.Escape(INE) + "$", "i"))));
 					return;
 				case "Match":
 					DoMatch();
@@ -238,10 +146,36 @@ namespace Mdbc.Commands
 					return;
 			}
 
-			if (Not)
-				DoListNot(new QueryNotConditionList(Name));
-			else
-				DoList(new QueryConditionList(Name));
+			IMongoQuery query = null;
+
+			if (NE != null)
+				query = Query.NE(Name, Actor.ToBsonValue(NE));
+			else if (GE != null)
+				query = Query.GTE(Name, Actor.ToBsonValue(GE));
+			else if (GT != null)
+				query = Query.GT(Name, Actor.ToBsonValue(GT));
+			else if (LE != null)
+				query = Query.LTE(Name, Actor.ToBsonValue(LE));
+			else if (LT != null)
+				query = Query.LT(Name, Actor.ToBsonValue(LT));
+			else if (_existsSet)
+				query = _exists ? Query.Exists(Name) : Query.NotExists(Name);
+			else if (_sizeSet)
+				query = Query.Size(Name, _size);
+			else if (Type != 0)
+				query = Query.Type(Name, Type);
+			else if (Mod != null)
+				query = Query.Mod(Name, Mod[0], Mod[1]);
+			else if (Matches != null)
+				query = Query.ElemMatch(Name, Actor.ObjectToQuery(Matches));
+			else if (All != null)
+				query = Query.All(Name, Actor.ToBsonValues(All));
+			else if (In != null)
+				query = Query.In(Name, Actor.ToBsonValues(In));
+			else if (NotIn != null)
+				query = Query.NotIn(Name, Actor.ToBsonValues(NotIn));
+
+			WriteObject(Not ? Query.Not(query) : query);
 		}
 	}
 }

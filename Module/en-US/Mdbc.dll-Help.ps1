@@ -341,10 +341,6 @@ See the server-side processing page for more information (official site).
 Queries for logical And (including MongoDB `$and).
 $QueryTypes
 "@
-		Nor = @"
-Queries for logical Nor (MongoDB `$nor).
-$QueryTypes
-"@
 		Or = @"
 Queries for logical Or (MongoDB `$or).
 $QueryTypes

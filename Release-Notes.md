@@ -1,6 +1,12 @@
 Mdbc Release Notes
 ==================
 
+## v2.1.1
+
+C# driver 1.5
+
+`New-MdbcQuery` does not support the parameter `Nor`.
+
 ## v2.1.0
 
 New cmdlet `Invoke-MdbcCommand` for invoking any MongoDB commands including not
