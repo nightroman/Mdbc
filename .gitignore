@@ -1,3 +1,5 @@
+*.chm
+*.chw
 *.dll
 *.suo
 *.user

@@ -32,7 +32,7 @@ if ($null -ne (helper $false)) {throw}
 if (0 -ne $Collection.Count()) {throw}
 
 # upsert:true so nothing there before; something there after
-if ($null -eq (helper $true)) {throw}
+if ($null -ne (helper $true)) {throw}
 if (1 -ne $Collection.Count()) {throw}
 
 $data = helper $true
