@@ -1,6 +1,12 @@
 Mdbc Release Notes
 ==================
 
+## v2.1.3
+
+C# driver 1.6.1
+
+`Get-MongoFile.ps1`: By default the search is for a regex pattern, not name.
+
 ## v2.1.2
 
 C# driver 1.6, MongoDB 2.2
@@ -204,7 +210,7 @@ C# driver v1.4.0.
 
 Amended conversion of `null` and `BsonNull`.
 
-Update-MongoFiles.ps1 - updated for the latest version of Split-Pipeline.
+`Update-MongoFiles.ps1` - updated for the latest version of Split-Pipeline.
 
 ## v1.0.4
 

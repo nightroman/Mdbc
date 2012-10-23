@@ -9,23 +9,22 @@
 	Database: test
 	Collection: files
 
-	The script searches for file paths by a name or a regular expression
-	pattern. It works with data created by Update-MongoFiles.ps1.
+	The script searches for file paths by a regular expression pattern or a
+	name. It works with data created by Update-MongoFiles.ps1.
+
+.Parameter Pattern
+		Regular expression pattern or literal file name.
 
 .Parameter Name
-		A file name or a regular expression to search for. The search is case
-		insensitive.
-
-.Parameter Match
-		Tells that the Name is a regular expression pattern.
+		Tells that the Pattern is a literal name.
 
 .Example
-	> Get-MongoFile readme.txt
-	Get files named "readme.txt"
-
-.Example
-	> Get-MongoFile -Match readme
+	> Get-MongoFile readme
 	Get files which names contain "readme".
+
+.Example
+	> Get-MongoFile readme.txt -Name
+	Get files named "readme.txt"
 
 .Link
 	Update-MongoFiles.ps1
@@ -33,18 +32,18 @@
 
 param
 (
-	[Parameter(Mandatory = $true)]$Name,
-	[switch]$Match
+	[Parameter(Mandatory=$true)][string]$Pattern,
+	[switch]$Name
 )
 
 Import-Module Mdbc
 Connect-Mdbc . test files
 
-if ($Match) {
-	$query = New-MdbcQuery Name -Match $Name, i
+if ($Name) {
+	$query = New-MdbcQuery Name -IEQ $Pattern
 }
 else {
-	$query = New-MdbcQuery Name -IEQ $Name
+	$query = New-MdbcQuery Name -Match $Pattern, i
 }
 
 Get-MdbcData $query -Property @() | .{process{ $_._id }}
