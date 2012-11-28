@@ -1,6 +1,23 @@
 Mdbc Release Notes
 ==================
 
+## v3.0.0
+
+This version adopts major changes in C# driver 1.7.0. The driver is compatible
+with existing code. In contrast, Mdbc introduces new and breaking changes now.
+
+The switch `Safe` and the parameter `SafeMode` in writing commands are replaced
+with the parameter `WriteConcern` (`Acknowledged` by default). Some cmdlets
+that used to fail silently may write PowerShell errors.
+
+The switch `Result` used to enable safe writes implicitly. Now it is not
+related to write concern, it just tells to output a result object.
+
+`Connect-Mdbc` drops the trick with `/?`. It was introduced mostly for shorter
+connection strings like `/?safe=true`. Now they are not so useful.
+
+For other details see the driver release notes and new documentation.
+
 ## v2.1.3
 
 C# driver 1.6.1

@@ -32,16 +32,17 @@ namespace Mdbc.Commands
 
 			var bson = Actor.ToBsonDocument(InputObject, null);
 
-			if (Safe)
-				SafeMode = new SafeMode(Safe);
-
-			SafeModeResult result;
-			if (Update)
-				result = SafeMode == null ? Collection.Save(bson) : Collection.Save(bson, SafeMode);
-			else
-				result = SafeMode == null ? Collection.Insert(bson) : Collection.Insert(bson, SafeMode);
-
-			WriteSafeModeResult(result);
+			try
+			{
+				if (Update)
+					WriteResult(Collection.Save(bson, WriteConcern));
+				else
+					WriteResult(Collection.Insert(bson, WriteConcern));
+			}
+			catch (MongoException ex)
+			{
+				WriteException(ex);
+			}
 		}
 	}
 }

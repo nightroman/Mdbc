@@ -29,7 +29,7 @@ namespace Mdbc.Commands
 				if (_Collection == null)
 				{
 					_Collection = GetVariableValue(Actor.CollectionVariable) as MongoCollection;
-					if (_Collection == null) throw new PSArgumentException("Specify collection or set default $Collection.", "Collection");
+					if (_Collection == null) throw new PSArgumentException("Specify a collection by the parameter or variable Collection.");
 				}
 				return _Collection;
 			}

@@ -28,7 +28,7 @@ namespace Mdbc.Commands
 				if (_Database == null)
 				{
 					_Database = GetVariableValue(Actor.DatabaseVariable) as MongoDatabase;
-					if (_Database == null) throw new PSArgumentException("Specify database or set default $Database.", "Database");
+					if (_Database == null) throw new PSArgumentException("Specify a database by the parameter or variable Database.");
 				}
 				return _Database;
 			}

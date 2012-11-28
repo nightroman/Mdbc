@@ -15,9 +15,22 @@ $document.Name = 'Hello'
 # Add the document
 $document | Add-MdbcData
 
-# Add again with the same _id and another Name
+# To add with the same _id and another Name
 $document.Name = 'World'
-$document | Add-MdbcData
+
+# This throws an exception
+$message = ''
+try {$document | Add-MdbcData -ErrorAction Stop}
+catch {$message = "$_"}
+if ($message -notlike 'WriteConcern detected an error*') {throw}
+
+# This writes an error to the specified variable
+$document | Add-MdbcData -ErrorAction 0 -ErrorVariable ev
+if ("$ev" -notlike 'WriteConcern detected an error*') {throw}
+
+# This fails silently and returns nothing
+$result = $document | Add-MdbcData -Result -WriteConcern ([MongoDB.Driver.WriteConcern]::Unacknowledged)
+if ($null -ne $result) {throw}
 
 # Test: Name is still 'Hello', 'World' is not added or saved
 $data = @(Get-MdbcData)
@@ -32,3 +45,6 @@ $document | Add-MdbcData -Update
 $data = @(Get-MdbcData)
 if ($data.Count -ne 1) { throw }
 if ($data[0].Name -ne 'World') { throw }
+
+# End
+'OK'

@@ -14,6 +14,7 @@
 * limitations under the License.
 */
 
+using System;
 using System.Management.Automation;
 using MongoDB.Driver;
 namespace Mdbc.Commands
@@ -21,30 +22,17 @@ namespace Mdbc.Commands
 	public abstract class AbstractWriteCommand : AbstractCollectionCommand
 	{
 		[Parameter]
-		public SafeMode SafeMode { get; set; }
-		[Parameter]
-		public SwitchParameter Safe { get; set; }
+		public WriteConcern WriteConcern { get; set; }
 		[Parameter]
 		public SwitchParameter Result { get; set; }
-		protected void WriteSafeModeResult(CommandResult value)
+		protected void WriteResult(WriteConcernResult value)
 		{
-			if (value == null)
-				return;
-
-			if (Result)
+			if (Result && value != null)
 				WriteObject(value);
-
-			if (!value.Ok)
-				WriteError(new ErrorRecord(new RuntimeException(value.ErrorMessage), "Driver", ErrorCategory.InvalidResult, value));
 		}
-		protected SafeMode MySafeMode()
+		protected void WriteException(Exception value)
 		{
-			var mode = SafeMode ?? new SafeMode(false);
-
-			if (Safe || Result)
-				mode.Enabled = true;
-
-			return mode;
+			WriteError(new ErrorRecord(value, "Driver", ErrorCategory.WriteError, null));
 		}
 	}
 }

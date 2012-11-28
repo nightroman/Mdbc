@@ -43,10 +43,16 @@ $TypeMdbcDictionary = @{
 	description = 'Objects created by New-MdbcData or obtained by Get-MdbcData.'
 }
 
-$TypeSafeModeResult = @{
-	type = '[MongoDB.Driver.SafeModeResult]'
-	description = 'The result is returned if safe mode if enabled.'
+$TypeWriteConcernResult = @{
+	type = '[MongoDB.Driver.WriteConcernResult]'
+	description = 'Result object from the driver is written if the switch Result is present.'
 }
+
+$AboutResultAndErrors = @'
+In order to get a result object from the driver use the switch Result. Driver
+exceptions are caught and written as not terminating errors. Use proper error
+action preference and/or cmdlet common error parameters.
+'@
 
 $QueryInputs = @(
 	@{
@@ -83,13 +89,9 @@ names for a database.
 		ConnectionString = @'
 	Connection string (see the C# driver manual for details):
 	mongodb://[username:password@]hostname[:port][/[database][?options]]
-	"." is used for the default C# driver connection ("mongodb://localhost").
+	"." is used for the default C# driver connection.
 	Examples:
 	mongodb://localhost:27017
-	mongodb://localhost/?safe=true
-'@, @'
-Mdbc convention: if the string starts with /? then it is treated as options for
-the local host. E.g. /?safe=true is the same as mongodb://localhost/?safe=true
 '@
 		DatabaseName = 'Database name. * is used in order to get all database objects.'
 		CollectionName = 'Collection name. * is used in order to get all collection objects.'
@@ -203,9 +205,8 @@ $AbstractCollection = @{
 ### AbstractWrite
 $AbstractWrite = Merge-Helps $AbstractCollection @{
 	parameters = @{
-		Safe = 'Tells to enable safe mode.'
-		SafeMode = 'Advanced safe mode options.'
-		Result = 'Tells to enable safe mode and output result objects.'
+		WriteConcern = 'Write concern options.'
+		Result = 'Tells to output an object returned by the driver.'
 	}
 }
 
@@ -518,6 +519,7 @@ Deletes a given field.
 Merge-Helps $AbstractWrite @{
 	command = 'Add-MdbcData'
 	synopsis = 'Adds new documents to the database collection or updates existing.'
+	description = 'Adds new documents to the database collection or updates existing.', $AboutResultAndErrors
 	parameters = @{
 		InputObject = 'Document (Mdbc.Dictionary, BsonDocument, or PSCustomObject).'
 		Update = 'Tells to update existing documents with the same _id or add new documents otherwise.'
@@ -533,7 +535,7 @@ Merge-Helps $AbstractWrite @{
 			description = 'This type is supported but normally it should not be used directly.'
 		}
 	)
-	outputs = $TypeSafeModeResult
+	outputs = $TypeWriteConcernResult
 	links = @(
 		@{ text = 'New-MdbcData' }
 		@{ text = 'Select-Object' }
@@ -647,13 +649,13 @@ specified.
 Merge-Helps $AbstractWrite @{
 	command = 'Remove-MdbcData'
 	synopsis = 'Removes specified documents from the collection.'
-	description = ''
+	description = 'Removes specified documents from the collection.', $AboutResultAndErrors
 	parameters = @{
 		Query = $QueryParameter
 		Modes = 'Additional removal flags. See the C# driver manual.'
 	}
 	inputs = $QueryInputs
-	outputs = $TypeSafeModeResult
+	outputs = $TypeWriteConcernResult
 	links = @(
 		@{ text = 'Connect-Mdbc' }
 		@{ text = 'New-MdbcQuery' }
@@ -664,14 +666,14 @@ Merge-Helps $AbstractWrite @{
 Merge-Helps $AbstractWrite @{
 	command = 'Update-MdbcData'
 	synopsis = 'Updates the specified documents.'
-	description = ''
+	description = 'Updates the specified documents.', $AboutResultAndErrors
 	parameters = @{
 		Query = $QueryParameter
 		Modes = 'Additional update flags. See the C# driver manual.'
 		Update = 'Update expressions. See New-MdbcUpdate.'
 	}
 	inputs = $QueryInputs
-	outputs = $TypeSafeModeResult
+	outputs = $TypeWriteConcernResult
 	links = @(
 		@{ text = 'Connect-Mdbc' }
 		@{ text = 'New-MdbcUpdate' }

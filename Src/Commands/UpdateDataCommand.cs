@@ -31,12 +31,7 @@ namespace Mdbc.Commands
 		public UpdateFlags Modes { get; set; }
 		protected override void ProcessRecord()
 		{
-			if (Safe)
-				SafeMode = new SafeMode(Safe);
-
-			SafeModeResult result = SafeMode == null ? Collection.Update(_Query, _Update, Modes) : Collection.Update(_Query, _Update, Modes, SafeMode);
-			
-			WriteSafeModeResult(result);
+			WriteResult(Collection.Update(_Query, _Update, Modes, WriteConcern));
 		}
 	}
 }

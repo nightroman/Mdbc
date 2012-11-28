@@ -221,20 +221,6 @@ namespace Mdbc
 			return Query.EQ("_id", BsonValue.Create(value));
 		}
 		/// <summary>
-		/// Safe cast from Object or PSObject.
-		/// </summary>
-		public static T Cast<T>(object obj) where T : class
-		{
-			if (obj == null)
-				return null;
-
-			var pso = obj as PSObject;
-			if (pso != null)
-				return pso.BaseObject as T;
-
-			return obj as T;
-		}
-		/// <summary>
 		/// Converts PS objects to a SortBy object.
 		/// </summary>
 		/// <param name="values">Strings or @{Name=Boolean}. Null and empty is allowed.</param>

@@ -40,10 +40,8 @@ namespace Mdbc.Commands
 		public SwitchParameter NewCollection { get; set; }
 		protected override void BeginProcessing()
 		{
-			if (ConnectionString.StartsWith("/?", System.StringComparison.Ordinal))
-				ConnectionString = "mongodb://localhost" + ConnectionString;
-
-			var server = ConnectionString == "." ? MongoServer.Create() : MongoServer.Create(ConnectionString);
+			var client = ConnectionString == "." ? new MongoClient() : new MongoClient(ConnectionString);
+			var server =  client.GetServer();
 			server.Connect();
 			SessionState.PSVariable.Set(ServerVariable ?? Actor.ServerVariable, server);
 

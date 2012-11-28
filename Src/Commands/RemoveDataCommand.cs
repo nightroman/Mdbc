@@ -28,9 +28,14 @@ namespace Mdbc.Commands
 		public RemoveFlags Modes { get; set; }
 		protected override void ProcessRecord()
 		{
-			SafeModeResult result = Collection.Remove(_Query, Modes, MySafeMode());
-			
-			WriteSafeModeResult(result);
+			try
+			{
+				WriteResult(Collection.Remove(_Query, Modes, WriteConcern));
+			}
+			catch (MongoException ex)
+			{
+				WriteException(ex);
+			}
 		}
 	}
 }
