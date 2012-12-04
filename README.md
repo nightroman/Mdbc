@@ -12,7 +12,7 @@ It makes MongoDB scripting easy and represents yet another MongoDB shell.
 **Step 1:** Get and install *Mdbc*:
 
 An easy way to get and install is the PowerShell module
-[psget](https://github.com/psget/psget):
+[PsGet](https://github.com/psget/psget):
 
     Import-Module PsGet
     Install-Module -NuGetPackageId Mdbc
