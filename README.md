@@ -9,17 +9,24 @@ It makes MongoDB scripting easy and represents yet another MongoDB shell.
 
 ## Quick Start
 
-**Step 1:**
-An easy way to get and update the package is
+**Step 1:** Get and install *Mdbc*:
+
+An easy way to get and install is the PowerShell module
+[psget](https://github.com/psget/psget):
+
+    Import-Module PsGet
+    Install-Module -NuGetPackageId Mdbc
+
+Alternatively, to get the package without installation use
 [NuGet.exe Command Line](http://nuget.codeplex.com/releases):
 
     NuGet install Mdbc
 
-Alternatively, manually download and unzip the latest package from
+Alternatively, manually download and unzip the package from
 [Downloads](https://github.com/nightroman/Mdbc/downloads).
 
-Copy the directory *Mdbc* from the package to one of the PowerShell module
-directories (see `$env:PSModulePath`). For example:
+In the last two cases copy the directory *Mdbc* from the package to a
+PowerShell module directory, see `$env:PSModulePath`. For example:
 
     C:/Users/.../Documents/WindowsPowerShell/Modules/Mdbc
 

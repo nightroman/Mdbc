@@ -37,7 +37,7 @@
 
 .Parameter ConnectionString
 		Connection string (see the C# driver manual for details).
-		The default is "." which stands for "mongodb://localhost".
+		The default is "." which is used for the default C# driver connection.
 
 .Parameter DatabaseName
 		Database name or wildcard pattern. If it is not resolved to an existing
