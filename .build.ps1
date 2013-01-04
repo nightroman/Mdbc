@@ -46,7 +46,7 @@ task Build {
 
 # Clean all.
 task Clean RemoveMarkdownHtml, {
-	Remove-Item z, Src\bin, Src\obj, Module\Mdbc.dll, Mdbc.*.zip, *.nupkg -Force -Recurse -ErrorAction 0
+	Remove-Item z, Src\bin, Src\obj, Module\Mdbc.dll, *.nupkg -Force -Recurse -ErrorAction 0
 }
 
 # Copy all to the module root directory and then build help.
@@ -58,7 +58,7 @@ task PostBuild {
 @{Help=1}
 
 # Build module help by Helps (https://github.com/nightroman/Helps).
-task Help -Incremental @{(Get-Item Src\Commands\*, Module\en-US\Mdbc.dll-Help.ps1) = "$ModuleRoot\en-US\Mdbc.dll-Help.xml"} {
+task Help -Inputs (Get-Item Src\Commands\*, Module\en-US\Mdbc.dll-Help.ps1) -Outputs "$ModuleRoot\en-US\Mdbc.dll-Help.xml" {
 	. Helps.ps1
 	Convert-Helps Module\en-US\Mdbc.dll-Help.ps1 $Outputs
 }
@@ -84,12 +84,10 @@ task TestHelp Help, TestHelpExample, TestHelpSynopsis
 
 # Copy external scripts from their working location to the project.
 # It fails if the scripts are not available.
-task UpdateScript -Partial @{
-	{ Get-Command Mdbc.ps1, Update-MongoFiles.ps1, Get-MongoFile.ps1 | %{ $_.Definition } } =
-	{ process{ "Scripts\$(Split-Path -Leaf $_)" } }
-} {
-	process{ Copy-Item $_ $2 }
-}
+task UpdateScript -Partial `
+-Inputs {Get-Command Mdbc.ps1, Update-MongoFiles.ps1, Get-MongoFile.ps1 | %{ $_.Definition }} `
+-Outputs {process{ "Scripts\$(Split-Path -Leaf $_)" }} `
+{process{ Copy-Item $_ $2 }}
 
 # Call tests.
 task Test {
@@ -124,7 +122,7 @@ task Driver PullDriver, BuildDriver, Build, Test, Clean, CleanDriver
 try { Markdown.tasks.ps1 }
 catch { task ConvertMarkdown; task RemoveMarkdownHtml }
 
-# Make the package in z\tools for Zip and NuGet.
+# Make the package in z\tools for NuGet.
 task Package ConvertMarkdown, @{UpdateScript=1}, {
 	Remove-Item [z] -Force -Recurse
 	$null = mkdir z\tools\Mdbc\en-US, z\tools\Mdbc\Scripts
@@ -158,12 +156,6 @@ task Version {
 	$script:Version = $matches[1]
 }
 
-# Make zip package.
-task Zip Package, Version, {
-	Set-Location z\tools
-	exec { & 7z a ..\..\Mdbc.$Version.zip * }
-}
-
 # Make NuGet package.
 task NuGet Package, Version, {
 	$text = @'
@@ -191,9 +183,6 @@ It makes MongoDB scripting easy and represents yet another MongoDB shell.
 	# pack
 	exec { NuGet pack z\Package.nuspec -NoPackageAnalysis }
 }
-
-# Make all packages.
-task Pack Zip, NuGet
 
 # Check files.
 task CheckFiles {
