@@ -1,5 +1,5 @@
 ﻿
-/* Copyright 2011-2012 Roman Kuzmin
+/* Copyright 2011-2013 Roman Kuzmin
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -87,7 +87,7 @@ namespace Mdbc.Commands
 			options.SetOutput(output);
 
 			var result = Collection.MapReduce(new BsonJavaScript(Function[0]), new BsonJavaScript(Function[1]), options);
-			
+
 			if (ResultVariable != null)
 				SessionState.PSVariable.Set(ResultVariable, result);
 

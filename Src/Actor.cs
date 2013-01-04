@@ -1,5 +1,5 @@
 ﻿
-/* Copyright 2011-2012 Roman Kuzmin
+/* Copyright 2011-2013 Roman Kuzmin
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -190,14 +190,14 @@ namespace Mdbc
 			if (ps != null)
 			{
 				value = ps.BaseObject;
-				
+
 				var psco = value as PSCustomObject;
 				if (psco != null)
 				{
 					var id = ps.Properties["_id"];
 					if (id == null)
 						throw new InvalidOperationException("Custom object: expected property _id.");
-					
+
 					return Query.EQ("_id", BsonValue.Create(id.Value));
 				}
 			}
@@ -229,7 +229,7 @@ namespace Mdbc
 		{
 			if (values == null)
 				return SortBy.Null;
-			
+
 			var builder = new SortByBuilder();
 			foreach (var it in values)
 			{
@@ -260,7 +260,7 @@ namespace Mdbc
 			var ps = value as PSObject;
 			if (ps != null)
 				value = ps.BaseObject;
-			
+
 			var update = value as IMongoUpdate;
 			if (update != null)
 				return update;

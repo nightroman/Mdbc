@@ -1,5 +1,5 @@
 ﻿
-/* Copyright 2011-2012 Roman Kuzmin
+/* Copyright 2011-2013 Roman Kuzmin
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ namespace Mdbc.Commands
 		{
 			// default options
 			var options = new CollectionOptionsBuilder();
-			
+
 			// capped collection
 			if (MaxSize > 0)
 			{
@@ -42,11 +42,11 @@ namespace Mdbc.Commands
 				if (MaxDocuments > 0)
 					options.SetMaxDocuments(MaxDocuments);
 			}
-			
+
 			// auto index explicitly
 			if (AutoIndexId.HasValue)
 				options.SetAutoIndexId(AutoIndexId.Value);
-			
+
 			Database.CreateCollection(Name, options);
 		}
 	}
