@@ -1,6 +1,10 @@
 Mdbc Release Notes
 ==================
 
+## v3.0.1
+
+C# driver 1.7.1
+
 ## v3.0.0
 
 This version adopts major changes in C# driver 1.7.0. The driver is compatible
