@@ -485,7 +485,10 @@ Renames the field with name 'old_field_name' to 'new_field_name'. Does not
 expand arrays to find a match for 'old_field_name'.
 '@
 		Set = '{ $set : { field : value } }', @'
-Sets field to value. All data types are supported.
+Sets a field value. All data types are supported.
+'@
+		SetOnInsert = '{ $setOnInsert : { field : value } }', @'
+Sets a field value during upsert only when insert is performed. All data types are supported.
 '@
 		Unset = '{ $unset : { field : 1} }', @'
 Deletes a given field.
@@ -506,6 +509,7 @@ Deletes a given field.
 		PushAll = '$pushAll argument, a collection of values, each value is pushed.'
 		Rename = '$rename argument, the new field name.'
 		Set = '$set argument. All standard types are supported.'
+		SetOnInsert = '$setOnInsert argument. All standard types are supported.'
 		Unset = 'Tells to remove the field.'
 	}
 	inputs = @()

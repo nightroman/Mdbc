@@ -16,7 +16,6 @@
 
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Management.Automation;
 using MongoDB.Bson;
 using MongoDB.Bson.IO;
@@ -51,7 +50,7 @@ namespace Mdbc
 			switch (bsonReader.GetCurrentBsonType())
 			{
 				case BsonType.Array: return ReadArray(bsonReader); // replacement
-				case BsonType.Binary: var binary = BsonBinaryData.ReadFrom(bsonReader); return binary.RawValue ?? binary; // byte[] or Guid else self
+				case BsonType.Binary: var binary = BsonSerializer.Deserialize<BsonValue>(bsonReader); return BsonTypeMapper.MapToDotNetValue(binary) ?? binary; // byte[] or Guid else self
 				case BsonType.Boolean: return bsonReader.ReadBoolean();
 				case BsonType.DateTime: return BsonUtils.ToDateTimeFromMillisecondsSinceEpoch(bsonReader.ReadDateTime());
 				case BsonType.Document: return ReadCustomObject(bsonReader); // replacement
@@ -60,7 +59,7 @@ namespace Mdbc
 				case BsonType.Int64: return bsonReader.ReadInt64();
 				case BsonType.Null: bsonReader.ReadNull(); return null;
 				case BsonType.String: return bsonReader.ReadString();
-				default: return BsonValue.ReadFrom(bsonReader);
+				default: return BsonSerializer.Deserialize<BsonValue>(bsonReader);
 			}
 		}
 		static PSObject ReadCustomObject(BsonReader bsonReader)

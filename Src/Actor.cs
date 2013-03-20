@@ -37,9 +37,9 @@ namespace Mdbc
 			switch (value.BsonType)
 			{
 				case BsonType.Array: return new Collection((BsonArray)value); // wrapper
-				case BsonType.Binary: return value.RawValue ?? value; // byte[] or Guid else self
-				case BsonType.Boolean: return value.RawValue;
-				case BsonType.DateTime: return ((BsonDateTime)value).Value;
+				case BsonType.Binary: return BsonTypeMapper.MapToDotNetValue(value) ?? value; // byte[] or Guid else self
+				case BsonType.Boolean: return BsonTypeMapper.MapToDotNetValue(value);
+				case BsonType.DateTime: return ((BsonDateTime)value).ToUniversalTime();
 				case BsonType.Document: return new Dictionary((BsonDocument)value); // wrapper
 				case BsonType.Double: return ((BsonDouble)value).Value;
 				case BsonType.Int32: return ((BsonInt32)value).Value;
@@ -271,7 +271,7 @@ namespace Mdbc
 
 			var enumerable = LanguagePrimitives.GetEnumerable(value);
 			if (enumerable != null)
-				return Update.Combine(enumerable.Cast<object>().Select(Actor.ObjectToUpdate).Cast<UpdateBuilder>());
+				return Update.Combine(enumerable.Cast<object>().Select(Actor.ObjectToUpdate));
 
 			throw new PSInvalidCastException("Invalid update type. Valid types: update, dictionary.");
 		}

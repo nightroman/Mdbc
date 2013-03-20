@@ -1,6 +1,12 @@
 Mdbc Release Notes
 ==================
 
+## v3.0.2
+
+C# driver 1.8
+
+`New-MdbcData` - new parameter `SetOnInsert`.
+
 ## v3.0.1
 
 C# driver 1.7.1

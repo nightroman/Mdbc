@@ -34,7 +34,7 @@ namespace Mdbc.Commands
 			if (Id != null)
 				document["_id"] = BsonValue.Create(Id.BaseObject);
 			else if (NewId)
-				document["_id"] = BsonObjectId.GenerateNewId();
+				document["_id"] = new BsonObjectId(ObjectId.GenerateNewId());
 
 			WriteObject(new Dictionary(document));
 		}

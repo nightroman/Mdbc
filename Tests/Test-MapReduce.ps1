@@ -7,11 +7,11 @@ Connect-Mdbc . test test -NewCollection
 
 # NB: `function` looks optional and `this` is all we need
 $map = <#js#>@'
-//function() {
+function() {
 	for (var key in this) {
 		emit(key, {count : 1})
 	}
-//}
+}
 '@
 
 # NB: http://stackoverflow.com/a/65028/323582

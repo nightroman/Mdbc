@@ -30,5 +30,5 @@ catch {
 	$message = "$_"
 }
 if ($message -ne @'
-Command 'create' failed: collection already exists (response: { "errmsg" : "collection already exists", "ok" : 0.0 })
-'@) {throw}
+Command 'create' failed: collection already exists (response: { "ok" : 0.0, "errmsg" : "collection already exists" })
+'@) {throw $message}

@@ -35,6 +35,7 @@ namespace Mdbc.Commands
 		const string NPushAll = "PushAll";
 		const string NRename = "Rename";
 		const string NSet = "Set";
+		const string NSetOnInsert = "SetOnInsert";
 		const string NUnset = "Unset";
 		const string ExpectedInteger = "Invalid value type. Expected types: int, long.";
 		const string ExpectedNumber = "Invalid value type. Expected types: int, long, double.";
@@ -67,6 +68,9 @@ namespace Mdbc.Commands
 		[Parameter(Position = 1, Mandatory = true, ParameterSetName = NSet)]
 		[AllowNull]
 		public PSObject Set { get; set; }
+		[Parameter(Position = 1, Mandatory = true, ParameterSetName = NSetOnInsert)]
+		[AllowNull]
+		public PSObject SetOnInsert { get; set; }
 		[Parameter(Position = 1, Mandatory = true, ParameterSetName = NUnset)]
 		public SwitchParameter Unset { get; set; }
 		UpdateBuilder BuildBand()
@@ -164,6 +168,10 @@ namespace Mdbc.Commands
 
 				case NSet:
 					WriteObject(Update.Set(Name, Actor.ToBsonValue(Set)));
+					return;
+
+				case NSetOnInsert:
+					WriteObject(Update.SetOnInsert(Name, Actor.ToBsonValue(SetOnInsert)));
 					return;
 
 				case NUnset:
