@@ -40,6 +40,9 @@ namespace Mdbc.Commands
 		public SwitchParameter NewCollection { get; set; }
 		protected override void BeginProcessing()
 		{
+			// driver 1.8.1 needs this even before connection
+			PSObjectSerializer.Register();
+
 			var client = ConnectionString == "." ? new MongoClient() : new MongoClient(ConnectionString);
 			var server =  client.GetServer();
 			server.Connect();
