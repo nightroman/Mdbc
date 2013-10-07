@@ -25,64 +25,72 @@ namespace Mdbc.Commands
 	[Cmdlet(VerbsCommon.New, "MdbcQuery")]
 	public sealed class NewQueryCommand : PSCmdlet
 	{
-		[Parameter(Mandatory = true, ParameterSetName = "And")]
+		const string NAnd = "And";
+		const string NOr = "Or";
+		const string NEQ = "EQ";
+		const string NIEQ = "IEQ";
+		const string NINE = "NINE";
+		const string NMatch = "Match";
+		const string NList = "List";
+		const string NWhere = "Where";
+		[Parameter(Mandatory = true, ParameterSetName = NAnd)]
 		public object[] And { get; set; }
-		[Parameter(Mandatory = true, ParameterSetName = "Or")]
+		[Parameter(Mandatory = true, ParameterSetName = NOr)]
 		public object[] Or { get; set; }
-		[Parameter(Position = 0, ParameterSetName = "EQ")]
-		[Parameter(Position = 0, ParameterSetName = "IEQ")]
-		[Parameter(Position = 0, ParameterSetName = "INE")]
-		[Parameter(Position = 0, ParameterSetName = "Match")]
-		[Parameter(Position = 0, ParameterSetName = "List")]
+		[Parameter(Position = 0, ParameterSetName = NEQ)]
+		[Parameter(Position = 0, ParameterSetName = NIEQ)]
+		[Parameter(Position = 0, ParameterSetName = NINE)]
+		[Parameter(Position = 0, ParameterSetName = NMatch)]
+		[Parameter(Position = 0, ParameterSetName = NList)]
 		[ValidateNotNullOrEmpty]
 		public string Name { get; set; }
 		#region [ One ]
-		[Parameter(Position = 1, ParameterSetName = "EQ")]
+		[Parameter(Position = 1, ParameterSetName = NEQ)]
 		public PSObject EQ { get; set; }
-		[Parameter(ParameterSetName = "IEQ")]
+		[Parameter(ParameterSetName = NIEQ)]
 		public string IEQ { get; set; }
-		[Parameter(ParameterSetName = "INE")]
+		[Parameter(ParameterSetName = NINE)]
 		public string INE { get; set; }
-		[Parameter(ParameterSetName = "Match")]
+		[Parameter(ParameterSetName = NMatch)]
 		[ValidateCount(1, 2)]
 		public PSObject[] Match { get; set; }
-		[Parameter(ParameterSetName = "Where")]
+		[Parameter(ParameterSetName = NWhere)]
 		public string Where { get; set; }
 		#endregion
 		#region [ List ]
-		[Parameter(ParameterSetName = "Match")]
-		[Parameter(ParameterSetName = "List")]
+		[Parameter(ParameterSetName = NMatch)]
+		[Parameter(ParameterSetName = NList)]
 		public SwitchParameter Not { get; set; }
-		[Parameter(ParameterSetName = "List")]
+		[Parameter(ParameterSetName = NList)]
 		public PSObject NE { get; set; }
-		[Parameter(ParameterSetName = "List")]
+		[Parameter(ParameterSetName = NList)]
 		public PSObject GE { get; set; }
-		[Parameter(ParameterSetName = "List")]
+		[Parameter(ParameterSetName = NList)]
 		public PSObject GT { get; set; }
-		[Parameter(ParameterSetName = "List")]
+		[Parameter(ParameterSetName = NList)]
 		public PSObject LE { get; set; }
-		[Parameter(ParameterSetName = "List")]
+		[Parameter(ParameterSetName = NList)]
 		public PSObject LT { get; set; }
-		[Parameter(ParameterSetName = "List")]
+		[Parameter(ParameterSetName = NList)]
 		public bool Exists { get { return _exists; } set { _exists = value; _existsSet = true; } }
 		bool _exists;
 		bool _existsSet;
-		[Parameter(ParameterSetName = "List")]
+		[Parameter(ParameterSetName = NList)]
 		public int Size { get { return _size; } set { _size = value; _sizeSet = true; } }
 		int _size;
 		bool _sizeSet;
-		[Parameter(ParameterSetName = "List")]
+		[Parameter(ParameterSetName = NList)]
 		public BsonType Type { get; set; }
-		[Parameter(ParameterSetName = "List")]
+		[Parameter(ParameterSetName = NList)]
 		[ValidateCount(2, 2)]
 		public int[] Mod { get; set; }
-		[Parameter(ParameterSetName = "List")]
+		[Parameter(ParameterSetName = NList)]
 		public PSObject Matches { get; set; }
-		[Parameter(ParameterSetName = "List")]
+		[Parameter(ParameterSetName = NList)]
 		public PSObject All { get; set; }
-		[Parameter(ParameterSetName = "List")]
+		[Parameter(ParameterSetName = NList)]
 		public PSObject In { get; set; }
-		[Parameter(ParameterSetName = "List")]
+		[Parameter(ParameterSetName = NList)]
 		public PSObject NotIn { get; set; }
 		#endregion
 		void DoMatch()
@@ -123,25 +131,25 @@ namespace Mdbc.Commands
 		{
 			switch (ParameterSetName)
 			{
-				case "And":
+				case NAnd:
 					WriteObject(Query.And(And.Select(Actor.ObjectToQuery)));
 					return;
-				case "Or":
+				case NOr:
 					WriteObject(Query.Or(Or.Select(Actor.ObjectToQuery)));
 					return;
-				case "EQ":
+				case NEQ:
 					WriteObject(Query.EQ(Name, Actor.ToBsonValue(EQ, null)));
 					return;
-				case "IEQ":
+				case NIEQ:
 					WriteObject(Query.Matches(Name, new BsonRegularExpression("^" + Regex.Escape(IEQ) + "$", "i")));
 					return;
-				case "INE":
+				case NINE:
 					WriteObject(Query.Not(Query.Matches(Name, new BsonRegularExpression("^" + Regex.Escape(INE) + "$", "i"))));
 					return;
-				case "Match":
+				case NMatch:
 					DoMatch();
 					return;
-				case "Where":
+				case NWhere:
 					WriteObject(Query.Where(Where));
 					return;
 			}

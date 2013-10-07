@@ -56,7 +56,7 @@ task Add-MdbcData.ErrorAddSameId {
 	$d1, $d2 | Add-MdbcData -ErrorAction 0 -ErrorVariable e
 	$r = Get-MdbcData
 
-	assert ($e -and $e.TargetObject -eq $d2)
-	assert ($e -like '*E11000 duplicate key error index: test.test.$_id_  dup key: { : 1 }*') $e
+	assert ($e -like '*E11000 duplicate key error index: test.test.$_id_  dup key: { : 1 }*')
+	assert ($PSVersionTable.PSVersion.Major -le 2 -or $e.TargetObject -eq $d2)
 	Test-Dictionary $r $d1
 }

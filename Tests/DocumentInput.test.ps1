@@ -19,8 +19,8 @@ task DocumentInput.BsonValueError {
 
 	Invoke-Test {
 		$r = . $MakeData
-		assert ($e -and $e.TargetObject -eq $Host)
 		assert ($e -like '.NET type * cannot be mapped to a BsonValue.')
+		assert ($PSVersionTable.PSVersion.Major -le 2 -or $e.TargetObject -eq $Host)
 		Test-Array -Force $r $good
 	}{
 		$MakeData = {

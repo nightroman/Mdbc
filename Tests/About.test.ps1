@@ -58,31 +58,32 @@ task Test-Dictionary {
 
 # Test the function Invoke-Test
 task Invoke-Test {
-	$log = [Collections.Generic.List[string]]@()
+	$log = [Collections.ArrayList]@()
+	function log { $null = $log.AddRange($args) }
 
 	# default context
-	$end = {$log.Add('do end 0')}
+	$end = {log 'do end 0'}
 
 	# the first test script is invoked after each context script
 	Invoke-Test {
 		# test script
-		$log.Add('test begin')
+		log 'test begin'
 		. $begin
 
-		$log.Add('test end')
+		log 'test end'
 		. $end
 	}{
 		# context script 1
 		$begin = {
-			$log.Add('do begin1')
+			log 'do begin1'
 		}
 		$end = {
-			$log.Add('do end1')
+			log 'do end1'
 		}
 	}{
 		# context script 2
 		$begin = {
-			$log.Add('begin2')
+			log 'begin2'
 		}
 	}
 

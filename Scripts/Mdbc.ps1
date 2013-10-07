@@ -103,9 +103,11 @@ $help
 
 ### Aliases
 Set-Alias -Scope global -Name amd -Value Add-MdbcData
+Set-Alias -Scope global -Name emd -Value Export-MdbcData
 Set-Alias -Scope global -Name gmd -Value Get-MdbcData
 Set-Alias -Scope global -Name gmh -Value Get-MdbcHelp
 Set-Alias -Scope global -Name imc -Value Invoke-MdbcCommand
+Set-Alias -Scope global -Name imd -Value Import-MdbcData
 Set-Alias -Scope global -Name nmd -Value New-MdbcData
 Set-Alias -Scope global -Name nmq -Value New-MdbcQuery
 Set-Alias -Scope global -Name nmu -Value New-MdbcUpdate

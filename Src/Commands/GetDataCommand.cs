@@ -20,60 +20,66 @@ using MongoDB.Bson;
 using MongoDB.Driver;
 namespace Mdbc.Commands
 {
-	[Cmdlet(VerbsCommon.Get, "MdbcData", DefaultParameterSetName = "All")]
+	[Cmdlet(VerbsCommon.Get, "MdbcData", DefaultParameterSetName = NAll)]
 	public sealed class GetDataCommand : AbstractCollectionCommand
 	{
+		const string NAll = "All";
+		const string NDistinct = "Distinct";
+		const string NCount = "Count";
+		const string NCursor = "Cursor";
+		const string NRemove = "Remove";
+		const string NUpdate = "Update";
 		[Parameter(Position = 0)]
 		public object Query { get { return null; } set { _Query = Actor.ObjectToQuery(value); } }
 		IMongoQuery _Query;
-		[Parameter(Mandatory = true, ParameterSetName = "Distinct")]
+		[Parameter(Mandatory = true, ParameterSetName = NDistinct)]
 		public string Distinct { get; set; }
-		[Parameter(Mandatory = true, ParameterSetName = "Count")]
+		[Parameter(Mandatory = true, ParameterSetName = NCount)]
 		public SwitchParameter Count { get; set; }
-		[Parameter(Mandatory = true, ParameterSetName = "Cursor")]
+		[Parameter(Mandatory = true, ParameterSetName = NCursor)]
 		public SwitchParameter Cursor { get; set; }
-		[Parameter(Mandatory = true, ParameterSetName = "Remove")]
+		[Parameter(Mandatory = true, ParameterSetName = NRemove)]
 		public SwitchParameter Remove { get; set; }
-		[Parameter(Mandatory = true, ParameterSetName = "Update")]
+		[Parameter(Mandatory = true, ParameterSetName = NUpdate)]
 		public object Update { get { return null; } set { _Update = Actor.ObjectToUpdate(value); } }
 		IMongoUpdate _Update;
-		[Parameter(ParameterSetName = "Update")]
+		[Parameter(ParameterSetName = NUpdate)]
 		public SwitchParameter New { get; set; }
-		[Parameter(ParameterSetName = "Update")]
+		[Parameter(ParameterSetName = NUpdate)]
 		public SwitchParameter Add { get; set; }
-		[Parameter(ParameterSetName = "All")]
-		[Parameter(ParameterSetName = "Count")]
-		[Parameter(ParameterSetName = "Cursor")]
-		[Parameter(ParameterSetName = "Remove")]
-		[Parameter(ParameterSetName = "Update")]
+		[Parameter(ParameterSetName = NAll)]
+		[Parameter(ParameterSetName = NCount)]
+		[Parameter(ParameterSetName = NCursor)]
+		[Parameter(ParameterSetName = NRemove)]
+		[Parameter(ParameterSetName = NUpdate)]
 		public QueryFlags Modes { get; set; }
-		[Parameter(ParameterSetName = "All")]
-		[Parameter(ParameterSetName = "Count")]
-		[Parameter(ParameterSetName = "Cursor")]
+		[Parameter(ParameterSetName = NAll)]
+		[Parameter(ParameterSetName = NCount)]
+		[Parameter(ParameterSetName = NCursor)]
 		public int First { get; set; }
-		[Parameter(ParameterSetName = "All")]
-		[Parameter(ParameterSetName = "Count")]
-		[Parameter(ParameterSetName = "Cursor")]
+		[Parameter(ParameterSetName = NAll)]
+		[Parameter(ParameterSetName = NCount)]
+		[Parameter(ParameterSetName = NCursor)]
 		public int Last { get; set; }
-		[Parameter(ParameterSetName = "All")]
-		[Parameter(ParameterSetName = "Count")]
-		[Parameter(ParameterSetName = "Cursor")]
+		[Parameter(ParameterSetName = NAll)]
+		[Parameter(ParameterSetName = NCount)]
+		[Parameter(ParameterSetName = NCursor)]
 		public int Skip { get; set; }
-		[Parameter(ParameterSetName = "All")]
-		[Parameter(ParameterSetName = "Cursor")]
-		[Parameter(ParameterSetName = "Update")]
+		[Parameter(ParameterSetName = NAll)]
+		[Parameter(ParameterSetName = NCursor)]
+		[Parameter(ParameterSetName = NUpdate)]
 		public string[] Property { get; set; }
-		[Parameter(ParameterSetName = "All")]
-		[Parameter(ParameterSetName = "Cursor")]
-		[Parameter(ParameterSetName = "Remove")]
-		[Parameter(ParameterSetName = "Update")]
+		[Parameter(ParameterSetName = NAll)]
+		[Parameter(ParameterSetName = NCursor)]
+		[Parameter(ParameterSetName = NRemove)]
+		[Parameter(ParameterSetName = NUpdate)]
 		public object[] SortBy { get { return null; } set { _SortBy = Actor.ObjectsToSortBy(value); } }
 		IMongoSortBy _SortBy;
-		[Parameter(ParameterSetName = "All")]
-		[Parameter(ParameterSetName = "Cursor")]
+		[Parameter(ParameterSetName = NAll)]
+		[Parameter(ParameterSetName = NCursor)]
 		public Type As { get; set; }
-		[Parameter(ParameterSetName = "All")]
-		[Parameter(ParameterSetName = "Cursor")]
+		[Parameter(ParameterSetName = NAll)]
+		[Parameter(ParameterSetName = NCursor)]
 		public SwitchParameter AsCustomObject { get; set; }
 		void DoCount()
 		{
@@ -111,21 +117,21 @@ namespace Mdbc.Commands
 		{
 			switch (ParameterSetName)
 			{
-				case "Count":
+				case NCount:
 					if (First > 0 || Skip > 0)
 						break;
 					DoCount();
 					return;
 
-				case "Distinct":
+				case NDistinct:
 					DoDistinct();
 					return;
 
-				case "Remove":
+				case NRemove:
 					DoRemove();
 					return;
 
-				case "Update":
+				case NUpdate:
 					DoUpdate();
 					return;
 			}

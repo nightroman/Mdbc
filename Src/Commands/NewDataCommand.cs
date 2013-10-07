@@ -20,20 +20,22 @@ using System.Management.Automation;
 using MongoDB.Bson;
 namespace Mdbc.Commands
 {
-	[Cmdlet(VerbsCommon.New, "MdbcData", DefaultParameterSetName = "Document")]
+	[Cmdlet(VerbsCommon.New, "MdbcData", DefaultParameterSetName = NDocument)]
 	public sealed class NewDataCommand : PSCmdlet, IDocumentInput
 	{
-		[Parameter(ParameterSetName = "Value")]
+		const string NDocument = "Document";
+		const string NValue = "Value";
+		[Parameter(Mandatory = true, ParameterSetName = NValue)]
 		public PSObject Value { get; set; }
-		[Parameter(Position = 0, ValueFromPipeline = true, ParameterSetName = "Document")]
+		[Parameter(Position = 0, ValueFromPipeline = true, ParameterSetName = NDocument)]
 		public PSObject InputObject { get; set; }
-		[Parameter(ParameterSetName = "Document")]
+		[Parameter(ParameterSetName = NDocument)]
 		public PSObject Id { get; set; }
-		[Parameter(ParameterSetName = "Document")]
+		[Parameter(ParameterSetName = NDocument)]
 		public SwitchParameter NewId { get; set; }
-		[Parameter(ParameterSetName = "Document")]
+		[Parameter(ParameterSetName = NDocument)]
 		public ScriptBlock Convert { get; set; }
-		[Parameter(ParameterSetName = "Document")]
+		[Parameter(ParameterSetName = NDocument)]
 		public object[] Property { get { return null; } set { Selectors = Selector.Create(value, this); } }
 		public IList<Selector> Selectors { get; private set; }
 		void WriteDocument(BsonDocument document)
@@ -45,7 +47,7 @@ namespace Mdbc.Commands
 		{
 			try
 			{
-				if (ParameterSetName == "Document")
+				if (ParameterSetName == NDocument)
 				{
 					if (InputObject == null)
 						WriteDocument(new BsonDocument());
