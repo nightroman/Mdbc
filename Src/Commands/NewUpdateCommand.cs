@@ -110,7 +110,7 @@ namespace Mdbc.Commands
 		{
 			var query = Pull.BaseObject as IMongoQuery;
 			if (query == null)
-				return Update.Pull(Name, Actor.ToBsonValue(Pull));
+				return Update.Pull(Name, Actor.ToBsonValue(Pull, null));
 
 			return Update.Pull(Name, query);
 		}
@@ -119,11 +119,11 @@ namespace Mdbc.Commands
 			switch (ParameterSetName)
 			{
 				case NAddToSet:
-					WriteObject(Update.AddToSet(Name, Actor.ToBsonValue(AddToSet)));
+					WriteObject(Update.AddToSet(Name, Actor.ToBsonValue(AddToSet, null)));
 					return;
 
 				case NAddToSetEach:
-					WriteObject(Update.AddToSetEach(Name, Actor.ToBsonValues(AddToSetEach)));
+					WriteObject(Update.AddToSetEach(Name, Actor.ToEnumerableBsonValue(AddToSetEach)));
 					return;
 
 				case NBand:
@@ -151,15 +151,15 @@ namespace Mdbc.Commands
 					return;
 
 				case NPullAll:
-					WriteObject(Update.PullAll(Name, Actor.ToBsonValues(PullAll)));
+					WriteObject(Update.PullAll(Name, Actor.ToEnumerableBsonValue(PullAll)));
 					return;
 
 				case NPush:
-					WriteObject(Update.Push(Name, Actor.ToBsonValue(Push)));
+					WriteObject(Update.Push(Name, Actor.ToBsonValue(Push, null)));
 					return;
 
 				case NPushAll:
-					WriteObject(Update.PushAll(Name, Actor.ToBsonValues(PushAll)));
+					WriteObject(Update.PushAll(Name, Actor.ToEnumerableBsonValue(PushAll)));
 					return;
 
 				case NRename:
@@ -167,11 +167,11 @@ namespace Mdbc.Commands
 					return;
 
 				case NSet:
-					WriteObject(Update.Set(Name, Actor.ToBsonValue(Set)));
+					WriteObject(Update.Set(Name, Actor.ToBsonValue(Set, null)));
 					return;
 
 				case NSetOnInsert:
-					WriteObject(Update.SetOnInsert(Name, Actor.ToBsonValue(SetOnInsert)));
+					WriteObject(Update.SetOnInsert(Name, Actor.ToBsonValue(SetOnInsert, null)));
 					return;
 
 				case NUnset:

@@ -9,6 +9,47 @@ Import-Module Mdbc
 
 ### Shared descriptions
 
+$IdParameter = @'
+Sets the document _id to the specified value or a script block returning a
+value from the input object represented by the variable $_.
+'@
+
+$NewIdParameter = @'
+Tells to generate and set a new document _id as BsonObjectId.
+'@
+
+$ConvertParameter = @'
+A script called on exceptions during conversion of unknown data to BsonValue.
+The variable $_ is the problem object to be converted. The script returns a
+single value to be tried instead or nothing for nulls.
+
+Examples: {} converts unknown data to nulls. {"$_"} converts data to strings,
+it is useful for preserving as much information as possible on dumping objects
+for later analysis.
+
+Converters should be used sparingly. Consider to use Property instead for
+selecting standard data and converting not standard much more effectively.
+'@
+
+$PropertyParameter = @'
+Property or key names which values are to be included into new documents. This
+parameter is used when input objects are converted into documents. Missing
+properties or keys are ignored.
+
+Properties are defined in three ways:
+
+1. Strings for property or key names and the same document field names.
+
+2. Hashtables @{Name=Expression} where Name is a new document field name and
+Expression is either a string (input object property name) or a script block
+(field value calculated from the input object $_).
+
+3. Hashtables @{Name=...; Expression=...} or @{Label=...; Expression=...}, the
+same as the cmdlet Select-Object uses for its parameter Property.
+
+See New-MdbcData examples.
+'@
+
 $CollectionParameter = @'
 Collection object. It is obtained by Connect-Mdbc or from database or server
 objects. If it is not specified then the current variable $Collection is used.
@@ -16,17 +57,19 @@ objects. If it is not specified then the current variable $Collection is used.
 
 $QueryTypes = @'
 Supported types:
-1) MongoDB.Driver.IMongoQuery (see New-MdbcQuery);
-2) _id holders (Mdbc.Dictionary, BsonDocument, custom objects);
-3) hashtables representing MongoDB JSON-like query expressions;
-4) other values are treated as _id and converted to _id queries.
+1. MongoDB.Driver.IMongoQuery (see New-MdbcQuery);
+2. _id holders (Mdbc.Dictionary, BsonDocument, custom objects);
+3. hashtables representing MongoDB JSON-like query expressions;
+4. other values are treated as _id and converted to _id queries.
 '@
+
 $QueryParameter = "Specifies documents to be processed. $QueryTypes"
 
 $AsParameter = @'
 The custom type of returned documents. The type members must be compatible with
 a query unless a custom serialization is registered for the type.
 '@
+
 $AsCustomObjectParameter = @'
 Tells to return documents represented by PSObject. PS objects are convenient in
 some scenarios, especially interactive. Performance is not always good enough.
@@ -40,7 +83,10 @@ equivalents (say, 1 and 0) are for ascending and descending directions.
 
 $TypeMdbcDictionary = @{
 	type = '[Mdbc.Dictionary]'
-	description = 'Objects created by New-MdbcData or obtained by Get-MdbcData.'
+	description = @'
+Objects created by New-MdbcData or obtained by Get-MdbcData or Import-MdbcData.
+This type is the most effective and safe as input/output of Mdbc data cmdlets.
+'@
 }
 
 $TypeWriteConcernResult = @{
@@ -54,6 +100,38 @@ exceptions are caught and written as not terminating errors. Use proper error
 action preference and/or cmdlet common error parameters.
 '@
 
+$DocumentInputs = @(
+	$TypeMdbcDictionary
+	@{
+		type = '$null'
+		description = @'
+Null creates an empty document for New-MdbcData and ignored for Add-MdbcData
+and Export-MdbcData.
+'@
+	}
+	@{
+		type = '[IDictionary]'
+		description = @'
+Dictionaries are converted to documents internally. Keys are normally strings
+used as field names. Values are converted to BsonValue.
+'@
+	}
+	@{
+		type = '[PSObject]'
+		description = @'
+Objects are converted to documents internally. Property names are used as field
+names. Values are converted to BsonValue.'
+'@
+	}
+	@{
+		type = '[MongoDB.Bson.BsonDocument]'
+		description = @'
+This is the native C# document type. It is supported but normally it should not
+be used directly. Its wrapper [Mdbc.Dictionary] is more suitable in PowerShell.
+'@
+	}
+)
+
 $QueryInputs = @(
 	@{
 		type = '[MongoDB.Driver.IMongoQuery]'
@@ -62,8 +140,8 @@ $QueryInputs = @(
 	@{
 		type = '[Mdbc.Dictionary], [MongoDB.Bson.BsonDocument]'
 		description = @'
-A document which _id is used for identification.
-[Mdbc.Dictionary] objects are created by New-MdbcData or obtained by Get-MdbcData.
+A document which _id is used for identification. [Mdbc.Dictionary] objects are
+created by New-MdbcData or obtained by Get-MdbcData.
 '@
 	}
 	@{
@@ -78,7 +156,7 @@ A document which _id is used for identification.
 	synopsis = 'Connects a server, database, and collection.'
 	description = @'
 The cmdlet connects the specified server, database, and collection and creates
-their reference variables in the current scope, with default names they are
+their reference variables in the current scope. With default names they are
 $Server, $Database, and $Collection.
 
 The * used as a name tells to get all database names for a server or collection
@@ -87,15 +165,15 @@ names for a database.
 
 	parameters = @{
 		ConnectionString = @'
-	Connection string (see the C# driver manual for details):
+	Connection string (see the C# driver manual for the details):
 	mongodb://[username:password@]hostname[:port][/[database][?options]]
 	"." is used for the default C# driver connection.
-	Examples:
+	Example:
 	mongodb://localhost:27017
 '@
 		DatabaseName = 'Database name. * is used in order to get all database objects.'
 		CollectionName = 'Collection name. * is used in order to get all collection objects.'
-		NewCollection = 'Tells to connect a new collection dropping the existing if there is any.'
+		NewCollection = 'Tells to connect a new collection dropping the existing if it exists.'
 		ServerVariable = 'Name of a new variable in the current scope with the connected server. The default variable is $Server.'
 		DatabaseVariable = 'Name of a new variable in the current scope with the connected database. The default variable is $Database.'
 		CollectionVariable = 'Name of a new variable in the current scope with the connected collection. The default variable is $Collection.'
@@ -163,7 +241,7 @@ names for a database.
 		}
 		@{
 			code = {
-				# Connect to the database 'test' and get all its collections
+				# Connect to the database 'test' and get all collections
 				Import-Module Mdbc
 				Connect-Mdbc . test *
 			}
@@ -215,48 +293,51 @@ $AbstractWrite = Merge-Helps $AbstractCollection @{
 	command = 'New-MdbcData'
 	synopsis = 'Creates data documents and some other C# driver types.'
 	description = @'
-This command is mostly used in order to create documents to be stored in the database.
-Without input objects it creates PowerShell friendly wrappers of C# driver documents.
+This command is used to create one or more documents (input objects come from
+the pipeline or as the first parameter InputObject) or a single BsonValue (as
+the named parameter Value).
+
+Created documents are used later for Add-MdbcData and Export-MdbcData. Note
+that they have the same properties Id, NewId, Convert, Property for making
+documents from input objects. Thus, in some cases intermediate use of
+New-MdbcData is not needed.
 '@
 	parameters = @{
-		Id = @'
-Sets the document _id to the specified value.
-It makes sense when a document is being created.
-
-With pipeline input it can be a script block that returns an ID value.
-If this ID is an existing property/key value then the Select list should be specified.
-Otherwise the same value is included twice as the document ID and the property/key value.
-'@
-		NewId = @'
-Tells to generate and set a new document _id.
-It makes sense when a document is being created.
-'@
 		InputObject = @'
-.NET value to be converted to its BSON analogue.
+.NET object to be converted to a document Mdbc.Dictionary, PowerShell friendly
+wrapper of BsonDocument. Objects suitable for conversion are dictionaries,
+custom PowerShell objects, and complex .NET types, normally not collections.
 '@
-		Property = @'
-Property or key names which values are to be included into new documents.
-This parameter is used when input objects are converted into documents (see examples).
+		Id = $IdParameter
+		NewId = $NewIdParameter
+		Convert = $ConvertParameter
+		Property = $PropertyParameter
+		Value = @'
+A .NET object to be converted to a BsonValue.
+
+[IDictionary] is converted to a document [Mdbc.Dictionary]. Note that
+parameters Id, NewId, Convert, Property are not available with Value.
+Use InputObject for custom conversion of dictionaries.
+
+[IEnumerable] is converted to a [Mdbc.Collection] (BsonArray wrapper).
+
+Primitive types:
+
+	[bool]     is converted to BsonBoolean.
+	[DateTime] is converted to BsonDateTime.
+	[double]   is converted to BsonDouble.
+	[Guid]     is converted to BsonBinaryData (and retrieved back as [Guid]).
+	[int]      is converted to BsonInt32.
+	[long]     is converted to BsonInt64.
+	[string]   is converted to BsonString.
+
+If a primitive type is known than it is much more effective to create it
+directly than by this cmdlet, e.g. for a string:
+
+	[MongoDB.Bson.BsonString]'Some text'
 '@
 	}
-	inputs = @(
-		@{
-			type = '$null, [PSCustomObject], [Hashtable] (any dictionary, in fact)'
-			description = @'
-[Mdbc.Dictionary] document is created (BsonDocument helper).
-The created document is empty if the input object is $null or empty.
-Otherwise the document has the same fields and values as the input properties/keys and values.
-'@
-		}
-		@{ type = '[System.Collections.IEnumerable]'; description = 'Mdbc array is created (BsonArray helper).' }
-		@{ type = '[bool]'; description = 'is converted to BsonBoolean.' }
-		@{ type = '[DateTime]'; description = 'is converted to BsonDateTime.' }
-		@{ type = '[double]'; description = 'is converted to BsonDouble.' }
-		@{ type = '[Guid]'; description = 'is converted to BsonBinaryData (and retrieved back as [Guid].' }
-		@{ type = '[int]'; description = 'is converted to BsonInt32.' }
-		@{ type = '[long]'; description = 'is converted to BsonInt64.' }
-		@{ type = '[string]'; description = 'is converted to BsonString.' }
-	)
+	inputs = $DocumentInputs
 	outputs = @(
 		@{
 			type = '[Mdbc.Dictionary]'
@@ -264,11 +345,11 @@ Otherwise the document has the same fields and values as the input properties/ke
 		}
 		@{
 			type = '[Mdbc.Collection]'
-			description = 'PowerShell friendly wrapper of BsonArray.'
+			description = 'Wrapper of BsonArray created from Value.'
 		}
 		@{
 			type = '[MongoDB.Bson.BsonValue]'
-			description = 'Other BsonValue types created from input objects.'
+			description = 'BsonValue objects created from Value.'
 		}
 	)
 	examples = @(
@@ -316,9 +397,29 @@ Otherwise the document has the same fields and values as the input properties/ke
 				if ($result[0].Name -ne 'mongod') { throw }
 			}
 		}
+		@{
+			code = {
+				# Example of various forms of property expressions.
+				# Note that ExitCode throws, so that Code will be null.
+
+				New-MdbcData (Get-Process -Id $Pid) -Property `
+					Name,                         # existing property name
+					Missing,                      # missing property name is ignored
+					@{WS1 = 'WS'},                # @{name = old name} - renamed property
+					@{WS2 = {$_.WS}},             # @{name = scriptblock} - calculated field
+					@{Ignored = 'Missing'},       # renaming of a missing property is ignored
+					@{n = '_id'; e = 'Id'},       # @{name=...; expression=...} like Select-Object does
+					@{l = 'Code'; e = 'ExitCode'} # @{label=...; expression=...} another like Select-Object
+			}
+			test = {
+				$r = . $args[0]
+				if ($r.Count -ne 5) { throw }
+			}
+		}
 	)
 	links = @(
 		@{ text = 'Add-MdbcData' }
+		@{ text = 'Export-MdbcData' }
 	)
 }
 
@@ -525,20 +626,14 @@ Merge-Helps $AbstractWrite @{
 	synopsis = 'Adds new documents to the database collection or updates existing.'
 	description = 'Adds new documents to the database collection or updates existing.', $AboutResultAndErrors
 	parameters = @{
-		InputObject = 'Document (Mdbc.Dictionary, BsonDocument, or PSCustomObject).'
+		InputObject = 'Document or a similar object.'
 		Update = 'Tells to update existing documents with the same _id or add new documents otherwise.'
+		Id = $IdParameter
+		NewId = $NewIdParameter
+		Convert = $ConvertParameter
+		Property = $PropertyParameter
 	}
-	inputs = @(
-		$TypeMdbcDictionary
-		@{
-			type = '[PSCustomObject]'
-			description = 'Custom objects often created by Select-Object but not only.'
-		}
-		@{
-			type = '[MongoDB.Bson.BsonDocument]'
-			description = 'This type is supported but normally it should not be used directly.'
-		}
-	)
+	inputs = $DocumentInputs
 	outputs = $TypeWriteConcernResult
 	links = @(
 		@{ text = 'New-MdbcData' }
@@ -852,5 +947,86 @@ The argument value required by the command with one argument.
 				if ($data.Count -ne 5) {throw}
 			}
 		}
+	)
+}
+
+$ExampleIOCode = {
+	@{ p1 = 'Name1'; p2 = 123 }, @{ p1 = 'Name2'; p2 = 3.14 } | Export-MdbcData test.bson
+	Import-MdbcData test.bson -AsCustomObject
+}
+
+### Export-MdbcData
+@{
+	command = 'Export-MdbcData'
+	synopsis = 'Exports objects to a BSON file.'
+	description = @'
+The cmdlet writes BSON representation of input objects to the specified file.
+The output file has the same format as .bson files produced by mongodump.exe.
+
+Cmdlets Export-MdbcData and Import-MdbcData do not need any database connection
+or even installed MongoDB. They are used for file based object persistence.
+'@
+	parameters = @{
+		Path = @'
+Specifies the path to the file where BSON representation of objects will be stored.
+'@
+		Append = 'Tells to append data to the file if it exists.'
+		InputObject = 'Document or a similar object.'
+		Id = $IdParameter
+		NewId = $NewIdParameter
+		Convert = $ConvertParameter
+		Property = $PropertyParameter
+	}
+	inputs = $DocumentInputs
+	outputs = @()
+	examples = @(
+		@{
+			code = $ExampleIOCode
+			test = {
+				Push-Location C:\TEMP
+				$data = . $args[0]
+				if ($data.Count -ne 2) {throw}
+				Remove-Item test.bson
+				Pop-Location
+			}
+		}
+	)
+	links = @(
+		@{ text = ''; URI = '' }
+	)
+}
+
+### Import-MdbcData
+@{
+	command = 'Import-MdbcData'
+	synopsis = 'Imports data from a file.'
+	description = @'
+The cmdlet reads data from a BSON file. Such files are produced, for example,
+by the cmdlet Export-MdbcData or by the utility mongodump.exe.
+
+Cmdlets Export-MdbcData and Import-MdbcData do not need any database connection
+or even installed MongoDB. They are used for file based object persistence.
+'@
+	parameters = @{
+		Path = @'
+Specifies the path to the BSON file where objects will be restored from.
+'@
+		As = $AsParameter
+		AsCustomObject = $AsCustomObjectParameter
+	}
+	inputs = @()
+	outputs = @(
+		@{
+			type = ''
+			description = ''
+		}
+	)
+	examples = @(
+		@{
+			code = $ExampleIOCode
+		}
+	)
+	links = @(
+		@{ text = ''; URI = '' }
 	)
 }

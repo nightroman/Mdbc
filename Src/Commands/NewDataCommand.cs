@@ -14,56 +14,63 @@
 * limitations under the License.
 */
 
+using System;
+using System.Collections.Generic;
 using System.Management.Automation;
 using MongoDB.Bson;
 namespace Mdbc.Commands
 {
-	[Cmdlet(VerbsCommon.New, "MdbcData")]
-	public sealed class NewDataCommand : Cmdlet
+	[Cmdlet(VerbsCommon.New, "MdbcData", DefaultParameterSetName = "Document")]
+	public sealed class NewDataCommand : PSCmdlet, IDocumentInput
 	{
-		[Parameter(Position = 0, ValueFromPipeline = true)]
+		[Parameter(ParameterSetName = "Value")]
+		public PSObject Value { get; set; }
+		[Parameter(Position = 0, ValueFromPipeline = true, ParameterSetName = "Document")]
 		public PSObject InputObject { get; set; }
-		[Parameter(ValueFromPipelineByPropertyName = true)]
+		[Parameter(ParameterSetName = "Document")]
 		public PSObject Id { get; set; }
-		[Parameter]
+		[Parameter(ParameterSetName = "Document")]
 		public SwitchParameter NewId { get; set; }
-		[Parameter]
-		public string[] Property { get; set; }
+		[Parameter(ParameterSetName = "Document")]
+		public ScriptBlock Convert { get; set; }
+		[Parameter(ParameterSetName = "Document")]
+		public object[] Property { get { return null; } set { Selectors = Selector.Create(value, this); } }
+		public IList<Selector> Selectors { get; private set; }
 		void WriteDocument(BsonDocument document)
 		{
-			if (Id != null)
-				document["_id"] = BsonValue.Create(Id.BaseObject);
-			else if (NewId)
-				document["_id"] = new BsonObjectId(ObjectId.GenerateNewId());
-
+			DocumentInput.MakeId(document, this, SessionState);
 			WriteObject(new Dictionary(document));
 		}
 		protected override void ProcessRecord()
 		{
-			if (InputObject == null)
+			try
 			{
-				WriteDocument(new BsonDocument());
-				return;
-			}
+				if (ParameterSetName == "Document")
+				{
+					if (InputObject == null)
+						WriteDocument(new BsonDocument());
+					else
+						WriteDocument(Actor.ToBsonDocument(InputObject, Selectors, x => DocumentInput.ConvertValue(x, this, SessionState)));
+					return;
+				}
 
-			if (Property != null)
-			{
-				WriteDocument(Actor.ToBsonDocument(InputObject, Property));
-				return;
+				var bson = Actor.ToBsonValue(Value, null);
+				switch (bson.BsonType)
+				{
+					case BsonType.Array:
+						WriteObject(new Collection((BsonArray)bson));
+						return;
+					case BsonType.Document:
+						WriteDocument((BsonDocument)bson);
+						return;
+					default:
+						WriteObject(bson);
+						return;
+				}
 			}
-
-			var bson = Actor.ToBsonValue(InputObject);
-			switch (bson.BsonType)
+			catch (ArgumentException ex)
 			{
-				case BsonType.Array:
-					WriteObject(new Collection((BsonArray)bson));
-					return;
-				case BsonType.Document:
-					WriteDocument((BsonDocument)bson);
-					return;
-				default:
-					WriteObject(bson);
-					return;
+				WriteError(DocumentInput.NewErrorRecordBsonValue(ex, InputObject));
 			}
 		}
 	}

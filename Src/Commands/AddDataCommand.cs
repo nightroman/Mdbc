@@ -14,34 +14,50 @@
 * limitations under the License.
 */
 
+using System;
+using System.Collections.Generic;
 using System.Management.Automation;
 using MongoDB.Driver;
 namespace Mdbc.Commands
 {
 	[Cmdlet(VerbsCommon.Add, "MdbcData")]
-	public sealed class AddDataCommand : AbstractWriteCommand
+	public sealed class AddDataCommand : AbstractWriteCommand, IDocumentInput
 	{
 		[Parameter(Position = 0, ValueFromPipeline = true)]
 		public PSObject InputObject { get; set; }
 		[Parameter]
 		public SwitchParameter Update { get; set; }
+		[Parameter]
+		public PSObject Id { get; set; }
+		[Parameter]
+		public SwitchParameter NewId { get; set; }
+		[Parameter]
+		public ScriptBlock Convert { get; set; }
+		[Parameter]
+		public object[] Property { get { return null; } set { Selectors = Selector.Create(value, this); } }
+		public IList<Selector> Selectors { get; private set; }
 		protected override void ProcessRecord()
 		{
 			if (InputObject == null)
 				return;
 
-			var bson = Actor.ToBsonDocument(InputObject, null);
-
 			try
 			{
+				var bson = Actor.ToBsonDocument(InputObject, Selectors, x => DocumentInput.ConvertValue(x, this, SessionState));
+				DocumentInput.MakeId(bson, this, SessionState);
+
 				if (Update)
 					WriteResult(Collection.Save(bson, WriteConcern));
 				else
 					WriteResult(Collection.Insert(bson, WriteConcern));
 			}
+			catch (ArgumentException ex)
+			{
+				WriteError(DocumentInput.NewErrorRecordBsonValue(ex, InputObject));
+			}
 			catch (MongoException ex)
 			{
-				WriteException(ex);
+				WriteException(ex, InputObject);
 			}
 		}
 	}

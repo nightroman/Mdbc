@@ -1,6 +1,48 @@
 Mdbc Release Notes
 ==================
 
+## v3.1.0
+
+New cmdlets `Export-MdbcData` and `Import-MdbcData` for storing and restoring
+objects without need of database connections or even MongoDB installed.
+
+Potentially breaking change in `New-MdbcData`. `InputObject` is only for new
+documents and the new named parameter `Value` is for `BsonValue`. This should
+not break too much because the cmdlet is mostly for creation of documents and
+direct use of `BsonValue` is rare. The change resolves ambiguities in some
+cases and improves compatibility with `Add-MdbcData`, `Export-MdbcData`.
+
+Added control of cyclic references on data conversion to documents and avoided
+potential stack overflows. An exception 'Cyclic reference.' is thrown instead.
+
+Properties and dictionary entries with null values are preserved on conversion
+to BsonDocuments. Properties which throws are also preserved with null values.
+
+Cmdlets `New-MdbcData`, `Add-MdbcData`, and `Export-MdbcData` have four common
+parameters which make it easier to create documents from pipeline input:
+
+- `Id` - specifies a document's `_id`
+- `NewId` - tells to generate the `_id`
+- `Convert` - converts unknown data on errors
+- `Property` - property expressions similar to `Select-Object`
+
+Thus, in some cases intermediate use of `New-MdbcData` is not needed now.
+
+Note that omitted `Id` does not take an existing  property `Id` for `_id`
+automatically anymore. This effect was unwanted and rather confusing.
+
+`New-MdbcData`, `Add-MdbcData`, and `Export-MdbcData`: driver exceptions on
+BSON conversion and MondoException are caught for every input object and an
+error is written instead. Differences:
+
+- Errors include failed objects as TargetObject (for recovery, logging)
+- Cmdlets may use the ErrorAction parameter or variable (better control)
+- By default ErrorAction is Continue, i.e. such errors do not terminate
+
+Removed not documented use of script blocks as input to `Add-MdbcData`.
+
+Converted tests to special test scripts invoked by `Invoke-Build`.
+
 ## v3.0.4
 
 C# driver 1.8.2

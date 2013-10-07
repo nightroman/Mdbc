@@ -35,7 +35,7 @@ namespace Mdbc.Commands
 				if (Value == null)
 					document = new CommandDocument(commandName, 1);
 				else
-					document = new CommandDocument(commandName, Actor.ToBsonValue(Value));
+					document = new CommandDocument(commandName, Actor.ToBsonValue(Value, null));
 			}
 			else
 			{

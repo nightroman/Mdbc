@@ -91,7 +91,8 @@ task UpdateScript -Partial `
 
 # Call tests.
 task Test {
-	Invoke-Build * Tests\Test.build.ps1
+	Invoke-Build ** Tests -Result result
+	assert ($result.Tasks.Count -eq 37) $result.Tasks.Count
 }
 
 # Pull C# driver sources.

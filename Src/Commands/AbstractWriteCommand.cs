@@ -30,9 +30,9 @@ namespace Mdbc.Commands
 			if (Result && value != null)
 				WriteObject(value);
 		}
-		protected void WriteException(Exception value)
+		protected void WriteException(Exception value, object targetObject)
 		{
-			WriteError(new ErrorRecord(value, "Driver", ErrorCategory.WriteError, null));
+			WriteError(new ErrorRecord(value, "Driver", ErrorCategory.WriteError, targetObject));
 		}
 	}
 }

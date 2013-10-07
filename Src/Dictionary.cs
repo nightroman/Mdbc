@@ -65,7 +65,7 @@ namespace Mdbc
 				if (value == null)
 					Remove(key);
 				else
-					_document.Set(key.ToString(), Actor.ToBsonValue(value));
+					_document.Set(key.ToString(), Actor.ToBsonValue(value, null));
 			}
 		}
 		public void Remove(object key)
@@ -76,7 +76,7 @@ namespace Mdbc
 		public void Add(object key, object value)
 		{
 			if (key == null) throw new ArgumentNullException("key");
-			_document.Add(key.ToString(), Actor.ToBsonValue(value));
+			_document.Add(key.ToString(), Actor.ToBsonValue(value, null));
 		}
 		public bool Contains(object key)
 		{

@@ -46,13 +46,13 @@ PowerShell module directory, see `$env:PSModulePath`. For example:
     # Connect the database 'test' and the new collection 'test'
     Connect-Mdbc . test test -NewCollection
 
-    # Add some data (Name and WorkingSet of currently running processes)
-    Get-Process | New-MdbcData -Id {$_.Id} -Property Name, WorkingSet | Add-MdbcData
+    # Add some data (Id as _id, Name, and WorkingSet of current processes)
+    Get-Process | Add-MdbcData -Id {$_.Id} -Property Name, WorkingSet
 
-    # Query all saved data back and print them formatted
+    # Query all data back as custom objects and print them formatted
     Get-MdbcData -AsCustomObject | Format-Table -AutoSize | Out-String
 
-    # Get saved data of the process 'mongod' (there should be at least one)
+    # Get saved data of the process 'mongod' (expected at least one)
     $data = Get-MdbcData (New-MdbcQuery Name -EQ mongod)
     $data
 

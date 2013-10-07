@@ -130,7 +130,7 @@ namespace Mdbc.Commands
 					WriteObject(Query.Or(Or.Select(Actor.ObjectToQuery)));
 					return;
 				case "EQ":
-					WriteObject(Query.EQ(Name, Actor.ToBsonValue(EQ)));
+					WriteObject(Query.EQ(Name, Actor.ToBsonValue(EQ, null)));
 					return;
 				case "IEQ":
 					WriteObject(Query.Matches(Name, new BsonRegularExpression("^" + Regex.Escape(IEQ) + "$", "i")));
@@ -149,15 +149,15 @@ namespace Mdbc.Commands
 			IMongoQuery query = null;
 
 			if (NE != null)
-				query = Query.NE(Name, Actor.ToBsonValue(NE));
+				query = Query.NE(Name, Actor.ToBsonValue(NE, null));
 			else if (GE != null)
-				query = Query.GTE(Name, Actor.ToBsonValue(GE));
+				query = Query.GTE(Name, Actor.ToBsonValue(GE, null));
 			else if (GT != null)
-				query = Query.GT(Name, Actor.ToBsonValue(GT));
+				query = Query.GT(Name, Actor.ToBsonValue(GT, null));
 			else if (LE != null)
-				query = Query.LTE(Name, Actor.ToBsonValue(LE));
+				query = Query.LTE(Name, Actor.ToBsonValue(LE, null));
 			else if (LT != null)
-				query = Query.LT(Name, Actor.ToBsonValue(LT));
+				query = Query.LT(Name, Actor.ToBsonValue(LT, null));
 			else if (_existsSet)
 				query = _exists ? Query.Exists(Name) : Query.NotExists(Name);
 			else if (_sizeSet)
@@ -169,11 +169,11 @@ namespace Mdbc.Commands
 			else if (Matches != null)
 				query = Query.ElemMatch(Name, Actor.ObjectToQuery(Matches));
 			else if (All != null)
-				query = Query.All(Name, Actor.ToBsonValues(All));
+				query = Query.All(Name, Actor.ToEnumerableBsonValue(All));
 			else if (In != null)
-				query = Query.In(Name, Actor.ToBsonValues(In));
+				query = Query.In(Name, Actor.ToEnumerableBsonValue(In));
 			else if (NotIn != null)
-				query = Query.NotIn(Name, Actor.ToBsonValues(NotIn));
+				query = Query.NotIn(Name, Actor.ToEnumerableBsonValue(NotIn));
 
 			WriteObject(Not ? Query.Not(query) : query);
 		}

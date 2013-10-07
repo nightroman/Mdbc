@@ -6,7 +6,7 @@ SHORT DESCRIPTION
     MongoDB cmdlets based on the official C# driver.
 
 LONG DESCRIPTION
-    The module provides the following cmdlets and tools.
+    The module provides the following cmdlets and tools:
 
     Connect, set the default server, database, and collection:
 
@@ -19,7 +19,7 @@ LONG DESCRIPTION
         Remove-MdbcData
         Update-MdbcData
 
-    Create new documents for Add-MdbcData:
+    Create new documents for Add-MdbcData, Export-MdbcData:
 
         New-MdbcData
 
@@ -31,7 +31,7 @@ LONG DESCRIPTION
 
         New-MdbcQuery
 
-    Add collections with special properties, for example capped:
+    Add collections with special properties, e.g. capped:
 
         Add-MdbcCollection
 
@@ -39,9 +39,14 @@ LONG DESCRIPTION
 
         Invoke-MdbcMapReduce
 
-    Invoke any command, including not covered by Mdbc and C# driver:
+    Invoke MongoDB command including not covered by Mdbc or C# driver:
 
         Invoke-MdbcCommand
+
+    File based data persistence even without MongoDB installed:
+
+        Export-MdbcData
+        Import-MdbcData
 
     Interactive profile adds more features for interactive sessions:
 
@@ -49,5 +54,5 @@ LONG DESCRIPTION
 
 SEE ALSO
     MongoDB http://www.mongodb.org
-    Driver manuals http://www.mongodb.org/display/DOCS/CSharp+Language+Center
+    Driver manual http://www.mongodb.org/display/DOCS/CSharp+Language+Center
     Driver repository https://github.com/mongodb/mongo-csharp-driver

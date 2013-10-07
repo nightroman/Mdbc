@@ -77,8 +77,11 @@
     <Compile Include="Commands\AbstractWriteCommand.cs" />
     <Compile Include="Commands\AddDataCommand.cs" />
     <Compile Include="Commands\ConnectCommand.cs" />
+    <Compile Include="Commands\ExportDataCommand.cs" />
     <Compile Include="Commands\GetDataCommand.cs" />
     <Compile Include="Commands\AddCollectionCommand.cs" />
+    <Compile Include="Commands\DocumentInput.cs" />
+    <Compile Include="Commands\ImportDataCommand.cs" />
     <Compile Include="Commands\InvokeCommandCommand.cs" />
     <Compile Include="Commands\InvokeMapReduceCommand.cs" />
     <Compile Include="Commands\NewDataCommand.cs" />
@@ -91,6 +94,7 @@
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="PSObjectSerializer.cs" />
+    <Compile Include="Selector.cs" />
   </ItemGroup>
   <ItemGroup>
     <CodeAnalysisDictionary Include="CodeAnalysisDictionary.xml" />

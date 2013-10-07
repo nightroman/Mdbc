@@ -34,7 +34,7 @@ namespace Mdbc.Commands
 			}
 			catch (MongoException ex)
 			{
-				WriteException(ex);
+				WriteException(ex, null);
 			}
 		}
 	}

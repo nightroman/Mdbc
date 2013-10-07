@@ -56,7 +56,7 @@ namespace Mdbc
 			}
 			set
 			{
-				_array[index] = Actor.ToBsonValue(value);
+				_array[index] = Actor.ToBsonValue(value, null);
 			}
 		}
 		public void RemoveAt(int index)
@@ -65,15 +65,15 @@ namespace Mdbc
 		}
 		public void Remove(object value)
 		{
-			_array.Remove(Actor.ToBsonValue(value));
+			_array.Remove(Actor.ToBsonValue(value, null));
 		}
 		public void Insert(int index, object value)
 		{
-			_array.Insert(index, Actor.ToBsonValue(value));
+			_array.Insert(index, Actor.ToBsonValue(value, null));
 		}
 		public int IndexOf(object value)
 		{
-			return _array.IndexOf(Actor.ToBsonValue(value));
+			return _array.IndexOf(Actor.ToBsonValue(value, null));
 		}
 		public void Clear()
 		{
@@ -81,11 +81,11 @@ namespace Mdbc
 		}
 		public bool Contains(object value)
 		{
-			return _array.Contains(Actor.ToBsonValue(value));
+			return _array.Contains(Actor.ToBsonValue(value, null));
 		}
 		public int Add(object value)
 		{
-			_array.Add(Actor.ToBsonValue(value));
+			_array.Add(Actor.ToBsonValue(value, null));
 			return _array.Count - 1;
 		}
 	}
