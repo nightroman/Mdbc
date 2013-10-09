@@ -58,6 +58,7 @@ namespace Mdbc
 				case BsonType.Int32: return bsonReader.ReadInt32();
 				case BsonType.Int64: return bsonReader.ReadInt64();
 				case BsonType.Null: bsonReader.ReadNull(); return null;
+				case BsonType.ObjectId: return bsonReader.ReadObjectId();
 				case BsonType.String: return bsonReader.ReadString();
 				default: return BsonSerializer.Deserialize<BsonValue>(bsonReader);
 			}

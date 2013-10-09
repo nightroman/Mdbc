@@ -38,13 +38,14 @@ namespace Mdbc
 			{
 				case BsonType.Array: return new Collection((BsonArray)value); // wrapper
 				case BsonType.Binary: return BsonTypeMapper.MapToDotNetValue(value) ?? value; // byte[] or Guid else self
-				case BsonType.Boolean: return BsonTypeMapper.MapToDotNetValue(value);
+				case BsonType.Boolean: return ((BsonBoolean)value).Value;
 				case BsonType.DateTime: return ((BsonDateTime)value).ToUniversalTime();
 				case BsonType.Document: return new Dictionary((BsonDocument)value); // wrapper
 				case BsonType.Double: return ((BsonDouble)value).Value;
 				case BsonType.Int32: return ((BsonInt32)value).Value;
 				case BsonType.Int64: return ((BsonInt64)value).Value;
 				case BsonType.Null: return null;
+				case BsonType.ObjectId: return ((BsonObjectId)value).Value;
 				case BsonType.String: return ((BsonString)value).Value;
 				default: return value;
 			}

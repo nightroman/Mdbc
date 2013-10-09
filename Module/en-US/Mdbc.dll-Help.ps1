@@ -15,7 +15,7 @@ value from the input object represented by the variable $_.
 '@
 
 $NewIdParameter = @'
-Tells to generate and set a new document _id as BsonObjectId.
+Tells to generate and set a new document _id as MongoDB.Bson.ObjectId.
 '@
 
 $ConvertParameter = @'
@@ -426,108 +426,124 @@ directly than by this cmdlet, e.g. for a string:
 ### New-MdbcQuery
 @{
 	command = 'New-MdbcQuery'
-	synopsis = 'Creates queries for Get-MdbcData, Remove-MdbcData, and Update-MdbcData.'
-	sets = @{
-		Where = '{ $where: "this.a > 3" }', @'
-The database evaluates JavaScript expression for each object scanned. When the
-result is true, the object is returned in the query results.
-'@,
-		@'
-JavaScript executes more slowly than the native operators but is very flexible.
-See the server-side processing page for more information (official site).
+	synopsis = 'Creates a query expression for other commands.'
+	description = @'
+The cmdlet creates a query expression used by Get-MdbcData, Remove-MdbcData,
+Update-MdbcData, ... Most of queries have their alternative JSON-like forms,
+see parameter descriptions.
 '@
-	}
 	parameters = @{
-		Where = '$where argument, JavaScript Boolean expression.'
-		And = @"
-Queries for logical And (including MongoDB `$and).
-$QueryTypes
-"@
-		Or = @"
-Queries for logical Or (MongoDB `$or).
-$QueryTypes
-"@
 		Name = @'
-Field name.
-'@
-		EQ = @'
-Equality test. Parameter name is optional. Parameter value can be null.
-It is not combined with other query tests.
-'@
-		IEQ = @'
-Ignore case equality test for strings (no MongoDB analogue).
-It is not combined with other query tests.
-'@
-		INE = @'
-Ignore case inequality test for strings (no MongoDB analogue).
-It is not combined with other query tests.
-'@
-		Match = @'
-Regular expression test (MongoDB /.../imxs values, $regex and $options operators).
-It is not combined with other query tests.
-'@,
-		@'
-Value is an array of one or two items.
-A single item is either a regular expression string pattern or a regular expression object.
-Two items are both strings: a regular expression pattern and options, combination of 'i', 'm', 'x', 's' characters.
+Field name for a field value test.
 '@
 		Not = @'
-Tells to negate the whole query expression (MongoDB $not).
+Tells to negate the query expression.
+JSON-like form: @{name = @{'$not' = expression}
 '@
-		GE = @'
-Greater or equal test (MongoDB $gte).
-'@
-		GT = @'
-Greater than test (MongoDB $gt).
-'@
-		LE = @'
-Less or equal test (MongoDB $lte).
-'@
-		LT = @'
-Less than test (MongoDB $lt).
+		And = @'
+Logical And on two or more expressions.
+JSON-like form: @{'$and' = @(expression1, expression2, ...)}
+'@, $QueryTypes
+		Or = @'
+Logical Or on two or more expressions.
+JSON-like form: @{'$or' = @(expression1, expression2, ...)}
+'@, $QueryTypes
+		EQ = @'
+Equality test. Parameter name is optional.
+JSON-like form: @{name = value}
 '@
 		NE = @'
-Inequality test (MongoDB $ne).
+Inequality test.
+JSON-like form: @{name = @{'$ne' = value}}
+'@
+		IEQ = @'
+Ignore case equality test for strings.
+JSON-like form is not available.
+'@
+		INE = @'
+Ignore case inequality test for strings.
+JSON-like form is not available.
+'@
+		GE = @'
+Greater or equal test.
+JSON-like form: @{name = @{'$gte' = value}}
+'@
+		GT = @'
+Greater than test.
+JSON-like form: @{name = @{'$gt' = value}}
+'@
+		LE = @'
+Less or equal test.
+JSON-like form: @{name = @{'$le' = value}}
+'@
+		LT = @'
+Less than test.
+JSON-like form: @{name = @{'$lt' = value}}
 '@
 		Exists = @'
-Checks if the field exists (MongoDB $exists).
+Checks if the field exists.
+JSON-like form: @{name = @{'$exists' = $true|$false}}
 '@
-		Matches = @'
-Checks if an element in an array matches the specified query expression (MongoDB $elemMatch).
-'@,
-		@'
-It is needed only when more than one field must be matched in the array element.
+		Match = @'
+Regular expression test.
+JSON-like form: @{name = @{'$regex' = pattern; '$options' = 'i|m|x|s'}}
+'@, @'
+The argument is one or two items. A single item is either a regular expression
+string pattern or a regular expression object. Two items are both strings: a
+regular expression pattern and options, combination of characters 'i', 'm',
+'x', 's'.
 '@
 		Mod = @'
-Modulo test (MongoDB $mod).
-The argument is an array or two items: the modulus and the result value to be tested.
+Modulo test.
+JSON-like form: @{name = @{'$mod' = @(divisor, remainder)}}
+'@, @'
+The argument is an array of two items: the modulus and the result value to be tested.
 '@
 		Size = @'
-Array element item count test (MongoDB $size).
+Array item count test.
+JSON-like form: @{name = @{'$size' = value}}
 '@
 		Type = @'
-Element type test (MongoDB $type).
-'@
-		All = @'
-Checks if all the field values are in the specified set (MongoDB $all).
+Element type test.
+JSON-like form: @{name = @{'$type' = type}}
 '@
 		In = @'
-Checks if the field has any value is in the specified set (MongoDB $in).
+Checks if the field value is equal to one the specified.
+JSON-like form: @{name = @{'$in' = @(value1, value2, ...)}
 '@
 		NotIn = @'
-Checks if the field does not have any value in the specified set (MongoDB $nin).
+Checks if the field value is missing or not equal to any specified.
+JSON-like form: @{name = @{'$nin' = @(value1, value2, ...)}
+'@
+		All = @'
+Checks if the array contains all the specified values.
+JSON-like form: @{name = @{'$all' = @(value1, value2, ...)}
+'@
+		Matches = @'
+Checks if an element in an array matches all the specified query expressions.
+JSON-like form: @{name = @{'$elemMatch' = @(expression1, expression2, ...)}}
+'@, @'
+It is needed only when more than one field must be matched in an array element.
+'@
+		Where = @'
+JavaScript Boolean expression test.
+JSON-like form: @{'$where' = code}
+'@, @'
+The database evaluates the expression for each object scanned. JavaScript
+executes more slowly than native operators but is very flexible. See the
+server-side processing page for more information (official site).
 '@
 	}
 	inputs = @()
 	outputs = @{
 		type = '[MongoDB.Driver.IMongoQuery]'
-		description = 'Use it for Get-MdbcData, Remove-MdbcData, Update-MdbcData.'
+		description = 'Used by Get-MdbcData, Remove-MdbcData, Update-MdbcData, ...'
 	}
 	links = @(
 		@{ text = 'Get-MdbcData' }
 		@{ text = 'Remove-MdbcData' }
 		@{ text = 'Update-MdbcData' }
-		@{ text = 'Advanced Queries'; URI = 'http://www.mongodb.org/display/DOCS/Advanced+Queries' }
+		@{ text = 'Query operators'; URI = 'http://docs.mongodb.org/manual/reference/operator/nav-query/' }
 	)
 }
 

@@ -39,10 +39,17 @@ $ModuleRoot = Join-Path ([Environment]::GetFolderPath('MyDocuments')) WindowsPow
 # Use MSBuild.
 use Framework\v4.0.30319 MSBuild
 
-# Build all.
+# Build (incremental).
 task Build {
 	exec { MSBuild Src\Mdbc.csproj /t:Build /p:Configuration=$Configuration }
 }
+
+# Rebuild all (force).
+task Rebuild {
+	Invoke-Build Clean
+	Remove-Item $ModuleRoot -Force -Recurse -ErrorAction 0
+},
+Build
 
 # Clean all.
 task Clean RemoveMarkdownHtml, {
@@ -92,7 +99,7 @@ task UpdateScript -Partial `
 # Call tests.
 task Test {
 	Invoke-Build ** Tests -Result result
-	assert ($result.Tasks.Count -eq 37) $result.Tasks.Count
+	assert ($result.Tasks.Count -eq 38) $result.Tasks.Count
 }
 
 # Pull C# driver sources.
@@ -194,4 +201,4 @@ task CheckFiles {
 }
 
 # Build, test and clean all.
-task . Build, Test, TestHelp, Clean, CheckFiles
+task . Rebuild, Test, TestHelp, Clean, CheckFiles

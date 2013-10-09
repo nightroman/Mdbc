@@ -25,75 +25,122 @@ namespace Mdbc.Commands
 	[Cmdlet(VerbsCommon.New, "MdbcQuery")]
 	public sealed class NewQueryCommand : PSCmdlet
 	{
-		const string NAnd = "And";
-		const string NOr = "Or";
-		const string NEQ = "EQ";
-		const string NIEQ = "IEQ";
-		const string NINE = "NINE";
-		const string NMatch = "Match";
-		const string NList = "List";
-		const string NWhere = "Where";
-		[Parameter(Mandatory = true, ParameterSetName = NAnd)]
-		public object[] And { get; set; }
-		[Parameter(Mandatory = true, ParameterSetName = NOr)]
-		public object[] Or { get; set; }
-		[Parameter(Position = 0, ParameterSetName = NEQ)]
-		[Parameter(Position = 0, ParameterSetName = NIEQ)]
-		[Parameter(Position = 0, ParameterSetName = NINE)]
-		[Parameter(Position = 0, ParameterSetName = NMatch)]
-		[Parameter(Position = 0, ParameterSetName = NList)]
+		const string nsAll = "All";
+		const string nsAnd = "And";
+		const string nsEQ = "EQ";
+		const string nsExists = "Exists";
+		const string nsGE = "GE";
+		const string nsGT = "GT";
+		const string nsIEQ = "IEQ";
+		const string nsIn = "In";
+		const string nsINE = "INE";
+		const string nsLE = "LE";
+		const string nsLT = "LT";
+		const string nsMatch = "Match";
+		const string nsMatches = "Matches";
+		const string nsMod = "Mod";
+		const string nsNE = "NE";
+		const string nsNotIn = "NotIn";
+		const string nsOr = "Or";
+		const string nsSize = "Size";
+		const string nsType = "Type";
+		const string nsWhere = "Where";
+
+		// `Not` is for all
+		[Parameter]
+		public SwitchParameter Not { get; set; }
+
+		// `Name` is for all but binary
+		[Parameter(Position = 0, ParameterSetName = nsAll)]
+		[Parameter(Position = 0, ParameterSetName = nsEQ)]
+		[Parameter(Position = 0, ParameterSetName = nsExists)]
+		[Parameter(Position = 0, ParameterSetName = nsGE)]
+		[Parameter(Position = 0, ParameterSetName = nsGT)]
+		[Parameter(Position = 0, ParameterSetName = nsIEQ)]
+		[Parameter(Position = 0, ParameterSetName = nsIn)]
+		[Parameter(Position = 0, ParameterSetName = nsINE)]
+		[Parameter(Position = 0, ParameterSetName = nsLE)]
+		[Parameter(Position = 0, ParameterSetName = nsLT)]
+		[Parameter(Position = 0, ParameterSetName = nsMatch)]
+		[Parameter(Position = 0, ParameterSetName = nsMatches)]
+		[Parameter(Position = 0, ParameterSetName = nsMod)]
+		[Parameter(Position = 0, ParameterSetName = nsNE)]
+		[Parameter(Position = 0, ParameterSetName = nsNotIn)]
+		[Parameter(Position = 0, ParameterSetName = nsSize)]
+		[Parameter(Position = 0, ParameterSetName = nsType)]
 		[ValidateNotNullOrEmpty]
 		public string Name { get; set; }
-		#region [ One ]
-		[Parameter(Position = 1, ParameterSetName = NEQ)]
+
+		#region [ Binary ]
+
+		[Parameter(Mandatory = true, ParameterSetName = nsAnd)]
+		public object[] And { get; set; }
+
+		[Parameter(Mandatory = true, ParameterSetName = nsOr)]
+		public object[] Or { get; set; }
+
+		#endregion
+		#region [ Unary ]
+
+		[Parameter(ParameterSetName = nsAll)]
+		public PSObject All { get; set; }
+
+		[Parameter(Position = 1, ParameterSetName = nsEQ)]
 		public PSObject EQ { get; set; }
-		[Parameter(ParameterSetName = NIEQ)]
+
+		[Parameter(ParameterSetName = nsExists)]
+		public bool Exists { get; set; }
+
+		[Parameter(ParameterSetName = nsGE)]
+		public PSObject GE { get; set; }
+
+		[Parameter(ParameterSetName = nsGT)]
+		public PSObject GT { get; set; }
+
+		[Parameter(ParameterSetName = nsIEQ)]
 		public string IEQ { get; set; }
-		[Parameter(ParameterSetName = NINE)]
+
+		[Parameter(ParameterSetName = nsIn)]
+		public PSObject In { get; set; }
+
+		[Parameter(ParameterSetName = nsINE)]
 		public string INE { get; set; }
-		[Parameter(ParameterSetName = NMatch)]
+
+		[Parameter(ParameterSetName = nsLE)]
+		public PSObject LE { get; set; }
+
+		[Parameter(ParameterSetName = nsLT)]
+		public PSObject LT { get; set; }
+
+		[Parameter(ParameterSetName = nsMatch)]
 		[ValidateCount(1, 2)]
 		public PSObject[] Match { get; set; }
-		[Parameter(ParameterSetName = NWhere)]
-		public string Where { get; set; }
-		#endregion
-		#region [ List ]
-		[Parameter(ParameterSetName = NMatch)]
-		[Parameter(ParameterSetName = NList)]
-		public SwitchParameter Not { get; set; }
-		[Parameter(ParameterSetName = NList)]
-		public PSObject NE { get; set; }
-		[Parameter(ParameterSetName = NList)]
-		public PSObject GE { get; set; }
-		[Parameter(ParameterSetName = NList)]
-		public PSObject GT { get; set; }
-		[Parameter(ParameterSetName = NList)]
-		public PSObject LE { get; set; }
-		[Parameter(ParameterSetName = NList)]
-		public PSObject LT { get; set; }
-		[Parameter(ParameterSetName = NList)]
-		public bool Exists { get { return _exists; } set { _exists = value; _existsSet = true; } }
-		bool _exists;
-		bool _existsSet;
-		[Parameter(ParameterSetName = NList)]
-		public int Size { get { return _size; } set { _size = value; _sizeSet = true; } }
-		int _size;
-		bool _sizeSet;
-		[Parameter(ParameterSetName = NList)]
-		public BsonType Type { get; set; }
-		[Parameter(ParameterSetName = NList)]
+
+		[Parameter(ParameterSetName = nsMatches)]
+		public PSObject Matches { get; set; }
+
+		[Parameter(ParameterSetName = nsMod)]
 		[ValidateCount(2, 2)]
 		public int[] Mod { get; set; }
-		[Parameter(ParameterSetName = NList)]
-		public PSObject Matches { get; set; }
-		[Parameter(ParameterSetName = NList)]
-		public PSObject All { get; set; }
-		[Parameter(ParameterSetName = NList)]
-		public PSObject In { get; set; }
-		[Parameter(ParameterSetName = NList)]
+
+		[Parameter(ParameterSetName = nsNE)]
+		public PSObject NE { get; set; }
+
+		[Parameter(ParameterSetName = nsNotIn)]
 		public PSObject NotIn { get; set; }
+
+		[Parameter(ParameterSetName = nsSize)]
+		public int Size { get; set; }
+
+		[Parameter(ParameterSetName = nsType)]
+		public BsonType Type { get; set; }
+
+		[Parameter(ParameterSetName = nsWhere)]
+		public string Where { get; set; }
+		
 		#endregion
-		void DoMatch()
+
+		IMongoQuery NewMatchQuery()
 		{
 			BsonRegularExpression bsonregex = null;
 			switch (Match.Length)
@@ -125,63 +172,36 @@ namespace Mdbc.Commands
 					break;
 			}
 
-			WriteObject(Not ? Query.Not(Query.Matches(Name, bsonregex)) : Query.Matches(Name, bsonregex));
+			return Query.Matches(Name, bsonregex);
 		}
 		protected override void BeginProcessing()
 		{
+			IMongoQuery query;
+
 			switch (ParameterSetName)
 			{
-				case NAnd:
-					WriteObject(Query.And(And.Select(Actor.ObjectToQuery)));
-					return;
-				case NOr:
-					WriteObject(Query.Or(Or.Select(Actor.ObjectToQuery)));
-					return;
-				case NEQ:
-					WriteObject(Query.EQ(Name, Actor.ToBsonValue(EQ, null)));
-					return;
-				case NIEQ:
-					WriteObject(Query.Matches(Name, new BsonRegularExpression("^" + Regex.Escape(IEQ) + "$", "i")));
-					return;
-				case NINE:
-					WriteObject(Query.Not(Query.Matches(Name, new BsonRegularExpression("^" + Regex.Escape(INE) + "$", "i"))));
-					return;
-				case NMatch:
-					DoMatch();
-					return;
-				case NWhere:
-					WriteObject(Query.Where(Where));
-					return;
+				case nsAnd: query = Query.And(And.Select(Actor.ObjectToQuery)); break;
+				case nsOr: query = Query.Or(Or.Select(Actor.ObjectToQuery)); break;
+				case nsEQ: query = Query.EQ(Name, Actor.ToBsonValue(EQ, null)); break;
+				case nsIEQ: query = Query.Matches(Name, new BsonRegularExpression("^" + Regex.Escape(IEQ) + "$", "i")); break;
+				case nsINE: query = Query.Not(Query.Matches(Name, new BsonRegularExpression("^" + Regex.Escape(INE) + "$", "i"))); break;
+				case nsLE: query = Query.LTE(Name, Actor.ToBsonValue(LE, null)); break;
+				case nsLT: query = Query.LT(Name, Actor.ToBsonValue(LT, null)); break;
+				case nsMatch: query = NewMatchQuery(); break;
+				case nsNE: query = Query.NE(Name, Actor.ToBsonValue(NE, null)); break;
+				case nsWhere: query = Query.Where(Where); break;
+				case nsGE: query = Query.GTE(Name, Actor.ToBsonValue(GE, null)); break;
+				case nsGT: query = Query.GT(Name, Actor.ToBsonValue(GT, null)); break;
+				case nsExists: query = Exists ? Query.Exists(Name) : Query.NotExists(Name); break;
+				case nsMod: query = Query.Mod(Name, Mod[0], Mod[1]); break;
+				case nsSize: query = Query.Size(Name, Size); break;
+				case nsType: query = Query.Type(Name, Type); break;
+				case nsMatches: query = Query.ElemMatch(Name, Actor.ObjectToQuery(Matches)); break;
+				case nsAll: query = Query.All(Name, Actor.ToEnumerableBsonValue(All)); break;
+				case nsIn: query = Query.In(Name, Actor.ToEnumerableBsonValue(In)); break;
+				case nsNotIn: query = Query.NotIn(Name, Actor.ToEnumerableBsonValue(NotIn)); break;
+				default: return;
 			}
-
-			IMongoQuery query = null;
-
-			if (NE != null)
-				query = Query.NE(Name, Actor.ToBsonValue(NE, null));
-			else if (GE != null)
-				query = Query.GTE(Name, Actor.ToBsonValue(GE, null));
-			else if (GT != null)
-				query = Query.GT(Name, Actor.ToBsonValue(GT, null));
-			else if (LE != null)
-				query = Query.LTE(Name, Actor.ToBsonValue(LE, null));
-			else if (LT != null)
-				query = Query.LT(Name, Actor.ToBsonValue(LT, null));
-			else if (_existsSet)
-				query = _exists ? Query.Exists(Name) : Query.NotExists(Name);
-			else if (_sizeSet)
-				query = Query.Size(Name, _size);
-			else if (Type != 0)
-				query = Query.Type(Name, Type);
-			else if (Mod != null)
-				query = Query.Mod(Name, Mod[0], Mod[1]);
-			else if (Matches != null)
-				query = Query.ElemMatch(Name, Actor.ObjectToQuery(Matches));
-			else if (All != null)
-				query = Query.All(Name, Actor.ToEnumerableBsonValue(All));
-			else if (In != null)
-				query = Query.In(Name, Actor.ToEnumerableBsonValue(In));
-			else if (NotIn != null)
-				query = Query.NotIn(Name, Actor.ToEnumerableBsonValue(NotIn));
 
 			WriteObject(Not ? Query.Not(query) : query);
 		}

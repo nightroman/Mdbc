@@ -25,7 +25,7 @@ task DataTypes {
 
 		### Other complex type objects are obtained as Bson* types.
 
-		Test-Type $document._id MongoDB.Bson.BsonObjectId
+		Test-Type $document._id MongoDB.Bson.ObjectId
 
 		### Nested complex data
 		# Documents still provide dot-notation.
@@ -108,6 +108,8 @@ task New-MdbcData.HashtableToDocument {
 }
 
 task New-MdbcData.-Value {
+	Test-Type (New-MdbcData -Value $null) MongoDB.Bson.BsonNull #fixed
+
 	Test-Type (New-MdbcData -Value $true) MongoDB.Bson.BsonBoolean
 	Test-Type (New-MdbcData -Value (Get-Date)) MongoDB.Bson.BsonDateTime
 	Test-Type (New-MdbcData -Value 1.1) MongoDB.Bson.BsonDouble

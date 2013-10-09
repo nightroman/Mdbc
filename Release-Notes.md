@@ -1,6 +1,14 @@
 Mdbc Release Notes
 ==================
 
+## v3.2.0
+
+The parameter `Not` of `New-MdbcQuery` works with any other query types.
+
+`Mdbc.Document` and `Mdbc.Collection` unwrap `BsonObjectId` to `ObjectId`.
+
+Fixed bugs with input nulls in `New-MdbcData -Value` and `New-MdbcQuery`.
+
 ## v3.1.0
 
 New cmdlets `Export-MdbcData` and `Import-MdbcData` for storing and restoring

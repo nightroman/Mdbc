@@ -25,7 +25,7 @@ namespace Mdbc.Commands
 	{
 		const string NDocument = "Document";
 		const string NValue = "Value";
-		[Parameter(Mandatory = true, ParameterSetName = NValue)]
+		[Parameter(ParameterSetName = NValue)]
 		public PSObject Value { get; set; }
 		[Parameter(Position = 0, ValueFromPipeline = true, ParameterSetName = NDocument)]
 		public PSObject InputObject { get; set; }

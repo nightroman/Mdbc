@@ -7,7 +7,7 @@ function test($value, $expected) {
 	"$value => $expected"
 	$actual = (. $value).ToString()
 	if ($actual -cne $expected) {
-		Write-Error -ErrorAction Stop "Expected: $expected, actual: $actual"
+		Write-Error -ErrorAction 1 "`nExpected : $expected`nActual   : $actual"
 	}
 }
 
@@ -31,6 +31,7 @@ task New-MdbcQuery.Expression {
 	### EQ
 	test { New-MdbcQuery Name 42 } '{ "Name" : 42 }'
 	test { New-MdbcQuery Name -EQ 42 } '{ "Name" : 42 }'
+	test { New-MdbcQuery -Not Name -EQ 42 } '{ "Name" : { "$ne" : 42 } }'
 
 	# EQ is used on its own
 	try { New-MdbcQuery Name -EQ 42 -GT 15 }
@@ -39,63 +40,78 @@ task New-MdbcQuery.Expression {
 
 	### LE
 	test { New-MdbcQuery Name -LE 42 } '{ "Name" : { "$lte" : 42 } }'
+	test { New-MdbcQuery -Not Name -LE 42 } '{ "Name" : { "$not" : { "$lte" : 42 } } }'
 
 	### LT
 	test { New-MdbcQuery Name -LT 42 } '{ "Name" : { "$lt" : 42 } }'
+	test { New-MdbcQuery -Not Name -LT 42 } '{ "Name" : { "$not" : { "$lt" : 42 } } }'
 
 	### GE
 	test { New-MdbcQuery Name -GE 42 } '{ "Name" : { "$gte" : 42 } }'
+	test { New-MdbcQuery -Not Name -GE 42 } '{ "Name" : { "$not" : { "$gte" : 42 } } }'
 
 	### GT
 	test { New-MdbcQuery Name -GT 42 } '{ "Name" : { "$gt" : 42 } }'
+	test { New-MdbcQuery -Not Name -GT 42 } '{ "Name" : { "$not" : { "$gt" : 42 } } }'
 
 	### NE
 	test { New-MdbcQuery Name -NE 42 } '{ "Name" : { "$ne" : 42 } }'
+	test { New-MdbcQuery -Not Name -NE 42 } '{ "Name" : 42 }'
 
 	### [ Ignore Case ]
 
 	### IEQ
 	test { New-MdbcQuery Name -IEQ te*xt } '{ "Name" : /^te\*xt$/i }'
+	test { New-MdbcQuery -Not Name -IEQ te*xt } '{ "Name" : { "$not" : /^te\*xt$/i } }'
 
-	### NEQ
+	### INE
 	test { New-MdbcQuery Name -INE te*xt } '{ "Name" : { "$not" : /^te\*xt$/i } }'
+	test { New-MdbcQuery -Not Name -INE te*xt } '{ "Name" : /^te\*xt$/i }'
 
 	### [ Misc ]
 
-	### Not
-	test { New-MdbcQuery -Not Name -mod 2, 1 } '{ "Name" : { "$not" : { "$mod" : [2, 1] } } }'
-
 	### Exists
+
 	test { New-MdbcQuery Name -Exists $true } '{ "Name" : { "$exists" : true } }'
+	test { New-MdbcQuery -Not Name -Exists $true } '{ "Name" : { "$exists" : false } }'
+
 	test { New-MdbcQuery Name -Exists $false } '{ "Name" : { "$exists" : false } }'
+	test { New-MdbcQuery -Not Name -Exists $false } '{ "Name" : { "$exists" : true } }'
 
 	### Mod
 	test { New-MdbcQuery Name -Mod 2, 1 } '{ "Name" : { "$mod" : [2, 1] } }'
+	test { New-MdbcQuery -Not Name -Mod 2, 1 } '{ "Name" : { "$not" : { "$mod" : [2, 1] } } }'
 
 	### Size
 	test { New-MdbcQuery Name -Size 42 } '{ "Name" : { "$size" : 42 } }'
+	test { New-MdbcQuery -Not Name -Size 42 } '{ "Name" : { "$not" : { "$size" : 42 } } }'
 
 	### Type
+
 	test { New-MdbcQuery Name -Type 1 } '{ "Name" : { "$type" : 1 } }'
 	test { New-MdbcQuery Name -Type Double } '{ "Name" : { "$type" : 1 } }'
+	test { New-MdbcQuery -Not Name -Type Double } '{ "Name" : { "$not" : { "$type" : 1 } } }'
 
 	### Where
 	test { New-MdbcQuery -Where 'this.Length == null' } '{ "$where" : { "$code" : "this.Length == null" } }'
+	test { New-MdbcQuery -Not -Where 'this.Length == null' } '{ "$where" : { "$ne" : { "$code" : "this.Length == null" } } }' #todo why $ne?
 
 	### Match
 
 	test { New-MdbcQuery Name -Match '^text$' } '{ "Name" : /^text$/ }'
-	test { New-MdbcQuery Name -Match '^text$' -Not } '{ "Name" : { "$not" : /^text$/ } }'
+	test { New-MdbcQuery -Not Name -Match '^text$'} '{ "Name" : { "$not" : /^text$/ } }'
 
 	test { New-MdbcQuery Name -Match '^text$', 'imxs' } '{ "Name" : /^text$/imxs }'
-	test { New-MdbcQuery Name -Match '^text$', 'imxs' -Not } '{ "Name" : { "$not" : /^text$/imxs } }'
+	test { New-MdbcQuery -Not Name -Match '^text$', 'imxs'} '{ "Name" : { "$not" : /^text$/imxs } }'
 
 	$regex = New-Object regex '^text$', "IgnoreCase, Multiline, IgnorePatternWhitespace, Singleline"
 	test { New-MdbcQuery Name -Match $regex } '{ "Name" : /^text$/imxs }'
-	test { New-MdbcQuery Name -Match $regex -Not } '{ "Name" : { "$not" : /^text$/imxs } }'
+	test { New-MdbcQuery -Not Name -Match $regex } '{ "Name" : { "$not" : /^text$/imxs } }'
 
 	### Matches
-	test { New-MdbcQuery Name -Matches (New-MdbcQuery -And (New-MdbcQuery a 1), (New-MdbcQuery b 2)) } '{ "Name" : { "$elemMatch" : { "a" : 1, "b" : 2 } } }'
+	$query = New-MdbcQuery -And (New-MdbcQuery a 1), (New-MdbcQuery b 2)
+	test { New-MdbcQuery Name -Matches $query } '{ "Name" : { "$elemMatch" : { "a" : 1, "b" : 2 } } }'
+	test { New-MdbcQuery -Not Name -Matches $query } '{ "Name" : { "$not" : { "$elemMatch" : { "a" : 1, "b" : 2 } } } }'
 
 	### [ Sets ]
 
@@ -116,6 +132,7 @@ task New-MdbcQuery.Expression {
 	test { New-MdbcQuery Name -All 1, more } '{ "Name" : { "$all" : [1, "more"] } }'
 	test { New-MdbcQuery Name -All 1L, more } '{ "Name" : { "$all" : [NumberLong(1), "more"] } }'
 	test { New-MdbcQuery Name -All text, more } '{ "Name" : { "$all" : ["text", "more"] } }'
+	test { New-MdbcQuery -Not Name -All text, more } '{ "Name" : { "$not" : { "$all" : ["text", "more"] } } }'
 
 	### In
 	test { New-MdbcQuery Name -In $bsonArray } '{ "Name" : { "$in" : [1, 2, 3] } }'
@@ -134,6 +151,7 @@ task New-MdbcQuery.Expression {
 	test { New-MdbcQuery Name -In 1, more } '{ "Name" : { "$in" : [1, "more"] } }'
 	test { New-MdbcQuery Name -In 1L, more } '{ "Name" : { "$in" : [NumberLong(1), "more"] } }'
 	test { New-MdbcQuery Name -In text, more } '{ "Name" : { "$in" : ["text", "more"] } }'
+	test { New-MdbcQuery -Not Name -In text, more } '{ "Name" : { "$nin" : ["text", "more"] } }'
 
 	### NotIn
 	test { New-MdbcQuery Name -NotIn $bsonArray } '{ "Name" : { "$nin" : [1, 2, 3] } }'
@@ -152,14 +170,17 @@ task New-MdbcQuery.Expression {
 	test { New-MdbcQuery Name -NotIn 1, more } '{ "Name" : { "$nin" : [1, "more"] } }'
 	test { New-MdbcQuery Name -NotIn 1L, more } '{ "Name" : { "$nin" : [NumberLong(1), "more"] } }'
 	test { New-MdbcQuery Name -NotIn text, more } '{ "Name" : { "$nin" : ["text", "more"] } }'
+	test { New-MdbcQuery -Not Name -NotIn text, more } '{ "Name" : { "$not" : { "$nin" : ["text", "more"] } } }'
 
-	### [ Query Operators ]
+	### [ Binary Operators ]
 
 	### And
 	test { New-MdbcQuery -And (New-MdbcQuery x 1), (New-MdbcQuery y 2) } '{ "x" : 1, "y" : 2 }'
+	test { New-MdbcQuery -Not -And (New-MdbcQuery x 1), (New-MdbcQuery y 2) } '{ "$nor" : [{ "x" : 1, "y" : 2 }] }'
 
 	### Or
 	test { New-MdbcQuery -Or (New-MdbcQuery x 1), (New-MdbcQuery y 2) } '{ "$or" : [{ "x" : 1 }, { "y" : 2 }] }'
+	test { New-MdbcQuery -Not -Or (New-MdbcQuery x 1), (New-MdbcQuery y 2) } '{ "$nor" : [{ "x" : 1 }, { "y" : 2 }] }'
 }
 
 task New-MdbcUpdate.Expression {

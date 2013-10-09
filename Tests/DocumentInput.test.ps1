@@ -61,7 +61,7 @@ task DocumentInput.-Id {
 		# Generate _id
 		$d = . $Data3
 		assert ($d.Count -eq 3)
-		assert ($d._id -is [MongoDB.Bson.BsonObjectId])
+		assert ($d._id -is [MongoDB.Bson.ObjectId])
 	}{
 		$Data1 = {New-MdbcData $ps -Id 'value'}
 		$Data2 = {New-MdbcData $ps -Id {$_.Id}}
