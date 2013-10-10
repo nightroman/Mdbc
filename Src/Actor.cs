@@ -17,11 +17,13 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Management.Automation;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.Builders;
+
 namespace Mdbc
 {
 	static class Actor
@@ -50,12 +52,11 @@ namespace Mdbc
 				default: return value;
 			}
 		}
-		// Checks all types, designed for nested calls without selectors
-		public static BsonValue ToBsonValue(object value, Func<object, object> convert)
+		public static BsonValue ToBsonValue(object value)
 		{
-			return ToBsonValue(value, convert, null);
+			return ToBsonValue(value, null, null);
 		}
-		static BsonValue ToBsonValue(object value, Func<object, object> convert, HashSet<object> cycle)
+		static BsonValue ToBsonValue(object value, DocumentInput input, ArrayList cycle)
 		{
 			if (value == null)
 				return BsonNull.Value;
@@ -67,7 +68,7 @@ namespace Mdbc
 
 				// case: custom
 				if (value is PSCustomObject) //! PSObject keeps properties
-					return ToBsonDocumentFromProperties(ps, null, convert, cycle);
+					return ToBsonDocumentFromProperties(ps, input, null, cycle);
 			}
 
 			// case: BsonValue
@@ -83,18 +84,24 @@ namespace Mdbc
 			// case: dictionary
 			var dictionary = value as IDictionary;
 			if (dictionary != null)
-				return ToBsonDocumentFromDictionary(dictionary, null, convert, cycle);
+				return ToBsonDocumentFromDictionary(dictionary, input, null, cycle);
 
 			// case: collection
 			var enumerable = value as IEnumerable;
 			if (enumerable != null)
 			{
-				CheckCycle(enumerable, ref cycle);
-				
-				var array = new BsonArray();
-				foreach (var it in enumerable)
-					array.Add(ToBsonValue(it, convert, cycle));
-				return array;
+				PushCycle(enumerable, ref cycle);
+				try
+				{
+					var array = new BsonArray();
+					foreach (var it in enumerable)
+						array.Add(ToBsonValue(it, input, cycle));
+					return array;
+				}
+				finally
+				{
+					PopCycle(cycle);
+				}
 			}
 
 			// try to create BsonValue
@@ -104,17 +111,17 @@ namespace Mdbc
 			}
 			catch (ArgumentException ae)
 			{
-				if (convert == null)
+				if (input == null)
 					throw;
 
 				try
 				{
-					value = convert(value);
+					value = input.ConvertValue(value);
 				}
 				catch (RuntimeException re)
 				{
 					throw new ArgumentException( //! use this type
-						string.Format(@"Converter script was called on ""{0}"" and failed with ""{1}"".", ae.Message, re.Message), re);
+						string.Format(CultureInfo.InvariantCulture, @"Converter script was called on ""{0}"" and failed with ""{1}"".", ae.Message, re.Message), re);
 				}
 
 				if (value == null)
@@ -124,115 +131,136 @@ namespace Mdbc
 				return ToBsonValue(value, null, cycle);
 			}
 		}
-		static BsonDocument ToBsonDocumentFromDictionary(IDictionary dictionary, IEnumerable<Selector> properties, Func<object, object> convert, HashSet<object> cycle)
+		static BsonDocument ToBsonDocumentFromDictionary(IDictionary dictionary, DocumentInput input, IEnumerable<Selector> properties, ArrayList cycle)
 		{
-			CheckCycle(dictionary, ref cycle);
-			
-			// Mdbc.Dictionary
-			var md = dictionary as Mdbc.Dictionary;
-			if (md != null)
-				return md.Document();
-
-			var document = new BsonDocument();
-			if (properties == null)
+			PushCycle(dictionary, ref cycle);
+			try
 			{
-				foreach (DictionaryEntry de in dictionary)
+				//_131013_155413 Mdbc.Dictionary
+				if (properties == null)
 				{
-					var name = de.Key as string;
-					if (name == null)
-						throw new InvalidOperationException("Dictionary keys must be strings.");
-
-					document.Add(name, ToBsonValue(de.Value, convert, cycle));
+					var md = dictionary as Dictionary;
+					if (md != null)
+						return md.Document();
 				}
-			}
-			else
-			{
-				foreach (var selector in properties)
+
+				var document = new BsonDocument();
+				if (properties == null)
 				{
-					if (selector.PropertyName != null)
+					foreach (DictionaryEntry de in dictionary)
 					{
-						if (dictionary.Contains(selector.PropertyName))
-							document.Add(selector.DocumentName, ToBsonValue(dictionary[selector.PropertyName], convert, cycle));
-					}
-					else
-					{
-						document.Add(selector.DocumentName, ToBsonValue(selector.GetValue(dictionary), convert, cycle));
+						var name = de.Key as string;
+						if (name == null)
+							throw new InvalidOperationException("Dictionary keys must be strings.");
+
+						document.Add(name, ToBsonValue(de.Value, input, cycle));
 					}
 				}
-			}
-
-			return document;
-		}
-		// Input supposed to be not null
-		static BsonDocument ToBsonDocumentFromProperties(PSObject value, IEnumerable<Selector> properties, Func<object, object> convert, HashSet<object> cycle)
-		{
-			CheckCycle(value, ref cycle);
-			
-			var document = new BsonDocument();
-			if (properties == null)
-			{
-				foreach (var pi in value.Properties)
+				else
 				{
-					try
+					foreach (var selector in properties)
 					{
-						document.Add(pi.Name, ToBsonValue(pi.Value, convert, cycle));
-					}
-					catch (GetValueException) // .Value may throw, e.g. ExitCode in Process
-					{
-						document.Add(pi.Name, BsonNull.Value);
-					}
-				}
-			}
-			else
-			{
-				foreach (var selector in properties)
-				{
-					if (selector.PropertyName != null)
-					{
-						var pi = value.Properties[selector.PropertyName];
-						if (pi != null)
+						if (selector.PropertyName != null)
 						{
-							try
-							{
-								document.Add(selector.DocumentName, ToBsonValue(pi.Value, convert, cycle));
-							}
-							catch (GetValueException) // .Value may throw, e.g. ExitCode in Process
-							{
-								document.Add(selector.DocumentName, BsonNull.Value);
-							}
+							if (dictionary.Contains(selector.PropertyName))
+								document.Add(selector.DocumentName, ToBsonValue(dictionary[selector.PropertyName], input, cycle));
+						}
+						else
+						{
+							document.Add(selector.DocumentName, ToBsonValue(selector.GetValue(dictionary), input, cycle));
 						}
 					}
-					else
+				}
+
+				return document;
+			}
+			finally
+			{
+				PopCycle(cycle);
+			}
+		}
+		// Input supposed to be not null
+		static BsonDocument ToBsonDocumentFromProperties(PSObject value, DocumentInput input, IEnumerable<Selector> properties, ArrayList cycle)
+		{
+			PushCycle((value.BaseObject is PSCustomObject ? value : value.BaseObject), ref cycle);
+			try
+			{
+				var document = new BsonDocument();
+				if (properties == null)
+				{
+					foreach (var pi in value.Properties)
 					{
-						document.Add(selector.DocumentName, ToBsonValue(selector.GetValue(value), convert, cycle));
+						try
+						{
+							document.Add(pi.Name, ToBsonValue(pi.Value, input, cycle));
+						}
+						catch (GetValueException) // .Value may throw, e.g. ExitCode in Process
+						{
+							document.Add(pi.Name, BsonNull.Value);
+						}
 					}
 				}
+				else
+				{
+					foreach (var selector in properties)
+					{
+						if (selector.PropertyName != null)
+						{
+							var pi = value.Properties[selector.PropertyName];
+							if (pi != null)
+							{
+								try
+								{
+									document.Add(selector.DocumentName, ToBsonValue(pi.Value, input, cycle));
+								}
+								catch (GetValueException) // .Value may throw, e.g. ExitCode in Process
+								{
+									document.Add(selector.DocumentName, BsonNull.Value);
+								}
+							}
+						}
+						else
+						{
+							document.Add(selector.DocumentName, ToBsonValue(selector.GetValue(value), input, cycle));
+						}
+					}
+				}
+				return document;
 			}
-			return document;
+			finally
+			{
+				PopCycle(cycle);
+			}
 		}
-		public static BsonDocument ToBsonDocument(object value, IEnumerable<Selector> properties, Func<object, object> convert)
+		public static BsonDocument ToBsonDocument(object value, DocumentInput input, IEnumerable<Selector> properties)
 		{
-			return ToBsonDocument(value, properties, convert, null);
+			return ToBsonDocument(value, input, properties, null);
 		}
-		static BsonDocument ToBsonDocument(object value, IEnumerable<Selector> properties, Func<object, object> convert, HashSet<object> cycle)
+		static BsonDocument ToBsonDocument(object value, DocumentInput input, IEnumerable<Selector> properties, ArrayList cycle)
 		{
 			var ps = value as PSObject;
 			if (ps != null)
 				value = ps.BaseObject;
 
-			var dictionary = value as IDictionary;
-			if (dictionary != null)
-				return ToBsonDocumentFromDictionary(dictionary, properties, convert, cycle);
-
+			//_131013_155413 BsonDocument
 			var document = value as BsonDocument;
 			if (document != null)
-				return document;
+			{
+				if (properties == null)
+					return document;
 
-			return ToBsonDocumentFromProperties(ps ?? PSObject.AsPSObject(value), properties, convert, cycle);
+				value = new Dictionary(document);
+			}
+
+			var dictionary = value as IDictionary;
+			if (dictionary != null)
+				return ToBsonDocumentFromDictionary(dictionary, input, properties, cycle);
+
+			return ToBsonDocumentFromProperties(ps ?? PSObject.AsPSObject(value), input, properties, cycle);
 		}
 		public static IEnumerable<BsonValue> ToEnumerableBsonValue(object value)
 		{
-			var bv = ToBsonValue(value, null);
+			var bv = ToBsonValue(value);
 			var ba = bv as BsonArray;
 			if (ba == null)
 				return new[] { bv };
@@ -327,7 +355,7 @@ namespace Mdbc
 				return update;
 
 			var dictionary = value as IDictionary;
-			if (dictionary != null)
+			if (dictionary != null) //1310111530
 				return new UpdateDocument(dictionary);
 
 			var enumerable = LanguagePrimitives.GetEnumerable(value);
@@ -336,23 +364,26 @@ namespace Mdbc
 
 			throw new PSInvalidCastException("Invalid update type. Valid types: update, dictionary.");
 		}
-		static void CheckCycle(object value, ref HashSet<object> cycle)
+		static void PushCycle(object value, ref ArrayList cycle)
 		{
 			if (cycle == null)
-				cycle = new HashSet<object>(new ReferenceEqualityComparer<object>());
-			if (!cycle.Add(value))
-				throw new InvalidOperationException("Cyclic reference.");
+			{
+				cycle = new ArrayList();
+			}
+			else
+			{
+				foreach (var it in cycle)
+				{
+					if (object.ReferenceEquals(it, value))
+						throw new InvalidOperationException("Cyclic reference.");
+				}
+				cycle.Add(value);
+			}
 		}
-	}
-	class ReferenceEqualityComparer<T> : IEqualityComparer<T>
-	{
-		public bool Equals(T x, T y)
+		static void PopCycle(ArrayList cycle)
 		{
-			return object.ReferenceEquals(x, y);
-		}
-		public int GetHashCode(T obj)
-		{
-			return obj == null ? 0 : obj.GetHashCode();
+			if (cycle.Count > 0)
+				cycle.RemoveAt(cycle.Count - 1);
 		}
 	}
 }

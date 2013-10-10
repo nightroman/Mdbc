@@ -13,9 +13,11 @@
 
 	Aliases:
 		amd - Add-MdbcData
+		emd - Export-MdbcData
 		gmd - Get-MdbcData
 		gmh - Get-MdbcHelp
 		imc - Invoke-MdbcCommand
+		imd - Import-MdbcData
 		nmd - New-MdbcData
 		nmq - New-MdbcQuery
 		nmu - New-MdbcUpdate

@@ -16,6 +16,7 @@
 
 using System.Management.Automation;
 using MongoDB.Driver;
+
 namespace Mdbc.Commands
 {
 	[Cmdlet(VerbsCommon.Remove, "MdbcData")]
@@ -24,8 +25,10 @@ namespace Mdbc.Commands
 		[Parameter(Position = 0, Mandatory = true, ValueFromPipeline = true)]
 		public object Query { get { return null; } set { _Query = Actor.ObjectToQuery(value); } }
 		IMongoQuery _Query;
+		
 		[Parameter]
 		public RemoveFlags Modes { get; set; }
+		
 		protected override void ProcessRecord()
 		{
 			try

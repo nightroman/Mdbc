@@ -16,32 +16,48 @@
 
 using System.Management.Automation;
 using MongoDB.Driver;
+
 namespace Mdbc.Commands
 {
 	[Cmdlet(VerbsCommunications.Connect, "Mdbc")]
 	public sealed class ConnectCommand : PSCmdlet
 	{
-		[Parameter(Position = 0, Mandatory = true)]
+		[Parameter(Position = 0)]
 		public string ConnectionString { get; set; }
+		
 		[Parameter(Position = 1)]
 		public string DatabaseName { get; set; }
+		
 		[Parameter(Position = 2)]
 		public string CollectionName { get; set; }
+		
 		[Parameter]
 		[ValidateNotNull]
 		public string ServerVariable { get; set; }
+		
 		[Parameter]
 		[ValidateNotNull]
 		public string DatabaseVariable { get; set; }
+		
 		[Parameter]
 		[ValidateNotNull]
 		public string CollectionVariable { get; set; }
+		
 		[Parameter]
 		public SwitchParameter NewCollection { get; set; }
+		
 		protected override void BeginProcessing()
 		{
 			// driver 1.8.1 needs this even before connection
 			PSObjectSerializer.Register();
+
+			if (ConnectionString == null)
+			{
+				if (DatabaseName != null || CollectionName != null) throw new PSArgumentException("ConnectionString parameter is null or missing.");
+				ConnectionString = ".";
+				DatabaseName = "test";
+				CollectionName = "test";
+			}
 
 			var client = ConnectionString == "." ? new MongoClient() : new MongoClient(ConnectionString);
 			var server =  client.GetServer();

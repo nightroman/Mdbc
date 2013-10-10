@@ -96,12 +96,6 @@ task UpdateScript -Partial `
 -Outputs {process{ "Scripts\$(Split-Path -Leaf $_)" }} `
 {process{ Copy-Item $_ $2 }}
 
-# Call tests.
-task Test {
-	Invoke-Build ** Tests -Result result
-	assert ($result.Tasks.Count -eq 38) $result.Tasks.Count
-}
-
 # Pull C# driver sources.
 task PullDriver {
 	assert $env:MongoDBCSharpDriverRepo
@@ -198,6 +192,12 @@ task CheckFiles {
 	foreach ($file in git status -s) { if ($file -notmatch $Pattern) {
 		Write-Warning "Illegal file: '$file'."
 	}}
+}
+
+# Call tests.
+task Test {
+	Invoke-Build ** Tests -Result result
+	assert ($result.Tasks.Count -eq 48) $result.Tasks.Count
 }
 
 # Build, test and clean all.

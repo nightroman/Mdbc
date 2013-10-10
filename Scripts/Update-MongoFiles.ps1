@@ -4,22 +4,18 @@
 	Updates the file system snapshot database.
 
 .Description
-	Server: local
-	Database: test
-	Collection: files
+	Server: local, Database: test, Collection: files
 
 	Required modules:
 	* Mdbc: <https://github.com/nightroman/Mdbc>
-	* SplitPipeline: <https://github.com/nightroman/SplitPipeline> [1]
-	[1] SplitPipeline is needed only with the switch -Split
+	* SplitPipeline: <https://github.com/nightroman/SplitPipeline> is needed
+	if the switch -Split is used
 
 	The script scans the specified directory tree, updates file and directory
-	documents, and then removes orphan documents that have not been updated.
+	documents, and then removes orphan documents which have not been updated.
+	This is rather a toy for making a data collection for experiments.
 
-	This is rather a toy for making a data collection for experiments. But
-	these data are still useful for some tasks. Example: Get-MongoFile.ps1.
-
-	Fields are similar to [FileInfo] and [DirectoryInfo] properties:
+	Fields reflect some [FileInfo] and [DirectoryInfo] properties:
 	* _id : String : FullName property
 	* Name : String
 	* Extension : String
@@ -32,7 +28,6 @@
 .Parameter Path
 		The directory path which contents has to be updated in the test.test
 		collection. Note that for paths like C:\ it may take several minutes.
-		PowerShell Get-ChildItem is relatively slow.
 
 .Parameter Split
 		Tells to perform parallel data processing using Split-Pipeline from the
@@ -76,7 +71,6 @@ function Get-Input {
 }
 
 ### New documents from input items.
-#! Imported by Split-Pipeline as a function with the process block.
 function New-Document {process{
 	$document = New-MdbcData -Id $_.FullName
 	$document.Name = $_.Name
@@ -111,12 +105,12 @@ else {
 
 ### Remove "unknown" data
 Write-Host "Removing unknown data..."
-$result = Remove-MdbcData (New-MdbcQuery Updated -Exists $false) -Result
+$result = Remove-MdbcData (New-MdbcQuery Updated -NotExists) -Result
 Write-Host $result.Response
 
 ### Remove data of missing files
 $pattern = '^' + [regex]::Escape($Path)
-$query = New-MdbcQuery -And (New-MdbcQuery Updated -LT $Updated), (New-MdbcQuery _id -Match $pattern)
+$query = New-MdbcQuery -And (New-MdbcQuery Updated -LT $Updated), (New-MdbcQuery _id -Matches $pattern)
 Write-Host "Removing data of missing files in $Path ..."
 $result = Remove-MdbcData $query -Result
 Write-Host $result.Response

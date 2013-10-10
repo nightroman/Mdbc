@@ -18,18 +18,45 @@ using System;
 using System.Collections.Generic;
 using System.Management.Automation;
 using MongoDB.Bson;
-namespace Mdbc.Commands
+
+namespace Mdbc
 {
 	interface IDocumentInput
 	{
 		PSObject InputObject { get; }
 		PSObject Id { get; }
 		SwitchParameter NewId { get; }
-		ScriptBlock Convert { get; }
-		IList<Selector> Selectors { get; }
 	}
-	static class DocumentInput
+	class DocumentInput
 	{
+		SessionState Session;
+		ScriptBlock Convert;
+
+		public DocumentInput()
+		{ }
+		public DocumentInput(SessionState session, ScriptBlock convert)
+		{
+			Session = session;
+			Convert = convert;
+		}
+		// Called on exceptions. If it returns null an exception is rethrown. So for a valid null return it as BsonNull.
+		public object ConvertValue(object value)
+		{
+			if (Convert == null)
+				return null;
+
+			using (new SetDollar(Session, value))
+			{
+				var result = Convert.Invoke();
+				if (result.Count == 1)
+				{
+					var ps = result[0];
+					return ps == null ? BsonNull.Value : ps.BaseObject;
+				}
+
+				return result.Count == 0 ? BsonNull.Value : null;
+			}
+		}
 		public static void MakeId(BsonDocument document, IDocumentInput input, SessionState session)
 		{
 			//! NewId first
@@ -46,32 +73,16 @@ namespace Mdbc.Commands
 				}
 				else
 				{
-					session.PSVariable.Set("_", input.InputObject);
-					var arr = sb.Invoke();
-					if (arr.Count != 1)
-						throw new ArgumentException("-Id script must return a single object."); //! use this type
+					using (new SetDollar(session, input.InputObject))
+					{
+						var arr = sb.Invoke();
+						if (arr.Count != 1)
+							throw new ArgumentException("-Id script must return a single object."); //! use this type
 
-					document["_id"] = BsonValue.Create(arr[0].BaseObject);
+						document["_id"] = BsonValue.Create(arr[0].BaseObject);
+					}
 				}
 			}
-		}
-		/// <summary>
-		/// It is called on exceptions. If it returns null an exception is rethrown.
-		/// </summary>
-		public static object ConvertValue(object value, IDocumentInput input, SessionState session)
-		{
-			if (input.Convert == null)
-				return null;
-
-			session.PSVariable.Set("_", value);
-			var result = input.Convert.Invoke();
-			if (result.Count == 1)
-			{
-				var ps = result[0];
-				return ps == null ? BsonNull.Value : ps.BaseObject;
-			}
-
-			return result.Count == 0 ? BsonNull.Value : null;
 		}
 		public static ErrorRecord NewErrorRecordBsonValue(Exception value, object targetObject)
 		{

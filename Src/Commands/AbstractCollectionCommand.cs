@@ -14,8 +14,10 @@
 * limitations under the License.
 */
 
+using System;
 using System.Management.Automation;
 using MongoDB.Driver;
+
 namespace Mdbc.Commands
 {
 	public abstract class AbstractCollectionCommand : PSCmdlet
@@ -39,5 +41,10 @@ namespace Mdbc.Commands
 			}
 		}
 		MongoCollection _Collection;
+
+		protected void WriteException(Exception value, object target)
+		{
+			WriteError(new ErrorRecord(value, "Driver", ErrorCategory.WriteError, target));
+		}
 	}
 }

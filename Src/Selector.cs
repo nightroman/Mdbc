@@ -18,26 +18,28 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Management.Automation;
+
 namespace Mdbc
 {
-	public class Selector
+	class Selector
 	{
 		public string DocumentName { get; private set; }
 		public string PropertyName { get; private set; }
 		ScriptBlock _ScriptBlock;
 		PSCmdlet _Cmdlet;
-		public static IList<Selector> Create(IEnumerable values, PSCmdlet cmdlet)
+		internal static IList<Selector> Create(IEnumerable values, PSCmdlet cmdlet)
 		{
 			var list = new List<Selector>();
 			foreach (var value in values)
-				list.Add(new Selector(value, cmdlet));
+				if (value != null)
+					list.Add(new Selector(value, cmdlet));
 
 			return list;
 		}
-		public object GetValue(object value)
+		internal object GetValue(object value)
 		{
-			_Cmdlet. SessionState.PSVariable.Set("_", value);
-			return _ScriptBlock.InvokeReturnAsIs();
+			using (new SetDollar(_Cmdlet.SessionState, value))
+				return _ScriptBlock.InvokeReturnAsIs();
 		}
 		void SetExpression(object value)
 		{
@@ -51,9 +53,8 @@ namespace Mdbc
 		}
 		Selector(object selector, PSCmdlet cmdlet)
 		{
-			if (selector == null) throw new ArgumentNullException();
 			_Cmdlet = cmdlet;
-			
+
 			var name = selector as string;
 			if (name != null)
 			{

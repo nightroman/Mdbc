@@ -16,6 +16,7 @@
 
 using System.Management.Automation;
 using MongoDB.Driver;
+
 namespace Mdbc.Commands
 {
 	public abstract class AbstractDatabaseCommand : PSCmdlet

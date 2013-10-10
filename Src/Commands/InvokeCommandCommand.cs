@@ -17,6 +17,7 @@
 using System.Collections;
 using System.Management.Automation;
 using MongoDB.Driver;
+
 namespace Mdbc.Commands
 {
 	[Cmdlet(VerbsLifecycle.Invoke, "MdbcCommand")]
@@ -24,8 +25,10 @@ namespace Mdbc.Commands
 	{
 		[Parameter(Position = 0, Mandatory = true)]
 		public PSObject Command { get; set; }
+		
 		[Parameter(Position = 1)]
 		public object Value { get; set; }
+		
 		protected override void BeginProcessing()
 		{
 			CommandDocument document;
@@ -35,7 +38,7 @@ namespace Mdbc.Commands
 				if (Value == null)
 					document = new CommandDocument(commandName, 1);
 				else
-					document = new CommandDocument(commandName, Actor.ToBsonValue(Value, null));
+					document = new CommandDocument(commandName, Actor.ToBsonValue(Value));
 			}
 			else
 			{

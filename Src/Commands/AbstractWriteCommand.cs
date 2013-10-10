@@ -14,25 +14,23 @@
 * limitations under the License.
 */
 
-using System;
 using System.Management.Automation;
 using MongoDB.Driver;
+
 namespace Mdbc.Commands
 {
 	public abstract class AbstractWriteCommand : AbstractCollectionCommand
 	{
 		[Parameter]
 		public WriteConcern WriteConcern { get; set; }
+		
 		[Parameter]
 		public SwitchParameter Result { get; set; }
+		
 		protected void WriteResult(WriteConcernResult value)
 		{
 			if (Result && value != null)
 				WriteObject(value);
-		}
-		protected void WriteException(Exception value, object targetObject)
-		{
-			WriteError(new ErrorRecord(value, "Driver", ErrorCategory.WriteError, targetObject));
 		}
 	}
 }

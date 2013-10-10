@@ -16,6 +16,7 @@
 
 using System.Management.Automation;
 using MongoDB.Driver.Builders;
+
 namespace Mdbc.Commands
 {
 	[Cmdlet(VerbsCommon.Add, "MdbcCollection")]
@@ -23,12 +24,18 @@ namespace Mdbc.Commands
 	{
 		[Parameter(Position = 0, Mandatory = true)]
 		public string Name { get; set; }
+		
 		[Parameter]
 		public long MaxSize { get; set; }
+		
 		[Parameter]
 		public long MaxDocuments { get; set; }
+		
 		[Parameter]
-		public bool? AutoIndexId { get; set; }
+		public bool AutoIndexId { get { return AutoIndexId; } set { _setAutoIndexId = true; _AutoIndexId = value; } }
+		bool _setAutoIndexId;
+		bool _AutoIndexId;
+		
 		protected override void BeginProcessing()
 		{
 			// default options
@@ -43,9 +50,9 @@ namespace Mdbc.Commands
 					options.SetMaxDocuments(MaxDocuments);
 			}
 
-			// auto index explicitly
-			if (AutoIndexId.HasValue)
-				options.SetAutoIndexId(AutoIndexId.Value);
+			// auto index explicitly, otherwise default is used
+			if (_setAutoIndexId)
+				options.SetAutoIndexId(_AutoIndexId);
 
 			Database.CreateCollection(Name, options);
 		}

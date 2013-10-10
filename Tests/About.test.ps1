@@ -26,7 +26,7 @@ task About {
 	$data
 
 	# Update these data (let's just set the WorkingSet to 12345)
-	$data | Update-MdbcData (New-MdbcUpdate WorkingSet -Set 12345)
+	$data | Update-MdbcData (New-MdbcUpdate -Set @{WorkingSet = 12345})
 
 	# Query again in order to take a look at the changed data
 	Get-MdbcData (New-MdbcQuery Name -EQ mongod)
@@ -98,5 +98,45 @@ task Invoke-Test {
 		'begin2'
 		'test end'
 		'do end 0'
+	)
+}
+
+task Connect-Mdbc {
+	Test-Error {Connect-Mdbc -DatabaseName test} 'ConnectionString parameter is null or missing.'
+	Test-Error {Connect-Mdbc -CollectionName test} 'ConnectionString parameter is null or missing.'
+
+	Connect-Mdbc
+	Test-Type $Server MongoDB.Driver.MongoServer
+	Test-Type $Database MongoDB.Driver.MongoDatabase
+	Test-Type $Collection MongoDB.Driver.MongoCollection
+	assert ($Database.Name -ceq 'test')
+	assert ($Collection.Name -ceq 'test')
+}
+
+# Variable $_ is restored on invoking scripts
+task SetDollar {
+	$log = [Collections.ArrayList]@(); function log {$null = $log.AddRange($args)}
+
+	# loop make the $_
+	'SetDollar' | .{process{
+		# Id
+		$null = New-MdbcData @{name = 'name1'} -Id {log $_.name; 42}
+		assert ($_ -eq 'SetDollar')
+
+		# Select
+		$null = New-MdbcData @{name = 'name2'} -Property @{name2 = {log $_.name; 42}}
+		assert ($_ -eq 'SetDollar')
+
+		# Convert
+		$null = New-MdbcData $host -Property Runspace -Convert {log "$_"}
+		assert ($_ -eq 'SetDollar')
+	}}
+
+	$log
+
+	Test-Array $log @(
+		'name1'
+		'name2'
+		'System.Management.Automation.Runspaces.LocalRunspace'
 	)
 }

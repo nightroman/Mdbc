@@ -7,7 +7,7 @@
 Import-Module Mdbc
 
 function Enter-BuildTask {
-	Connect-Mdbc . test test -NewCollection
+	Connect-Mdbc -NewCollection
 }
 
 task Get-MdbcData.-As {
@@ -136,7 +136,7 @@ task Get-MdbcData.-SortBy {
 task Get-MdbcData.-Update {
 	# this is the best way to build auto-increment
 	function getNextVal($counterName) {
-		(Get-MdbcData (New-MdbcQuery _id $counterName) -Update (New-MdbcUpdate val -Increment 1) -Add -New).val
+		(Get-MdbcData (New-MdbcQuery _id $counterName) -Update (New-MdbcUpdate -Inc @{val = 1}) -Add -New).val
 	}
 
 	assert (1 -eq (getNextVal a))
@@ -148,7 +148,7 @@ task Get-MdbcData.-Update {
 	$null = $Collection.Drop()
 
 	function helper($upsert) {
-		Get-MdbcData (New-MdbcQuery _id asdf) -Update (New-MdbcUpdate val -Increment 1) -Add:$upsert
+		Get-MdbcData (New-MdbcQuery _id asdf) -Update (New-MdbcUpdate -Inc @{val = 1}) -Add:$upsert
 	}
 
 	# upsert:false so nothing there before and after
@@ -170,7 +170,7 @@ task Get-MdbcData.-Update {
 	assert ($data._id -eq 'asdf' -and $data.val -eq 3)
 
 	# _id created if not specified
-	$out = Get-MdbcData (New-MdbcQuery a 1) -Update (New-MdbcUpdate b -Set 2) -Add -New
+	$out = Get-MdbcData (New-MdbcQuery a 1) -Update (New-MdbcUpdate @{b = 2}) -Add -New
 	assert ($null -ne $out._id)
 	assert (1 -eq $out.a)
 	assert (2 -eq $out.b)

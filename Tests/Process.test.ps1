@@ -14,7 +14,7 @@ Import-Module Mdbc
 Set-StrictMode -Version 2
 
 task . {
-	Connect-Mdbc mongodb://localhost test process -NewCollection
+	Connect-Mdbc -NewCollection
 
 	# Input: [System.Diagnostics.Process]
 	# Output: document with process and its module data
@@ -78,14 +78,14 @@ task . {
 	"Find svchost : $1"
 
 	### Get by pattern/where
-	$1 = Get-MdbcData (New-MdbcQuery Name -Match '^svc|^mon') -Count
+	$1 = Get-MdbcData (New-MdbcQuery Name -Matches '^svc|^mon') -Count
 	$2 = $Collection.Find([MongoDB.Driver.Builders.Query]::Matches('Name', '^svc|^mon')).Count()
 	$3 = $Collection.Find([MongoDB.Driver.QueryDocument]@{ '$where' = 'this.Name == "svchost" || this.Name == "mongod"' }).Count()
 	assert ($1 -eq $2)
 	assert ($1 -eq $3)
 	"Find match/where : $1"
 
-	Get-MdbcData (New-MdbcQuery Name mongod) | Update-MdbcData (New-MdbcUpdate HandleCount -Increment 1)
+	Get-MdbcData (New-MdbcQuery Name mongod) | Update-MdbcData (New-MdbcUpdate -Inc @{HandleCount = 1})
 	$document = Get-MdbcData (New-MdbcQuery Name mongod) -AsCustomObject
 
 	$document | Format-List | Out-String

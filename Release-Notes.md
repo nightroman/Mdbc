@@ -1,6 +1,58 @@
 Mdbc Release Notes
 ==================
 
+## v4.0.0
+
+C# driver 1.8.3
+
+This release introduces breaking changes in cmdlets redesigned for cleaner and
+easier to use interface. Also, some parameters were renamed in order to follow
+C# driver method names.
+
+### `New-MdbcQuery`
+
+Query operator parameters cannot be used together in a single call.
+
+Renamed parameters:
+
+- `GE` -> `GTE`
+- `LE` -> `LTE`
+- `Match` -> `Matches`
+- `Matches` -> `ElemMatch`
+
+Changed parameters:
+
+- switch `Not` becomes a parameter with an argument
+- parameter `Exists <bool>` is replaced by switches `Exists`, `NotExists`
+
+### `New-MdbcUpdate`
+
+Changed parameters so that they all can be used together and each parameter can
+specify several fields with arguments. As a result, a single call with several
+parameters and/or arguments may create complex updates.
+
+Renamed parameters:
+
+- `Band` -> `BitwiseAnd`
+- `Bor` -> `BitwiseOr`
+- `Increment` -> `Inc`
+
+### `New-MdbcData`
+
+Parameter `Value` makes `BsonValue` only, including `BsonDocument`, `BsonArray`.
+
+### Other changes
+
+`Get-MdbcData` and `Update-MdbcData` catch `MongoException` and write it as non
+terminating error, i.e. depending on the error action processing may continue.
+
+If none of parameters `ConnectionString`, `DatabaseName`, `CollectionName` is
+specified for `Connect-Mdbc` then they are assumed to be `.`, `test`, `test`.
+
+Fixed several issues with null arguments in cmdlets and nulls in documents.
+
+Fixed false positive cyclic reference errors.
+
 ## v3.2.0
 
 The parameter `Not` of `New-MdbcQuery` works with any other query types.
@@ -24,7 +76,7 @@ Added control of cyclic references on data conversion to documents and avoided
 potential stack overflows. An exception 'Cyclic reference.' is thrown instead.
 
 Properties and dictionary entries with null values are preserved on conversion
-to BsonDocuments. Properties which throws are also preserved with null values.
+to BsonDocument's. Properties which throws are also preserved with null values.
 
 Cmdlets `New-MdbcData`, `Add-MdbcData`, and `Export-MdbcData` have four common
 parameters which make it easier to create documents from pipeline input:

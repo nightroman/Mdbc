@@ -19,15 +19,15 @@ LONG DESCRIPTION
         Remove-MdbcData
         Update-MdbcData
 
-    Create new documents for Add-MdbcData, Export-MdbcData:
+    Create new documents, e.g. for Add-MdbcData, Export-MdbcData:
 
         New-MdbcData
 
-    Create update expressions for Update-MdbcData:
+    Create update expressions, e.g. for Update-MdbcData:
 
         New-MdbcUpdate
 
-    Create queries for Get-MdbcData, Update-MdbcData, and etc.:
+    Create queries, e.g. for Get-MdbcData, Update-MdbcData:
 
         New-MdbcQuery
 
@@ -35,11 +35,11 @@ LONG DESCRIPTION
 
         Add-MdbcCollection
 
-    Invoke map and reduce procedure:
+    Invoke map and reduce:
 
         Invoke-MdbcMapReduce
 
-    Invoke MongoDB command including not covered by Mdbc or C# driver:
+    Invoke MongoDB commands including not covered by Mdbc or C# driver:
 
         Invoke-MdbcCommand
 
@@ -48,7 +48,7 @@ LONG DESCRIPTION
         Export-MdbcData
         Import-MdbcData
 
-    Interactive profile adds more features for interactive sessions:
+    This script adds some features for interactive sessions:
 
         Mdbc.ps1
 

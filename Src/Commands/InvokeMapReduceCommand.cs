@@ -20,6 +20,7 @@ using System.Management.Automation;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.Builders;
+
 namespace Mdbc.Commands
 {
 	[Cmdlet(VerbsLifecycle.Invoke, "MdbcMapReduce")]
@@ -28,30 +29,42 @@ namespace Mdbc.Commands
 		[Parameter(Position = 0, Mandatory = true)]
 		[ValidateCount(2, 3)]
 		public string[] Function { get; set; }
+		
 		[Parameter(Position = 1)]
 		public object Query { get { return null; } set { _Query = Actor.ObjectToQuery(value); } }
 		IMongoQuery _Query;
+		
 		[Parameter]
 		public object[] SortBy { get { return null; } set { _SortBy = Actor.ObjectsToSortBy(value); } }
 		IMongoSortBy _SortBy;
+		
 		[Parameter]
 		public int First { get; set; }
+		
 		[Parameter]
 		public IDictionary Scope { get; set; }
+		
 		[Parameter]
 		public SwitchParameter JSMode { get; set; }
+		
 		[Parameter]
 		public string ResultVariable { get; set; }
+		
 		[Parameter]
 		public MapReduceOutputMode OutMode { get; set; }
+		
 		[Parameter]
 		public string OutDatabase { get; set; }
+		
 		[Parameter]
 		public string OutCollection { get; set; }
+		
 		[Parameter]
 		public Type As { get; set; }
+		
 		[Parameter]
 		public SwitchParameter AsCustomObject { get; set; }
+		
 		Type GetDocumentType()
 		{
 			return AsCustomObject ? typeof(PSObject) : As ?? typeof(BsonDocument);

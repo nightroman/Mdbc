@@ -18,6 +18,8 @@ function Invoke-Test([scriptblock]$Test)
 # Compares an object type with expected
 function Test-Type($Value, $TypeName) {
 	$name = $Value.GetType().FullName
+	if (($tick = $name.IndexOf('`')) -ge 0) {$name = $name.Substring(0, $tick)}
+
 	if ($TypeName -ne $name) {
 		Write-Error -ErrorAction Stop "Expected type: $TypeName, actual type: $name"
 	}
@@ -99,5 +101,14 @@ function Test-Array([object[]]$1, [object[]]$2, [switch]$Force) {
 		if ($v1 -cne $v2) {
 			Write-Error -ErrorAction Stop "Index '$i': different values: '$v1' and '$v2'."
 		}
+	}
+}
+
+# Log and test the expression and expected representation
+function Test-Expression($expression, $result) {
+	"$expression => $result"
+	$actual = (. $expression).ToString()
+	if ($actual -cne $result) {
+		Write-Error -ErrorAction 1 "`nExpected : $result`nActual   : $actual"
 	}
 }

@@ -7,7 +7,7 @@
 . .\Zoo.ps1
 Import-Module Mdbc
 Set-StrictMode -Version 2
-Connect-Mdbc . test test -NewCollection
+Connect-Mdbc -NewCollection
 
 # BsonValue errors
 task DocumentInput.BsonValueError {
@@ -98,4 +98,34 @@ task DocumentInput.-Id {
 	}
 
 	Remove-Item z.bson
+}
+
+
+#_131013_155413
+task DocumentInput.DocumentAsInput {
+	$mdbc = New-MdbcData @{x = 42; y = 0;}
+	$bson = $mdbc.Document()
+	assert ($mdbc.Count -eq 2)
+
+	# new is created and only x is there
+	$mdbc2 = $mdbc | New-MdbcData -Property x
+	assert ($mdbc2.Count -eq 1)
+	assert (![object]::ReferenceEquals($mdbc2.Document(), $bson))
+
+	# new is created and only x is there
+	$mdbc2 = , $bson | New-MdbcData -Property x
+	assert ($mdbc2.Count -eq 1) $mdbc2.Count
+	assert (![object]::ReferenceEquals($mdbc2.Document(), $bson))
+
+	# the same is used and _id is added
+	$mdbc3 = $mdbc | New-MdbcData -Id 3
+	assert ($mdbc3.Count -eq 3)
+	assert ($mdbc3._id -eq 3)
+	assert ([object]::ReferenceEquals($mdbc3.Document(), $bson))
+
+	# the same is used and _id is added
+	$mdbc4 = , $bson | New-MdbcData -Id 4
+	assert ($mdbc4.Count -eq 3)
+	assert ($mdbc4._id -eq 4)
+	assert ([object]::ReferenceEquals($mdbc4.Document(), $bson))
 }

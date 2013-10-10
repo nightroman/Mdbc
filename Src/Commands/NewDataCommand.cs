@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.Management.Automation;
 using MongoDB.Bson;
+
 namespace Mdbc.Commands
 {
 	[Cmdlet(VerbsCommon.New, "MdbcData", DefaultParameterSetName = NDocument)]
@@ -25,19 +26,26 @@ namespace Mdbc.Commands
 	{
 		const string NDocument = "Document";
 		const string NValue = "Value";
+		
 		[Parameter(ParameterSetName = NValue)]
 		public PSObject Value { get; set; }
+		
 		[Parameter(Position = 0, ValueFromPipeline = true, ParameterSetName = NDocument)]
 		public PSObject InputObject { get; set; }
+		
 		[Parameter(ParameterSetName = NDocument)]
 		public PSObject Id { get; set; }
+		
 		[Parameter(ParameterSetName = NDocument)]
 		public SwitchParameter NewId { get; set; }
+		
 		[Parameter(ParameterSetName = NDocument)]
 		public ScriptBlock Convert { get; set; }
+		
 		[Parameter(ParameterSetName = NDocument)]
-		public object[] Property { get { return null; } set { Selectors = Selector.Create(value, this); } }
-		public IList<Selector> Selectors { get; private set; }
+		public object[] Property { get { return null; } set { _Selectors = Selector.Create(value, this); } }
+		IList<Selector> _Selectors;
+		
 		void WriteDocument(BsonDocument document)
 		{
 			DocumentInput.MakeId(document, this, SessionState);
@@ -47,28 +55,12 @@ namespace Mdbc.Commands
 		{
 			try
 			{
-				if (ParameterSetName == NDocument)
-				{
-					if (InputObject == null)
-						WriteDocument(new BsonDocument());
-					else
-						WriteDocument(Actor.ToBsonDocument(InputObject, Selectors, x => DocumentInput.ConvertValue(x, this, SessionState)));
-					return;
-				}
-
-				var bson = Actor.ToBsonValue(Value, null);
-				switch (bson.BsonType)
-				{
-					case BsonType.Array:
-						WriteObject(new Collection((BsonArray)bson));
-						return;
-					case BsonType.Document:
-						WriteDocument((BsonDocument)bson);
-						return;
-					default:
-						WriteObject(bson);
-						return;
-				}
+				if (ParameterSetName == NValue)
+					WriteObject(Actor.ToBsonValue(Value));
+				else if (InputObject == null)
+					WriteDocument(new BsonDocument());
+				else
+					WriteDocument(Actor.ToBsonDocument(InputObject, new DocumentInput(SessionState, Convert), _Selectors));
 			}
 			catch (ArgumentException ex)
 			{

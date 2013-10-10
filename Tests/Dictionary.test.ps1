@@ -1,11 +1,19 @@
 
 Import-Module Mdbc
+Set-StrictMode -Version 2
 
 function query($expected, $query) {
 	$count = Get-MdbcData -Count $query
 	if ($expected -ne $count) {
 		Write-Error -ErrorAction 1 "Expected count: $expected, actual: $count."
 	}
+}
+
+# $null should be preserved
+task Dictionary.SetNull {
+	$d = New-MdbcData @{x = 1; y = 2}
+	$d.x = $null
+	assert ($d.Count -eq 2 -and $d.x -eq $null)
 }
 
 task Dictionary.Operators {
@@ -19,7 +27,7 @@ task Dictionary.Operators {
 		guid = $guid
 	}
 
-	Connect-Mdbc . test test -NewCollection
+	Connect-Mdbc -NewCollection
 	$d | Add-MdbcData
 
 	### EQ

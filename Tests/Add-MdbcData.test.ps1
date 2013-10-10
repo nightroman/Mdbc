@@ -3,7 +3,7 @@
 Import-Module Mdbc
 
 function Enter-BuildTask {
-	Connect-Mdbc . test test -NewCollection
+	Connect-Mdbc -NewCollection
 }
 
 task Add-MdbcData.WithSameIdAndWithUpdate {
@@ -19,10 +19,7 @@ task Add-MdbcData.WithSameIdAndWithUpdate {
 	$document.Name = 'World'
 
 	# This throws an exception
-	$message = ''
-	try {$document | Add-MdbcData -ErrorAction Stop}
-	catch {$message = "$_"}
-	assert ($message -like 'WriteConcern detected an error*')
+	Test-Error {$document | Add-MdbcData -ErrorAction Stop} 'WriteConcern detected an error*'
 
 	# This writes an error to the specified variable
 	$document | Add-MdbcData -ErrorAction 0 -ErrorVariable ev

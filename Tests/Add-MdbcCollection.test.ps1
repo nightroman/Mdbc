@@ -1,16 +1,17 @@
 
+. .\Zoo.ps1
 Import-Module Mdbc
 
 # How to create a capped collection by Add-MdbcCollection
 task Add-MdbcCollection.Capped {
 	Connect-Mdbc . test
-	$null = $Database.DropCollection('capped')
+	$null = $Database.DropCollection('test')
 
 	# add a capped collection (10 documents)
-	Add-MdbcCollection capped -MaxSize 1mb -MaxDocuments 10
+	Add-MdbcCollection test -MaxSize 1mb -MaxDocuments 10
 
 	# add 20 documents
-	$Collection = $Database.GetCollection('capped')
+	$Collection = $Database['test']
 	1..20 | %{@{Value=$_}} | Add-MdbcData
 
 	# test: expected 10 last documents
@@ -20,17 +21,32 @@ task Add-MdbcCollection.Capped {
 	assert ($data[9].Value -eq 20)
 
 	# try to add again, test the error
-	$message = ''
-	try {
-		Add-MdbcCollection capped -MaxSize 1mb -MaxDocuments 10
-	}
-	catch {
-		$message = "$_"
-	}
-	assert ($message -eq @'
-Command 'create' failed: collection already exists (response: { "ok" : 0.0, "errmsg" : "collection already exists" })
-'@) $message
+	Test-Error {Add-MdbcCollection test -MaxSize 1mb -MaxDocuments 10} "Command 'create' failed: collection already exists*"
+}
 
-	# end
-	$null = $Collection.Drop()
+task Add-MdbcCollection.-AutoIndexId {
+	Connect-Mdbc . test
+
+	# AutoIndexId 0
+	$null = $Database.DropCollection('test')
+	Add-MdbcCollection test -AutoIndexId 0 #todo bug in driver?
+
+	$Collection = $Database['test']
+	@{n = 1} | Add-MdbcData
+	$d = Get-MdbcData
+	assert ($d._id)
+	$i = @($Collection.GetIndexes())
+	assert ($i.Count -eq 1) #?? should be 0
+
+	# default collection
+	$null = $Database.DropCollection('test')
+	Add-MdbcCollection test
+
+	$Collection = $Database['test']
+	@{n = 1} | Add-MdbcData
+	$d = Get-MdbcData
+	assert ($d._id)
+	$i = @($Collection.GetIndexes())
+	assert ($i.Count -eq 1)
+
 }

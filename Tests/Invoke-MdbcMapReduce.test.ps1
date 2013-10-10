@@ -3,7 +3,7 @@ Import-Module Mdbc
 
 # Example 1 on p. 87 of MongoDB: The Definitive Guide by Kristina Chodorow and Michael Dirolf
 task Invoke-MdbcMapReduce {
-	Connect-Mdbc . test test -NewCollection
+	Connect-Mdbc -NewCollection
 
 	@{ A = 1; B = 2; }, @{ B = 1; C = 2 }, @{ X = 1; B = 2 } | Add-MdbcData
 
@@ -60,7 +60,7 @@ _id @{count=1}
 
 	# -SortBy and -First, just for testing
 	$null = $Collection.CreateIndex('A') #! https://jira.mongodb.org/browse/CSHARP-472
-	$data = Invoke-MdbcMapReduce $map, $reduce (New-MdbcQuery A -Exists 1) -SortBy A -First 10
+	$data = Invoke-MdbcMapReduce $map, $reduce (New-MdbcQuery A -Exists) -SortBy A -First 10
 	assert ($data.Count -eq 3)
 
 	### collection output, Replace
@@ -115,4 +115,5 @@ _id @{count=1}
 
 	# end
 	$null = $mz.Drop()
+	$Database.DropCollection('z')
 }

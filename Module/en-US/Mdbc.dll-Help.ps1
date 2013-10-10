@@ -4,18 +4,18 @@
 	Help script (https://github.com/nightroman/Helps)
 #>
 
-# Import the module to make commands available for the builder.
 Import-Module Mdbc
+Set-StrictMode -Version 2
 
 ### Shared descriptions
 
 $IdParameter = @'
-Sets the document _id to the specified value or a script block returning a
-value from the input object represented by the variable $_.
+The document _id value to be assigned or a script block returning this value
+for the input object represented by the variable $_.
 '@
 
 $NewIdParameter = @'
-Tells to generate and set a new document _id as MongoDB.Bson.ObjectId.
+Tells to generate and assign a new document _id as MongoDB.Bson.ObjectId.
 '@
 
 $ConvertParameter = @'
@@ -27,39 +27,40 @@ Examples: {} converts unknown data to nulls. {"$_"} converts data to strings,
 it is useful for preserving as much information as possible on dumping objects
 for later analysis.
 
-Converters should be used sparingly. Consider to use Property instead for
-selecting standard data and converting not standard much more effectively.
+Converters should be used sparingly, normally with unknown or varying data.
+Consider to use Property for selecting standard and converting not standard
+known data.
 '@
 
 $PropertyParameter = @'
-Property or key names which values are to be included into new documents. This
-parameter is used when input objects are converted into documents. Missing
-properties or keys are ignored.
+Specifies properties or keys which values are to be included into documents or
+defines calculated fields. Missing input properties and keys are ignored.
 
-Properties are defined in three ways:
+Arguments are defined in three ways:
 
-1. Strings for property or key names and the same document field names.
+1. Strings define property or key names and the corresponding result document
+field names.
 
-2. Hashtables @{Name=Expression} where Name is a new document field name and
-Expression is either a string (input object property name) or a script block
-(field value calculated from the input object $_).
+2. Hashtables @{Key=Value} define renamed and calculated fields. The key is a
+new document field name. The value is either a string (input object property
+name) or a script block (field value calculated from the input object $_).
 
-3. Hashtables @{Name=...; Expression=...} or @{Label=...; Expression=...}, the
-same as the cmdlet Select-Object uses for its parameter Property.
+3. Hashtables @{Name=...; Expression=...} or @{Label=...; Expression=...} are
+similar but use the same convention as the parameter Property of Select-Object.
 
 See New-MdbcData examples.
 '@
 
 $CollectionParameter = @'
 Collection object. It is obtained by Connect-Mdbc or from database or server
-objects. If it is not specified then the current variable $Collection is used.
+objects. If it is not specified then the current variable Collection is used.
 '@
 
 $QueryTypes = @'
 Supported types:
 1. MongoDB.Driver.IMongoQuery (see New-MdbcQuery);
 2. _id holders (Mdbc.Dictionary, BsonDocument, custom objects);
-3. hashtables representing MongoDB JSON-like query expressions;
+3. hashtables representing JSON-like MongoDB query expressions;
 4. other values are treated as _id and converted to _id queries.
 '@
 
@@ -81,53 +82,59 @@ hashtables with single entries: @{Field = <Boolean>}. True and false or their
 equivalents (say, 1 and 0) are for ascending and descending directions.
 '@
 
-$TypeMdbcDictionary = @{
-	type = '[Mdbc.Dictionary]'
-	description = @'
-Objects created by New-MdbcData or obtained by Get-MdbcData or Import-MdbcData.
-This type is the most effective and safe as input/output of Mdbc data cmdlets.
-'@
-}
-
 $TypeWriteConcernResult = @{
 	type = '[MongoDB.Driver.WriteConcernResult]'
 	description = 'Result object from the driver is written if the switch Result is present.'
 }
 
 $AboutResultAndErrors = @'
-In order to get a result object from the driver use the switch Result. Driver
-exceptions are caught and written as not terminating errors. Use proper error
-action preference and/or cmdlet common error parameters.
+In order to output command result objects from a server use the switch Result.
+
+Depending on operations some server exceptions are caught and written as not
+terminating errors, i.e. processing of remaining pipelined objects continues.
+
+Parameters ErrorAction and variables $ErrorActionPreference are used to alter
+error actions. See help about_CommonParameters and about_Preference_Variables.
 '@
 
 $DocumentInputs = @(
-	$TypeMdbcDictionary
 	@{
 		type = '$null'
 		description = @'
-Null creates an empty document for New-MdbcData and ignored for Add-MdbcData
-and Export-MdbcData.
+Null is converted to an empty document by New-MdbcData and ignored by
+Add-MdbcData and Export-MdbcData.
+'@
+	}
+	@{
+		type = '[Mdbc.Dictionary]'
+		description = @'
+Objects created by New-MdbcData or obtained by Get-MdbcData or Import-MdbcData.
+This type is the most effective and safe as input/output of Mdbc data cmdlets.
+
+The native C# driver document [MongoDB.Bson.BsonDocument] can be used as well
+but normally it should not be used directly. Its wrapper [Mdbc.Dictionary] is
+more suitable in PowerShell.
+
+NOTE: If the parameter Property is specified then the document is processed as
+IDictionary and a new document is created with the specified fields. Otherwise
+the input document is used directly and if Id or NewId is used then its _id is
+assigned as well.
 '@
 	}
 	@{
 		type = '[IDictionary]'
 		description = @'
-Dictionaries are converted to documents internally. Keys are normally strings
-used as field names. Values are converted to BsonValue.
+Dictionaries are converted to new documents. Keys are strings used as new field
+names. Collection, dictionary, and custom object values are converted to BSON
+container types recursively. Other values are converted to BsonValue.
 '@
 	}
 	@{
 		type = '[PSObject]'
 		description = @'
-Objects are converted to documents internally. Property names are used as field
-names. Values are converted to BsonValue.'
-'@
-	}
-	@{
-		type = '[MongoDB.Bson.BsonDocument]'
-		description = @'
-This is the native C# document type. It is supported but normally it should not
-be used directly. Its wrapper [Mdbc.Dictionary] is more suitable in PowerShell.
+Objects are converted to new documents. Property names are used as new field
+names. Collection, dictionary, and custom object values are converted to BSON
+container types recursively. Other values are converted to BsonValue.
 '@
 	}
 )
@@ -138,15 +145,15 @@ $QueryInputs = @(
 		description = 'Query expression. See New-MdbcQuery (query).'
 	}
 	@{
-		type = '[Mdbc.Dictionary], [MongoDB.Bson.BsonDocument]'
+		type = '[Mdbc.Dictionary]'
 		description = @'
-A document which _id is used for identification. [Mdbc.Dictionary] objects are
-created by New-MdbcData or obtained by Get-MdbcData.
+A document which _id is used for identification. Documents are created by
+New-MdbcData or obtained by Get-MdbcData.
 '@
 	}
 	@{
 		type = '[object]'
-		description = 'Any other value is treated as _id for identification.'
+		description = 'Other values are treated as requested _id values.'
 	}
 )
 
@@ -157,26 +164,31 @@ created by New-MdbcData or obtained by Get-MdbcData.
 	description = @'
 The cmdlet connects the specified server, database, and collection and creates
 their reference variables in the current scope. With default names they are
-$Server, $Database, and $Collection.
+Server, Database, and Collection.
 
 The * used as a name tells to get all database names for a server or collection
 names for a database.
+
+If none of the parameters ConnectionString, DatabaseName, CollectionName is
+specified then they are assumed to be ., test, test respectively.
 '@
 
 	parameters = @{
 		ConnectionString = @'
-	Connection string (see the C# driver manual for the details):
+	Connection string (see driver manuals for details):
 	mongodb://[username:password@]hostname[:port][/[database][?options]]
+
 	"." is used for the default C# driver connection.
+
 	Example:
 	mongodb://localhost:27017
 '@
 		DatabaseName = 'Database name. * is used in order to get all database objects.'
 		CollectionName = 'Collection name. * is used in order to get all collection objects.'
-		NewCollection = 'Tells to connect a new collection dropping the existing if it exists.'
-		ServerVariable = 'Name of a new variable in the current scope with the connected server. The default variable is $Server.'
-		DatabaseVariable = 'Name of a new variable in the current scope with the connected database. The default variable is $Database.'
-		CollectionVariable = 'Name of a new variable in the current scope with the connected collection. The default variable is $Collection.'
+		NewCollection = 'Tells to remove an existing collection if any and connect a new one.'
+		ServerVariable = 'Name of a new variable in the current scope with the connected server. The default variable name is Server.'
+		DatabaseVariable = 'Name of a new variable in the current scope with the connected database. The default variable name is Database.'
+		CollectionVariable = 'Name of a new variable in the current scope with the connected collection. The default variable name is Collection.'
 	}
 	inputs = @()
 	outputs = @(
@@ -263,8 +275,8 @@ names for a database.
 	)
 }
 
-### AbstractDatabase
-$AbstractDatabase = @{
+### ADatabase
+$ADatabase = @{
 	parameters = @{
 		Database = @'
 The database instance. If it is not specified then the variable $Database is
@@ -273,15 +285,15 @@ used: it is defined by Connect-Mdbc or assigned explicitly before the call.
 	}
 }
 
-### AbstractCollection
-$AbstractCollection = @{
+### ACollection
+$ACollection = @{
 	parameters = @{
 		Collection = $CollectionParameter
 	}
 }
 
-### AbstractWrite
-$AbstractWrite = Merge-Helps $AbstractCollection @{
+### AWrite
+$AWrite = Merge-Helps $ACollection @{
 	parameters = @{
 		WriteConcern = 'Write concern options.'
 		Result = 'Tells to output an object returned by the driver.'
@@ -294,34 +306,66 @@ $AbstractWrite = Merge-Helps $AbstractCollection @{
 	synopsis = 'Creates data documents and some other C# driver types.'
 	description = @'
 This command is used to create one or more documents (input objects come from
-the pipeline or as the first parameter InputObject) or a single BsonValue (as
+the pipeline or as the first parameter InputObject) or a single BsonValue (by
 the named parameter Value).
 
-Created documents are used later for Add-MdbcData and Export-MdbcData. Note
-that they have the same properties Id, NewId, Convert, Property for making
-documents from input objects. Thus, in some cases intermediate use of
-New-MdbcData is not needed.
+Created documents are used by Add-MdbcData and Export-MdbcData. These cmdlets
+also have parameters Id, NewId, Convert, Property for making documents from
+input objects. Thus, in some cases intermediate use of New-MdbcData is not
+needed.
+
+Mdbc.Dictionary
+
+Result documents are returned as Mdbc.Dictionary objects. Mdbc.Dictionary holds
+an underlying BsonDocument (Document()) and implements IDictionary. It works as
+a hashtable where keys are case sensitive strings and input and output values
+are convenient .NET types instead of underlying BsonValues. Main features:
+
+Useful members:
+
+	$dictionary.Count
+	$dictionary.Contains('key')
+	$dictionary.Add('key', 'value')
+	$dictionary.Remove('key')
+	$dictionary.Clear()
+
+Setting values:
+
+	$dictionary['key'] = ...
+	$dictionary.key = ...
+
+Getting values:
+
+	.. = $dictionary['key']
+	.. = $dictionary.key
+
+NOTE: On getting values the form "$dictionary.key" fails in strict mode (see
+Set-StrictMode) if the "key" is missing. The form "$dictionary['key'] is safe,
+it returns null for a missing key. Use Contains() in order to check existence
+of a key for sure.
 '@
 	parameters = @{
 		InputObject = @'
-.NET object to be converted to a document Mdbc.Dictionary, PowerShell friendly
-wrapper of BsonDocument. Objects suitable for conversion are dictionaries,
-custom PowerShell objects, and complex .NET types, normally not collections.
+.NET object to be converted to Mdbc.Dictionary, PowerShell friendly wrapper of
+BsonDocument. Objects suitable for conversion are dictionaries, custom objects,
+and complex .NET types, normally not collections.
 '@
 		Id = $IdParameter
 		NewId = $NewIdParameter
 		Convert = $ConvertParameter
 		Property = $PropertyParameter
 		Value = @'
-A .NET object to be converted to a BsonValue.
+An object to be converted to a BsonValue.
 
-[IDictionary] is converted to a document [Mdbc.Dictionary]. Note that
-parameters Id, NewId, Convert, Property are not available with Value.
-Use InputObject for custom conversion of dictionaries.
+Cmdlets and helper types do not need BsonValue's, they convert everything
+themselves. But BsonValue's may be needed for calling driver methods directly.
 
-[IEnumerable] is converted to a [Mdbc.Collection] (BsonArray wrapper).
+Containers:
 
-Primitive types:
+	[IDictionary] is converted to BsonDocument.
+	[IEnumerable] is converted to BsonArray.
+
+Primitives:
 
 	[bool]     is converted to BsonBoolean.
 	[DateTime] is converted to BsonDateTime.
@@ -341,11 +385,7 @@ directly than by this cmdlet, e.g. for a string:
 	outputs = @(
 		@{
 			type = '[Mdbc.Dictionary]'
-			description = 'PowerShell friendly wrapper of BsonDocument.'
-		}
-		@{
-			type = '[Mdbc.Collection]'
-			description = 'Wrapper of BsonArray created from Value.'
+			description = 'BsonDocument wrapper created from InputObject.'
 		}
 		@{
 			type = '[MongoDB.Bson.BsonValue]'
@@ -424,13 +464,18 @@ directly than by this cmdlet, e.g. for a string:
 }
 
 ### New-MdbcQuery
+$OneArgumentAndOr = @'
+One argument can be used as well. For a previously created query it creates the
+same query. But it can be used for creating a query from other supported input
+types like hashtables.
+'@
 @{
 	command = 'New-MdbcQuery'
 	synopsis = 'Creates a query expression for other commands.'
 	description = @'
 The cmdlet creates a query expression used by Get-MdbcData, Remove-MdbcData,
-Update-MdbcData, ... Most of queries have their alternative JSON-like forms,
-see parameter descriptions.
+Update-MdbcData. Parameters are named after C# driver query builder methods.
+Most of queries have their alternative JSON-like forms, see parameter help.
 '@
 	parameters = @{
 		Name = @'
@@ -438,16 +483,16 @@ Field name for a field value test.
 '@
 		Not = @'
 Tells to negate the query expression.
-JSON-like form: @{name = @{'$not' = expression}
-'@
+JSON-like form: @{name = @{'$not' = operator-expression}
+'@, $QueryTypes
 		And = @'
-Logical And on two or more expressions.
-JSON-like form: @{'$and' = @(expression1, expression2, ...)}
-'@, $QueryTypes
+Logical And, normally on two or more query expressions.
+JSON-like form: @{'$and' = @(query-expression1, query-expression2, ...)}
+'@, $OneArgumentAndOr, $QueryTypes
 		Or = @'
-Logical Or on two or more expressions.
-JSON-like form: @{'$or' = @(expression1, expression2, ...)}
-'@, $QueryTypes
+Logical Or, normally on two or more query expressions.
+JSON-like form: @{'$or' = @(query-expression1, query-expression2, ...)}
+'@, $OneArgumentAndOr, $QueryTypes
 		EQ = @'
 Equality test. Parameter name is optional.
 JSON-like form: @{name = value}
@@ -464,27 +509,31 @@ JSON-like form is not available.
 Ignore case inequality test for strings.
 JSON-like form is not available.
 '@
-		GE = @'
-Greater or equal test.
-JSON-like form: @{name = @{'$gte' = value}}
-'@
 		GT = @'
 Greater than test.
 JSON-like form: @{name = @{'$gt' = value}}
 '@
-		LE = @'
-Less or equal test.
-JSON-like form: @{name = @{'$le' = value}}
+		GTE = @'
+Greater or equal test.
+JSON-like form: @{name = @{'$gte' = value}}
 '@
 		LT = @'
 Less than test.
 JSON-like form: @{name = @{'$lt' = value}}
 '@
+		LTE = @'
+Less or equal test.
+JSON-like form: @{name = @{'$lte' = value}}
+'@
 		Exists = @'
 Checks if the field exists.
-JSON-like form: @{name = @{'$exists' = $true|$false}}
+JSON-like form: @{name = @{'$exists' = $true}}
 '@
-		Match = @'
+		NotExists = @'
+Checks if the field is missing.
+JSON-like form: @{name = @{'$exists' = $false}}
+'@
+		Matches = @'
 Regular expression test.
 JSON-like form: @{name = @{'$regex' = pattern; '$options' = 'i|m|x|s'}}
 '@, @'
@@ -519,7 +568,7 @@ JSON-like form: @{name = @{'$nin' = @(value1, value2, ...)}
 Checks if the array contains all the specified values.
 JSON-like form: @{name = @{'$all' = @(value1, value2, ...)}
 '@
-		Matches = @'
+		ElemMatch = @'
 Checks if an element in an array matches all the specified query expressions.
 JSON-like form: @{name = @{'$elemMatch' = @(expression1, expression2, ...)}}
 '@, @'
@@ -550,99 +599,155 @@ server-side processing page for more information (official site).
 ### New-MdbcUpdate
 @{
 	command = 'New-MdbcUpdate'
-	synopsis = 'Creates update expressions for Update-MdbcData.'
-	sets = @{
-		AddToSet = '{ $addToSet : { field : value } }', @'
-Adds value to the array only if its not in the array already, if field is an
-existing array, otherwise sets field to the array value if field is not
-present. If field is present but is not an array, an error condition is raised.
-'@
-		AddToSetEach = '{ $addToSet : { a : { $each : [ 3 , 5 , 6 ] } } }', @'
-To add many values.
-'@
-		Band = '{ $bit : { field : { and : 5 } } }', @'
-Does a bitwise-and update of field. Can only be used with integers.
-'@
-		Bor = '{ $bit : { field : { or : 5 } } }', @'
-Does a bitwise-or update of field. Can only be used with integers.
-'@
-		Increment = '{ $inc : { field : value } }', @'
-Increments field by the number value if field is present in the object,
-otherwise sets field to the number value.
-'@
-		PopFirst = '{ $pop : { field : -1  } }', @'
-Removes the first element in an array.
-'@
-		PopLast = '{ $pop : { field : 1  } }', @'
-Removes the last element in an array.
-'@
-		Pull = '{ $pull : { field : value } }', @'
-Removes all occurrences of value from field, if field is an array. If field is
-present but is not an array, an error condition is raised.
-'@,
-'{ $pull : { field : {<match-criteria>} } }', @'
-Removes array elements meeting match criteria.
-'@
-		PullAll = '{ $pullAll : { field : value_array } }', @'
-Removes all occurrences of each value in value_array from field, if field is an
-array. If field is present but is not an array, an error condition is raised.
-'@
-		Push = '{ $push : { field : value } }', @'
-Appends value to field, if field is an existing array, otherwise sets field to
-the array [value] if field is not present. If field is present but is not an
-array, an error condition is raised.
-'@
-		PushAll = '{ $pushAll : { field : value_array } }', @'
-Appends each value in value_array to field, if field is an existing array,
-otherwise sets field to the array value_array if field is not present. If field
-is present but is not an array, an error condition is raised.
-'@
-		Rename = '{ $rename : { old_field_name : new_field_name } }', @'
-Renames the field with name 'old_field_name' to 'new_field_name'. Does not
-expand arrays to find a match for 'old_field_name'.
-'@
-		Set = '{ $set : { field : value } }', @'
-Sets a field value. All data types are supported.
-'@
-		SetOnInsert = '{ $setOnInsert : { field : value } }', @'
-Sets a field value during upsert only when insert is performed. All data types are supported.
-'@
-		Unset = '{ $unset : { field : 1} }', @'
-Deletes a given field.
-'@
+	synopsis = 'Creates an update expression for Update-MdbcData.'
+	description = @'
+This cmdlet creates update expressions used by Update-MdbcData. Parameters are
+named after C# driver update builder methods. They can be combined in order to
+create complex updates in a single call.
+
+Some parameters (Unset, PopFirst, PopLast) require only field names (String[]).
+Example:
+
+	New-MdbcUpdate -Unset field1 -PopLast field2, field3
+
+Other parameters require field names and associated arguments. Such parameters
+accept one or more hashtables (IDictionary). Each hashtable defines field names
+as keys and arguments as their values. The following commands are essentially
+the same:
+
+	# Two hashtables with single entries
+	New-MdbcUpdate -Set @{field1 = value1}, @{field2 = value2}
+
+	# One hashtable with two entries
+	New-MdbcUpdate -Set @{
+		field1 = value1
+		field2 = value2
 	}
+'@
 	parameters = @{
-		Name = 'Name of a field to be updated.'
-		AddToSet = '$addToSet argument. If it is a collection then it is treated as a single value to add.'
-		AddToSetEach = '$addToSet $each argument, a collection of values, each value is added.'
-		Band = '$bit "and" argument, [int] or [long].'
-		Bor = '$bit "or" argument, [int] or [long].'
-		Increment = '$inc argument, [int], [long], or [double].'
-		PopFirst = 'Tells to remove the first element in an array.'
-		PopLast = 'Tells to remove the last element in an array.'
-		Pull = '$pull argument, a value or a query. If it is a collection then it is treated as a single value to pull.'
-		PullAll = '$pullAll argument, a collection of values, each value is pulled.'
-		Push = '$push argument. If it is a collection then it is treated as a single value to push.'
-		PushAll = '$pushAll argument, a collection of values, each value is pushed.'
-		Rename = '$rename argument, the new field name.'
-		Set = '$set argument. All standard types are supported.'
-		SetOnInsert = '$setOnInsert argument. All standard types are supported.'
-		Unset = 'Tells to remove the field.'
+		AddToSet = @'
+Adds a value to an array only if the value is not in the array already.
+
+If a field argument is a collection then it is treated as a single value to
+add. Use AddToSetEach in order to add each value.
+
+Mongo: { $addToSet: { <field>: <addition> }
+'@
+		AddToSetEach = @'
+Adds values to an array only if the values are not in the array already.
+
+Mongo: { $addToSet: { <field>: { $each: [ <value1>, <value2> ... ] } } }
+'@
+		BitwiseAnd = @'
+Performs bitwise AND update of integer values (int or long).
+
+Mongo: { $bit: { field: { and: NumberInt(5) } } }
+'@
+		BitwiseOr = @'
+Performs bitwise OR update of integer values (int or long).
+
+Mongo: { $bit: { field: { or: NumberInt(5) } } }
+'@
+		Inc = @'
+Increments a value of a field by a specified amount. If a field does not exist,
+it adds the field and sets it to the specified value. It accepts positive and
+negative values (int, long, or double).
+
+Mongo: { $inc: { <field1>: <amount1>, ... } }
+'@
+		PopFirst = @'
+Removes the first element in an array.
+
+It fails if a field is not an array. When it removes the last remaining item
+a field holds an empty array.
+
+Mongo: { $pop: { field: -1 } }
+'@
+		PopLast = @'
+Removes the last element in an array.
+
+It fails if a field is not an array. When it removes the last remaining item
+a field holds an empty array.
+
+Mongo: { $pop: { field: 1 } }
+'@
+		Pull = @"
+Removes matching values from a field if it is an array. It fails if a field is
+present but it is not an array.
+
+If a field argument is a collection then it is treated as a single value to
+pull. Use PullAll in order to remove each value.
+
+If a field argument is a query expression than items matching the expression
+are removed. $QueryTypes
+
+Mongo: { `$pull: { field: <value>|<query> } }
+"@
+		PullAll = @'
+Removes multiple values from an existing array. PullAll provides the inverse
+operation of the PushAll operator.
+
+Mongo: { $pullAll: { field: [ value1, value2, ... ] } }
+'@
+		Push = @'
+Appends a value to a field if it is an existing array, otherwise sets a field
+to an array with one value. It fails if a field is present but it is not an
+array.
+
+If a field argument is a collection then it is treated as a single value to
+push. Use PushAll in order to push all values.
+
+Mongo: { $push: { <field>: <value> }
+'@
+		PushAll = @'
+Appends all values to an array.
+
+Mongo: { $push: { <field>: { $each: [ value1, valu2 ... ] } } }
+'@
+		Rename = @'
+Renames a field. A field argument is a new field name.
+
+Mongo: { $rename: { <old name1>: <new name1> }, ... }
+'@
+		Set = @'
+Sets a field value. This parameter name can be omitted in a command, i.e. these
+commands are the same:
+
+	New-MdbcUpdate @{field = value}
+
+	New-MdbcUpdate -Set @{field = value}
+
+Mongo: { $set: { <field1>: <value1>, ... } }
+'@
+		SetOnInsert = @'
+Sets a field value upon documents creation during an upsert. It has no effect
+on update operations that modify existing documents.
+
+Mongo: { $setOnInsert: { <field1>: <value1>, ... } }
+'@
+		Unset = @'
+Tells to remove a field from an existing document.
+
+Mongo: { $unset: { <field1>: "", ... } }
+'@
 	}
 	inputs = @()
-	outputs = @{ type = 'Update expression'; description = 'Use these expression objects for Update-MdbcData.' }
+	outputs = @{
+		type = '[MongoDB.Driver.IMongoUpdate]';
+		description = 'Update expression used by Update-MdbcData.'
+	}
 	links = @(
 		@{ text = 'Update-MdbcData' }
 	)
 }
 
 ### Add-MdbcData
-Merge-Helps $AbstractWrite @{
+Merge-Helps $AWrite @{
 	command = 'Add-MdbcData'
 	synopsis = 'Adds new documents to the database collection or updates existing.'
 	description = 'Adds new documents to the database collection or updates existing.', $AboutResultAndErrors
 	parameters = @{
-		InputObject = 'Document or a similar object.'
+		InputObject = 'Document or a similar object, see INPUTS.'
 		Update = 'Tells to update existing documents with the same _id or add new documents otherwise.'
 		Id = $IdParameter
 		NewId = $NewIdParameter
@@ -658,23 +763,25 @@ Merge-Helps $AbstractWrite @{
 }
 
 ### Get-MdbcData
-Merge-Helps $AbstractCollection @{
+Merge-Helps $ACollection @{
 	command = 'Get-MdbcData'
 	synopsis = @'
-Gets documents or data from the database collection.
+Gets documents or information from a database collection.
 '@
 	description = @'
-Gets documents or other information from the database collection.
+This cmdlets invokes queries for the specified or default collection and
+outputs result documents or other requested data.
 
 By default documents are represented by the Mdbc.Dictionary type which wraps
 BsonDocument objects. This is the fastest way to obtain query results and the
-type is friendly enough for using in scripts.
+type is friendly for scripting. See New-MdbcData.
 
 It is sometimes more convenient to get data as custom types (use the parameter
 As) or as PS objects (use the switch AsCustomObject). Note that use of custom
-types is not always possible and performance of PS objects is not always good
-enough. Moreover, PS object property names are case insensitive unlike document
-field names.
+types is not always possible and performance of PS objects is not always good.
+
+On choosing the output type keep in mind that Mdbc.Dictionary (BsonDocument)
+field names are case sensitive unlike object properties in PowerShell.
 
 --------------------------------------------------
 '@
@@ -706,7 +813,8 @@ documents that match a query.
 Tells to remove and get the first document specified by Query and SortBy.
 '@
 		Update = @'
-Tells to update and get the first document specified by Query and SortBy.
+Specifies an update expression and tells to update and get the first document
+specified by Query and SortBy (FindAndModify method).
 '@
 		New = @'
 Tells to return the new document on Update.
@@ -739,19 +847,19 @@ specified.
 	outputs = @(
 		@{
 			type = 'Int64'
-			description = 'If the Count or Size switch is specified.'
+			description = 'If Count or Size is requested.'
 		}
 		@{
-			type = 'object[]'
+			type = 'object'
 			description = 'If the Distinct field name is specified.'
 		}
 		@{
-			type = 'MongoDB.Driver.MongoCursor'
-			description = 'If the Cursor switch is specified.'
+			type = 'Mdbc.Dictionary or custom objects'
+			description = 'Documents, see New-MdbcData about Mdbc.Dictionary.'
 		}
 		@{
-			type = 'Mdbc.Dictionary[]'
-			description = 'Query results, BSON document wrapper objects.'
+			type = 'MongoDB.Driver.MongoCursor'
+			description = 'If Cursor is requested.'
 		}
 	)
 	links = @(
@@ -761,7 +869,7 @@ specified.
 }
 
 ### Remove-MdbcData
-Merge-Helps $AbstractWrite @{
+Merge-Helps $AWrite @{
 	command = 'Remove-MdbcData'
 	synopsis = 'Removes specified documents from the collection.'
 	description = 'Removes specified documents from the collection.', $AboutResultAndErrors
@@ -778,14 +886,20 @@ Merge-Helps $AbstractWrite @{
 }
 
 ### Update-MdbcData
-Merge-Helps $AbstractWrite @{
+Merge-Helps $AWrite @{
 	command = 'Update-MdbcData'
 	synopsis = 'Updates the specified documents.'
-	description = 'Updates the specified documents.', $AboutResultAndErrors
+	description = @'
+Applies the specified update to documents matching the specified query.
+'@, $AboutResultAndErrors
 	parameters = @{
 		Query = $QueryParameter
 		Modes = 'Additional update flags. See the C# driver manual.'
-		Update = 'Update expressions. See New-MdbcUpdate.'
+		Update = @'
+One or more update expressions either created by New-MdbcUpdate or hashtables
+representing JSON-like updates. Two and more expression are combined together
+internally.
+'@
 	}
 	inputs = $QueryInputs
 	outputs = $TypeWriteConcernResult
@@ -796,7 +910,7 @@ Merge-Helps $AbstractWrite @{
 }
 
 ### Invoke-MdbcMapReduce command help
-Merge-Helps $AbstractCollection @{
+Merge-Helps $ACollection @{
 	command = 'Invoke-MdbcMapReduce'
 	synopsis = 'Invokes a Map/Reduce command.'
 	description = ''
@@ -861,7 +975,7 @@ This parameter is used together with Query.
 }
 
 ### Add-MdbcCollection
-Merge-Helps $AbstractDatabase @{
+Merge-Helps $ADatabase @{
 	command = 'Add-MdbcCollection'
 	synopsis = 'Creates a new collection in a database.'
 	description = @'
@@ -888,7 +1002,7 @@ creation of a unique key index on the _id field.
 }
 
 ### Invoke-MdbcCommand
-Merge-Helps $AbstractDatabase @{
+Merge-Helps $ADatabase @{
 	command = 'Invoke-MdbcCommand'
 	synopsis = 'Invokes a command for a database.'
 	description = @'
@@ -987,7 +1101,7 @@ or even installed MongoDB. They are used for file based object persistence.
 Specifies the path to the file where BSON representation of objects will be stored.
 '@
 		Append = 'Tells to append data to the file if it exists.'
-		InputObject = 'Document or a similar object.'
+		InputObject = 'Document or a similar object, see INPUTS.'
 		Id = $IdParameter
 		NewId = $NewIdParameter
 		Convert = $ConvertParameter

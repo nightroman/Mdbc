@@ -20,6 +20,7 @@ using System.Management.Automation;
 using MongoDB.Bson;
 using MongoDB.Bson.IO;
 using MongoDB.Bson.Serialization;
+
 namespace Mdbc.Commands
 {
 	[Cmdlet(VerbsData.Import, "MdbcData")]
@@ -27,10 +28,13 @@ namespace Mdbc.Commands
 	{
 		[Parameter(Position = 0, Mandatory = true)]
 		public string Path { get; set; }
+		
 		[Parameter]
 		public Type As { get; set; }
+		
 		[Parameter]
 		public SwitchParameter AsCustomObject { get; set; }
+		
 		protected override void BeginProcessing()
 		{
 			Type documentType = AsCustomObject ? typeof(PSObject) : As ?? typeof(BsonDocument);

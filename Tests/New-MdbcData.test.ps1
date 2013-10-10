@@ -4,7 +4,7 @@ Import-Module Mdbc
 Set-StrictMode -Version 2
 
 task DataTypes {
-	Connect-Mdbc . test nested -NewCollection
+	Connect-Mdbc -NewCollection
 
 	function Test-Document($document) {
 
@@ -108,7 +108,7 @@ task New-MdbcData.HashtableToDocument {
 }
 
 task New-MdbcData.-Value {
-	Test-Type (New-MdbcData -Value $null) MongoDB.Bson.BsonNull #fixed
+	Test-Type (New-MdbcData -Value $null) MongoDB.Bson.BsonNull
 
 	Test-Type (New-MdbcData -Value $true) MongoDB.Bson.BsonBoolean
 	Test-Type (New-MdbcData -Value (Get-Date)) MongoDB.Bson.BsonDateTime
@@ -118,8 +118,8 @@ task New-MdbcData.-Value {
 	Test-Type (New-MdbcData -Value 1L) MongoDB.Bson.BsonInt64
 	Test-Type (New-MdbcData -Value text) MongoDB.Bson.BsonString
 
-	Test-Type (New-MdbcData -Value @()) Mdbc.Collection
-	Test-Type (New-MdbcData -Value @{}) Mdbc.Dictionary
+	Test-Type (New-MdbcData -Value @()) MongoDB.Bson.BsonArray
+	Test-Type (New-MdbcData -Value @{}) MongoDB.Bson.BsonDocument
 }
 
 task New-MdbcData.PSCustomObject {
@@ -152,10 +152,7 @@ task New-MdbcData.KeepProblemValues {
 task New-MdbcData.KeysMustBeStrings {
 	$d = @{}
 	$d[1] = 1
-	$err = ''
-	try {$d | New-MdbcData}
-	catch {$err = "$_"}
-	assert ($err -eq 'Dictionary keys must be strings.')
+	Test-Error {$d | New-MdbcData} 'Dictionary keys must be strings.'
 }
 
 task New-MdbcData.MissingProperty {
@@ -221,4 +218,9 @@ task New-MdbcData.Cyclic {
 	$a = [Collections.ArrayList]@()
 	$null = $a.Add($a)
 	Test-Error { New-MdbcData -Value $a } 'Cyclic reference.'
+
+	#! not a cycle
+	$d = @{x = 1}
+	$d = @{array = $d, $d} | New-MdbcData
+	assert ($d.array.Count -eq 2)
 }

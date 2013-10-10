@@ -18,6 +18,7 @@ using System;
 using System.Management.Automation;
 using MongoDB.Bson;
 using MongoDB.Driver;
+
 namespace Mdbc.Commands
 {
 	[Cmdlet(VerbsCommon.Get, "MdbcData", DefaultParameterSetName = NAll)]
@@ -29,58 +30,75 @@ namespace Mdbc.Commands
 		const string NCursor = "Cursor";
 		const string NRemove = "Remove";
 		const string NUpdate = "Update";
+		
 		[Parameter(Position = 0)]
 		public object Query { get { return null; } set { _Query = Actor.ObjectToQuery(value); } }
 		IMongoQuery _Query;
+		
 		[Parameter(Mandatory = true, ParameterSetName = NDistinct)]
 		public string Distinct { get; set; }
+		
 		[Parameter(Mandatory = true, ParameterSetName = NCount)]
 		public SwitchParameter Count { get; set; }
+		
 		[Parameter(Mandatory = true, ParameterSetName = NCursor)]
 		public SwitchParameter Cursor { get; set; }
+		
 		[Parameter(Mandatory = true, ParameterSetName = NRemove)]
 		public SwitchParameter Remove { get; set; }
+		
 		[Parameter(Mandatory = true, ParameterSetName = NUpdate)]
 		public object Update { get { return null; } set { _Update = Actor.ObjectToUpdate(value); } }
 		IMongoUpdate _Update;
+		
 		[Parameter(ParameterSetName = NUpdate)]
 		public SwitchParameter New { get; set; }
+		
 		[Parameter(ParameterSetName = NUpdate)]
 		public SwitchParameter Add { get; set; }
+		
 		[Parameter(ParameterSetName = NAll)]
 		[Parameter(ParameterSetName = NCount)]
 		[Parameter(ParameterSetName = NCursor)]
 		[Parameter(ParameterSetName = NRemove)]
 		[Parameter(ParameterSetName = NUpdate)]
 		public QueryFlags Modes { get; set; }
+		
 		[Parameter(ParameterSetName = NAll)]
 		[Parameter(ParameterSetName = NCount)]
 		[Parameter(ParameterSetName = NCursor)]
 		public int First { get; set; }
+		
 		[Parameter(ParameterSetName = NAll)]
 		[Parameter(ParameterSetName = NCount)]
 		[Parameter(ParameterSetName = NCursor)]
 		public int Last { get; set; }
+		
 		[Parameter(ParameterSetName = NAll)]
 		[Parameter(ParameterSetName = NCount)]
 		[Parameter(ParameterSetName = NCursor)]
 		public int Skip { get; set; }
+		
 		[Parameter(ParameterSetName = NAll)]
 		[Parameter(ParameterSetName = NCursor)]
 		[Parameter(ParameterSetName = NUpdate)]
 		public string[] Property { get; set; }
+		
 		[Parameter(ParameterSetName = NAll)]
 		[Parameter(ParameterSetName = NCursor)]
 		[Parameter(ParameterSetName = NRemove)]
 		[Parameter(ParameterSetName = NUpdate)]
 		public object[] SortBy { get { return null; } set { _SortBy = Actor.ObjectsToSortBy(value); } }
 		IMongoSortBy _SortBy;
+		
 		[Parameter(ParameterSetName = NAll)]
 		[Parameter(ParameterSetName = NCursor)]
 		public Type As { get; set; }
+		
 		[Parameter(ParameterSetName = NAll)]
 		[Parameter(ParameterSetName = NCursor)]
 		public SwitchParameter AsCustomObject { get; set; }
+		
 		void DoCount()
 		{
 			WriteObject(Collection.Count(_Query));
@@ -115,85 +133,92 @@ namespace Mdbc.Commands
 		}
 		protected override void BeginProcessing()
 		{
-			switch (ParameterSetName)
+			try
 			{
-				case NCount:
-					if (First > 0 || Skip > 0)
-						break;
-					DoCount();
-					return;
-
-				case NDistinct:
-					DoDistinct();
-					return;
-
-				case NRemove:
-					DoRemove();
-					return;
-
-				case NUpdate:
-					DoUpdate();
-					return;
-			}
-
-			var documentType = GetDocumentType();
-			var cursor = Collection.FindAs(documentType, _Query);
-
-			if (Modes != QueryFlags.None)
-				cursor.SetFlags(Modes);
-
-			if (Last > 0)
-			{
-				Skip = (int)Collection.Count(_Query) - Skip - Last;
-				First = Last;
-				if (Skip < 0)
+				switch (ParameterSetName)
 				{
-					First += Skip;
-					if (First <= 0)
-					{
-						if (Count)
-							WriteObject(0);
+					case NCount:
+						if (First > 0 || Skip > 0)
+							break;
+						DoCount();
 						return;
+
+					case NDistinct:
+						DoDistinct();
+						return;
+
+					case NRemove:
+						DoRemove();
+						return;
+
+					case NUpdate:
+						DoUpdate();
+						return;
+				}
+
+				var documentType = GetDocumentType();
+				var cursor = Collection.FindAs(documentType, _Query);
+
+				if (Modes != QueryFlags.None)
+					cursor.SetFlags(Modes);
+
+				if (Last > 0)
+				{
+					Skip = (int)Collection.Count(_Query) - Skip - Last;
+					First = Last;
+					if (Skip < 0)
+					{
+						First += Skip;
+						if (First <= 0)
+						{
+							if (Count)
+								WriteObject(0);
+							return;
+						}
+						Skip = 0;
 					}
-					Skip = 0;
+				}
+
+				if (First > 0)
+					cursor.SetLimit(First);
+
+				if (Skip > 0)
+					cursor.SetSkip(Skip);
+
+				if (Count)
+				{
+					WriteObject(cursor.Size());
+					return;
+				}
+
+				if (_SortBy != null)
+					cursor.SetSortOrder(_SortBy);
+
+				if (Property != null)
+					cursor.SetFields(Property);
+
+				if (Cursor)
+				{
+					WriteObject(cursor);
+					return;
+				}
+
+				if (documentType == typeof(BsonDocument))
+				{
+					foreach (BsonDocument bson in cursor)
+						WriteObject(new Dictionary(bson));
+				}
+				else
+				{
+					if (documentType == typeof(PSObject))
+						PSObjectSerializer.Register();
+
+					WriteObject(cursor, true);
 				}
 			}
-
-			if (First > 0)
-				cursor.SetLimit(First);
-
-			if (Skip > 0)
-				cursor.SetSkip(Skip);
-
-			if (Count)
+			catch (MongoException ex)
 			{
-				WriteObject(cursor.Size());
-				return;
-			}
-
-			if (_SortBy != null)
-				cursor.SetSortOrder(_SortBy);
-
-			if (Property != null)
-				cursor.SetFields(Property);
-
-			if (Cursor)
-			{
-				WriteObject(cursor);
-				return;
-			}
-
-			if (documentType == typeof(BsonDocument))
-			{
-				foreach (BsonDocument bson in cursor)
-					WriteObject(new Dictionary(bson));
-			}
-			else
-			{
-				if (documentType == typeof(PSObject))
-					PSObjectSerializer.Register();
-
-				WriteObject(cursor, true);
+				WriteException(ex, null);
 			}
 		}
 	}

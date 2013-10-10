@@ -14,170 +14,229 @@
 * limitations under the License.
 */
 
+using System.Collections;
+using System.Collections.Generic;
 using System.Management.Automation;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using MongoDB.Driver.Builders;
+
 namespace Mdbc.Commands
 {
 	[Cmdlet(VerbsCommon.New, "MdbcUpdate")]
 	public sealed class NewUpdateCommand : PSCmdlet
 	{
-		const string NAddToSet = "AddToSet";
-		const string NAddToSetEach = "AddToSetEach";
-		const string NBand = "Band";
-		const string NBor = "Bor";
-		const string NIncrement = "Increment";
-		const string NPopFirst = "PopFirst";
-		const string NPopLast = "PopLast";
-		const string NPull = "Pull";
-		const string NPullAll = "PullAll";
-		const string NPush = "Push";
-		const string NPushAll = "PushAll";
-		const string NRename = "Rename";
-		const string NSet = "Set";
-		const string NSetOnInsert = "SetOnInsert";
-		const string NUnset = "Unset";
-		const string ExpectedInteger = "Invalid value type. Expected types: int, long.";
-		const string ExpectedNumber = "Invalid value type. Expected types: int, long, double.";
-		[Parameter(Position = 0, Mandatory = true)]
-		public string Name { get; set; }
-		[Parameter(Position = 1, Mandatory = true, ParameterSetName = NAddToSet)]
-		public PSObject AddToSet { get; set; }
-		[Parameter(Position = 1, Mandatory = true, ParameterSetName = NAddToSetEach)]
-		public PSObject AddToSetEach { get; set; }
-		[Parameter(Position = 1, Mandatory = true, ParameterSetName = NBand)]
-		public PSObject Band { get; set; }
-		[Parameter(Position = 1, Mandatory = true, ParameterSetName = NBor)]
-		public PSObject Bor { get; set; }
-		[Parameter(Position = 1, Mandatory = true, ParameterSetName = NIncrement)]
-		public PSObject Increment { get; set; }
-		[Parameter(Position = 1, Mandatory = true, ParameterSetName = NPopFirst)]
-		public SwitchParameter PopFirst { get; set; }
-		[Parameter(Position = 1, Mandatory = true, ParameterSetName = NPopLast)]
-		public SwitchParameter PopLast { get; set; }
-		[Parameter(Position = 1, Mandatory = true, ParameterSetName = NPull)]
-		public PSObject Pull { get; set; }
-		[Parameter(Position = 1, Mandatory = true, ParameterSetName = NPullAll)]
-		public PSObject PullAll { get; set; }
-		[Parameter(Position = 1, Mandatory = true, ParameterSetName = NPush)]
-		public PSObject Push { get; set; }
-		[Parameter(Position = 1, Mandatory = true, ParameterSetName = NPushAll)]
-		public PSObject PushAll { get; set; }
-		[Parameter(Position = 1, Mandatory = true, ParameterSetName = NRename)]
-		public string Rename { get; set; }
-		[Parameter(Position = 1, Mandatory = true, ParameterSetName = NSet)]
-		[AllowNull]
-		public PSObject Set { get; set; }
-		[Parameter(Position = 1, Mandatory = true, ParameterSetName = NSetOnInsert)]
-		[AllowNull]
-		public PSObject SetOnInsert { get; set; }
-		[Parameter(Position = 1, Mandatory = true, ParameterSetName = NUnset)]
-		public SwitchParameter Unset { get; set; }
-		UpdateBuilder BuildBand()
+		[Parameter]
+		public PSObject[] AddToSet { get { return null; } set { _AddToSet = ToData(value); } }
+		List<DictionaryEntry> _AddToSet;
+
+		[Parameter]
+		public PSObject[] AddToSetEach { get { return null; } set { _AddToSetEach = ToData(value); } }
+		List<DictionaryEntry> _AddToSetEach;
+
+		[Parameter]
+		public PSObject[] BitwiseAnd { get { return null; } set { _BitwiseAnd = ToData(value); } }
+		List<DictionaryEntry> _BitwiseAnd;
+
+		[Parameter]
+		public PSObject[] BitwiseOr { get { return null; } set { _BitwiseOr = ToData(value); } }
+		List<DictionaryEntry> _BitwiseOr;
+
+		[Parameter]
+		public PSObject[] Inc { get { return null; } set { _Inc = ToData(value); } }
+		List<DictionaryEntry> _Inc;
+
+		[Parameter]
+		public string[] PopFirst { get; set; }
+
+		[Parameter]
+		public string[] PopLast { get; set; }
+
+		[Parameter]
+		public PSObject[] Pull { get { return null; } set { _Pull = ToData(value); } }
+		List<DictionaryEntry> _Pull;
+
+		[Parameter]
+		public PSObject[] PullAll { get { return null; } set { _PullAll = ToData(value); } }
+		List<DictionaryEntry> _PullAll;
+
+		[Parameter]
+		public PSObject[] Push { get { return null; } set { _Push = ToData(value); } }
+		List<DictionaryEntry> _Push;
+
+		[Parameter]
+		public PSObject[] PushAll { get { return null; } set { _PushAll = ToData(value); } }
+		List<DictionaryEntry> _PushAll;
+
+		[Parameter]
+		public PSObject[] Rename { get { return null; } set { _Rename = ToData(value); } }
+		List<DictionaryEntry> _Rename;
+
+		[Parameter(Position = 0)]
+		public PSObject[] Set { get { return null; } set { _Set = ToData(value); } }
+		List<DictionaryEntry> _Set;
+
+		[Parameter]
+		public PSObject[] SetOnInsert { get { return null; } set { _SetOnInsert = ToData(value); } }
+		List<DictionaryEntry> _SetOnInsert;
+
+		[Parameter]
+		public string[] Unset { get; set; }
+
+		static List<DictionaryEntry> ToData(PSObject[] values)
 		{
-			if (Band.BaseObject is int)
-				return Update.BitwiseAnd(Name, (int)Band.BaseObject);
+			var r = new List<DictionaryEntry>(values.Length);
+			foreach (var po in values)
+			{
+				if (po == null)
+					throw new PSInvalidOperationException("Null values are not allowed.");
 
-			if (Band.BaseObject is long)
-				return Update.BitwiseAnd(Name, (long)Band.BaseObject);
+				var dic = po.BaseObject as IDictionary;
+				if (dic == null)
+					throw new PSInvalidOperationException("Values must be dictionaries.");
 
-			throw new PSInvalidCastException(ExpectedInteger);
+				foreach (DictionaryEntry e in dic)
+				{
+					if (e.Key == null)
+						throw new PSInvalidOperationException("Null keys are not allowed.");
+
+					r.Add(e);
+				}
+			}
+			return r;
 		}
-		UpdateBuilder BuildBor()
-		{
-			if (Bor.BaseObject is int)
-				return Update.BitwiseOr(Name, (int)Bor.BaseObject);
 
-			if (Bor.BaseObject is long)
-				return Update.BitwiseOr(Name, (long)Bor.BaseObject);
-
-			throw new PSInvalidCastException(ExpectedInteger);
-		}
-		UpdateBuilder BuildIncrement()
-		{
-			if (Increment.BaseObject is int)
-				return Update.Inc(Name, (int)Increment.BaseObject);
-
-			if (Increment.BaseObject is long)
-				return Update.Inc(Name, (long)Increment.BaseObject);
-
-			if (Increment.BaseObject is double)
-				return Update.Inc(Name, (double)Increment.BaseObject);
-
-			throw new PSInvalidCastException(ExpectedNumber);
-		}
-		UpdateBuilder BuildPull()
-		{
-			var query = Pull.BaseObject as IMongoQuery;
-			if (query == null)
-				return Update.Pull(Name, Actor.ToBsonValue(Pull, null));
-
-			return Update.Pull(Name, query);
-		}
 		protected sealed override void BeginProcessing()
 		{
-			switch (ParameterSetName)
+			UpdateBuilder r = new UpdateBuilder();
+
+			if (_Set != null)
 			{
-				case NAddToSet:
-					WriteObject(Update.AddToSet(Name, Actor.ToBsonValue(AddToSet, null)));
-					return;
-
-				case NAddToSetEach:
-					WriteObject(Update.AddToSetEach(Name, Actor.ToEnumerableBsonValue(AddToSetEach)));
-					return;
-
-				case NBand:
-					WriteObject(BuildBand());
-					return;
-
-				case NBor:
-					WriteObject(BuildBor());
-					return;
-
-				case NIncrement:
-					WriteObject(BuildIncrement());
-					return;
-
-				case NPopFirst:
-					WriteObject(Update.PopFirst(Name));
-					return;
-
-				case NPopLast:
-					WriteObject(Update.PopLast(Name));
-					return;
-
-				case NPull:
-					WriteObject(BuildPull());
-					return;
-
-				case NPullAll:
-					WriteObject(Update.PullAll(Name, Actor.ToEnumerableBsonValue(PullAll)));
-					return;
-
-				case NPush:
-					WriteObject(Update.Push(Name, Actor.ToBsonValue(Push, null)));
-					return;
-
-				case NPushAll:
-					WriteObject(Update.PushAll(Name, Actor.ToEnumerableBsonValue(PushAll)));
-					return;
-
-				case NRename:
-					WriteObject(Update.Rename(Name, Rename));
-					return;
-
-				case NSet:
-					WriteObject(Update.Set(Name, Actor.ToBsonValue(Set, null)));
-					return;
-
-				case NSetOnInsert:
-					WriteObject(Update.SetOnInsert(Name, Actor.ToBsonValue(SetOnInsert, null)));
-					return;
-
-				case NUnset:
-					WriteObject(Update.Unset(Name));
-					return;
+				foreach (var e in _Set)
+					r.Combine(Update.Set(e.Key.ToString(), Actor.ToBsonValue(e.Value)));
 			}
+
+			if (_SetOnInsert != null)
+			{
+				foreach (var e in _SetOnInsert)
+					r.Combine(Update.SetOnInsert(e.Key.ToString(), Actor.ToBsonValue(e.Value)));
+			}
+
+			if (_BitwiseAnd != null)
+			{
+				foreach (var e in _BitwiseAnd)
+				{
+					var n = e.Key.ToString();
+					var x = new IntLong(e.Value);
+					r.Combine(x.Int.HasValue ? Update.BitwiseAnd(n, x.Int.Value) : Update.BitwiseAnd(n, x.Long.Value));
+				}
+			}
+
+			if (_BitwiseOr != null)
+			{
+				foreach (var e in _BitwiseOr)
+				{
+					var n = e.Key.ToString();
+					var x = new IntLong(e.Value);
+					r.Combine(x.Int.HasValue ? Update.BitwiseOr(n, x.Int.Value) : Update.BitwiseOr(n, x.Long.Value));
+				}
+			}
+
+			if (_Inc != null)
+			{
+				foreach (var e in _Inc)
+				{
+					var n = e.Key.ToString();
+					var x = new IntLongDouble(e.Value);
+					r.Combine(x.Int.HasValue ? Update.Inc(n, x.Int.Value) : x.Long.HasValue ? Update.Inc(n, x.Long.Value) : Update.Inc(n, x.Double.Value));
+				}
+			}
+
+			if (_AddToSet != null)
+			{
+				foreach (var e in _AddToSet)
+					r.Combine(Update.AddToSet(e.Key.ToString(), Actor.ToBsonValue(e.Value)));
+			}
+
+			if (_AddToSetEach != null)
+			{
+				foreach (var e in _AddToSetEach)
+					r.Combine(Update.AddToSetEach(e.Key.ToString(), Actor.ToEnumerableBsonValue(e.Value)));
+			}
+
+			if (PopFirst != null)
+			{
+				foreach (var name in PopFirst)
+					if (name != null)
+						r.Combine(Update.PopFirst(name));
+			}
+
+			if (PopLast != null)
+			{
+				foreach (var name in PopLast)
+					if (name != null)
+						r.Combine(Update.PopLast(name));
+			}
+
+			if (_Pull != null)
+			{
+				foreach (var e in _Pull)
+				{
+					BsonValue value = null;
+					IMongoQuery query = null;
+					if (e.Value == null)
+					{
+						value = BsonNull.Value;
+					}
+					else
+					{
+						query = PSObject.AsPSObject(e.Value).BaseObject as IMongoQuery;
+						if (query == null)
+							value = Actor.ToBsonValue(e.Value);
+					}
+
+					var n = e.Key.ToString();
+					r.Combine(query == null ? Update.Pull(n, value) : Update.Pull(n, query));
+				}
+			}
+
+			if (_PullAll != null)
+			{
+				foreach (var e in _PullAll)
+					r.Combine(Update.PullAll(e.Key.ToString(), Actor.ToEnumerableBsonValue(e.Value)));
+			}
+
+			if (_Push != null)
+			{
+				foreach (var e in _Push)
+					r.Combine(Update.Push(e.Key.ToString(), Actor.ToBsonValue(e.Value)));
+			}
+
+			if (_PushAll != null)
+			{
+				foreach (var e in _PushAll)
+					r.Combine(Update.PushAll(e.Key.ToString(), Actor.ToEnumerableBsonValue(e.Value)));
+			}
+
+			if (_Rename != null)
+			{
+				foreach (var e in _Rename)
+				{
+					if (e.Value == null)
+						throw new PSInvalidOperationException("New names must not be nulls.");
+
+					r.Combine(Update.Rename(e.Key.ToString(), e.Value.ToString()));
+				}
+			}
+
+			if (Unset != null)
+			{
+				foreach (var name in Unset)
+					if (name != null)
+						r.Combine(Update.Unset(name));
+			}
+
+			WriteObject(r);
 		}
 	}
 }

@@ -19,6 +19,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using MongoDB.Bson;
+
 namespace Mdbc
 {
 	public class Dictionary : IDictionary
@@ -41,6 +42,7 @@ namespace Mdbc
 		{
 			return _document;
 		}
+		#region IDictionary
 		public bool IsFixedSize { get { return false; } }
 		public bool IsReadOnly { get { return false; } }
 		public bool IsSynchronized { get { return false; } }
@@ -62,10 +64,7 @@ namespace Mdbc
 			set
 			{
 				if (key == null) throw new ArgumentNullException("key");
-				if (value == null)
-					Remove(key);
-				else
-					_document.Set(key.ToString(), Actor.ToBsonValue(value, null));
+				_document.Set(key.ToString(), Actor.ToBsonValue(value));
 			}
 		}
 		public void Remove(object key)
@@ -76,7 +75,7 @@ namespace Mdbc
 		public void Add(object key, object value)
 		{
 			if (key == null) throw new ArgumentNullException("key");
-			_document.Add(key.ToString(), Actor.ToBsonValue(value, null));
+			_document.Add(key.ToString(), Actor.ToBsonValue(value));
 		}
 		public bool Contains(object key)
 		{
@@ -99,19 +98,20 @@ namespace Mdbc
 		{
 			return _document.ToString();
 		}
-	}
-	class DocumentEnumerator : IDictionaryEnumerator
-	{
-		readonly IEnumerator<BsonElement> _that;
-		public DocumentEnumerator(IEnumerator<BsonElement> that)
+		class DocumentEnumerator : IDictionaryEnumerator
 		{
-			_that = that;
+			readonly IEnumerator<BsonElement> _that;
+			public DocumentEnumerator(IEnumerator<BsonElement> that)
+			{
+				_that = that;
+			}
+			public DictionaryEntry Entry { get { return new DictionaryEntry(_that.Current.Name, Actor.ToObject(_that.Current.Value)); } }
+			public object Key { get { return _that.Current.Name; } }
+			public object Value { get { return Actor.ToObject(_that.Current.Value); } }
+			public object Current { get { return Entry; } }
+			public void Reset() { _that.Reset(); }
+			public bool MoveNext() { return _that.MoveNext(); }
 		}
-		public DictionaryEntry Entry { get { return new DictionaryEntry(_that.Current.Name, Actor.ToObject(_that.Current.Value)); } }
-		public object Key { get { return _that.Current.Name; } }
-		public object Value { get { return Actor.ToObject(_that.Current.Value); } }
-		public object Current { get { return Entry; } }
-		public void Reset() { _that.Reset(); }
-		public bool MoveNext() { return _that.MoveNext(); }
+		#endregion
 	}
 }

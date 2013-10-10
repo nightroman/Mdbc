@@ -43,7 +43,7 @@ if ($Name) {
 	$query = New-MdbcQuery Name -IEQ $Pattern
 }
 else {
-	$query = New-MdbcQuery Name -Match $Pattern, i
+	$query = New-MdbcQuery Name -Matches $Pattern, i
 }
 
 Get-MdbcData $query -Property @() | .{process{ $_._id }}

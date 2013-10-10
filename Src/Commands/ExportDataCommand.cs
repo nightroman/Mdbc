@@ -20,6 +20,7 @@ using System.IO;
 using System.Management.Automation;
 using MongoDB.Bson.IO;
 using MongoDB.Bson.Serialization;
+
 namespace Mdbc.Commands
 {
 	[Cmdlet(VerbsData.Export, "MdbcData")]
@@ -27,21 +28,29 @@ namespace Mdbc.Commands
 	{
 		[Parameter(Position = 0, Mandatory = true)]
 		public string Path { get; set; }
+		
 		[Parameter(ValueFromPipeline = true)]
 		public PSObject InputObject { get; set; }
+		
 		[Parameter]
 		public PSObject Id { get; set; }
+		
 		[Parameter]
 		public SwitchParameter NewId { get; set; }
+		
 		[Parameter]
 		public ScriptBlock Convert { get; set; }
+		
 		[Parameter]
-		public object[] Property { get { return null; } set { Selectors = Selector.Create(value, this); } }
-		public IList<Selector> Selectors { get; private set; }
+		public object[] Property { get { return null; } set { _Selectors = Selector.Create(value, this); } }
+		IList<Selector> _Selectors;
+		
 		[Parameter]
 		public SwitchParameter Append { get; set; }
+		
 		FileStream _stream;
 		BsonWriter _writer;
+		
 		public void Dispose()
 		{
 			if (_writer != null)
@@ -69,7 +78,7 @@ namespace Mdbc.Commands
 
 			try
 			{
-				var bson = Actor.ToBsonDocument(InputObject, Selectors, x => DocumentInput.ConvertValue(x, this, SessionState));
+				var bson = Actor.ToBsonDocument(InputObject, new DocumentInput(SessionState, Convert), _Selectors);
 				DocumentInput.MakeId(bson, this, SessionState);
 
 				BsonSerializer.Serialize(_writer, bson);

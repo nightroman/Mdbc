@@ -37,7 +37,7 @@ task Export.Basics {
 	}
 
 	# dump by mongodump
-	Connect-Mdbc . test test -NewCollection
+	Connect-Mdbc -NewCollection
 	$1, $2, $3 | Add-MdbcData
 	Set-Alias mongodump ([IO.Path]::GetDirectoryName((Get-Process mongod).Path) + '\mongodump.exe')
 	exec {mongodump --db test --collection test}
@@ -58,7 +58,7 @@ task Export.Basics {
 	Test-Dictionary3 $data1 $data2
 
 	# restore from our dump
-	Connect-Mdbc . test test -NewCollection
+	Connect-Mdbc -NewCollection
 	assert ($collection.Count() -eq 0)
 	Set-Alias mongorestore ([IO.Path]::GetDirectoryName((Get-Process mongod).Path) + '\mongorestore.exe')
 	exec {mongorestore --collection test --db test test2.bson}

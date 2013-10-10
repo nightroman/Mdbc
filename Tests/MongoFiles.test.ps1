@@ -40,9 +40,9 @@ task . {
 	$n3 = Test-Query (New-MdbcQuery LastWriteTime -LT $time1)
 	assert ($total -eq $n1 + $n2 + $n3)
 
-	"GE LE"
-	$n2 = Test-Query (New-MdbcQuery LastWriteTime -GE $time1)
-	$n3 = Test-Query (New-MdbcQuery LastWriteTime -LE $time1)
+	"GTE LTE"
+	$n2 = Test-Query (New-MdbcQuery LastWriteTime -GTE $time1)
+	$n3 = Test-Query (New-MdbcQuery LastWriteTime -LTE $time1)
 	assert ($total -eq -$n1 + $n2 + $n3)
 
 	"And"
@@ -54,28 +54,24 @@ task . {
 	$n1 = Test-Query (New-MdbcQuery -Or (New-MdbcQuery Name Readme.txt), (New-MdbcQuery Name About.txt), (New-MdbcQuery Name LICENSE))
 	$n2 = Test-Query (New-MdbcQuery Name -In Readme.txt, About.txt, LICENSE)
 	assert ($n1 -eq $n2)
-	$n2 = Test-Query (New-MdbcQuery Name -Match '^(?:Readme\.txt|About\.txt|LICENSE)$')
+	$n2 = Test-Query (New-MdbcQuery Name -Matches '^(?:Readme\.txt|About\.txt|LICENSE)$')
 	assert ($n1 -eq $n2)
 
-	"Match, ignore case"
-	$n1 = Test-Query (New-MdbcQuery Name -Match '^(?i:Readme\.txt|About\.txt|LICENSE)$')
-	$n2 = Test-Query (New-MdbcQuery Name -Match (New-Object regex '^(?:Readme\.txt|About\.txt|LICENSE)$', IgnoreCase))
+	"Matches, ignore case"
+	$n1 = Test-Query (New-MdbcQuery Name -Matches '^(?i:Readme\.txt|About\.txt|LICENSE)$')
+	$n2 = Test-Query (New-MdbcQuery Name -Matches (New-Object regex '^(?:Readme\.txt|About\.txt|LICENSE)$', IgnoreCase))
 	assert ($n1 -eq $n2)
 
 	"Exists Mod Not"
-	$MissingLength = Test-Query (New-MdbcQuery Length -Exists $false)
+	$MissingLength = Test-Query (New-MdbcQuery Length -NotExists)
 	$n1 = Test-Query (New-MdbcQuery Length -Mod 2, 0)
-	$n2 = Test-Query (New-MdbcQuery Length -Not -Mod 2, 1)
+	$n2 = Test-Query (New-MdbcQuery -Not (New-MdbcQuery Length -Mod 2, 1))
 	assert ($MissingLength + $n1 -eq $n2)
 	$n1 = Test-Query (New-MdbcQuery Length -Mod 2, 1)
-	$n2 = Test-Query (New-MdbcQuery Length -Not -Mod 2, 0)
+	$n2 = Test-Query (New-MdbcQuery -Not (New-MdbcQuery Length -Mod 2, 0))
 	assert ($MissingLength + $n1 -eq $n2)
 
 	"Type"
 	$n1 = Test-Query (New-MdbcQuery Length -Type Int64)
 	assert ($n1 -eq $total - $MissingLength)
-
-	"Where (slow)"
-	$n1 = Test-Query (New-MdbcQuery -Where 'this.Length == null')
-	assert ($n1 -eq $MissingLength)
 }

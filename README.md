@@ -57,7 +57,7 @@ PowerShell module directory, see `$env:PSModulePath`. For example:
     $data
 
     # Update these data (let's just set the WorkingSet to 12345)
-    $data | Update-MdbcData (New-MdbcUpdate WorkingSet -Set 12345)
+    $data | Update-MdbcData (New-MdbcUpdate -Set @{WorkingSet = 12345})
 
     # Query again in order to take a look at the changed data
     Get-MdbcData (New-MdbcQuery Name -EQ mongod)

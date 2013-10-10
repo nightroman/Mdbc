@@ -18,6 +18,7 @@ using System;
 using System.Collections;
 using System.Linq;
 using MongoDB.Bson;
+
 namespace Mdbc
 {
 	public class Collection : IList
@@ -56,7 +57,7 @@ namespace Mdbc
 			}
 			set
 			{
-				_array[index] = Actor.ToBsonValue(value, null);
+				_array[index] = Actor.ToBsonValue(value);
 			}
 		}
 		public void RemoveAt(int index)
@@ -65,15 +66,15 @@ namespace Mdbc
 		}
 		public void Remove(object value)
 		{
-			_array.Remove(Actor.ToBsonValue(value, null));
+			_array.Remove(Actor.ToBsonValue(value));
 		}
 		public void Insert(int index, object value)
 		{
-			_array.Insert(index, Actor.ToBsonValue(value, null));
+			_array.Insert(index, Actor.ToBsonValue(value));
 		}
 		public int IndexOf(object value)
 		{
-			return _array.IndexOf(Actor.ToBsonValue(value, null));
+			return _array.IndexOf(Actor.ToBsonValue(value));
 		}
 		public void Clear()
 		{
@@ -81,11 +82,11 @@ namespace Mdbc
 		}
 		public bool Contains(object value)
 		{
-			return _array.Contains(Actor.ToBsonValue(value, null));
+			return _array.Contains(Actor.ToBsonValue(value));
 		}
 		public int Add(object value)
 		{
-			_array.Add(Actor.ToBsonValue(value, null));
+			_array.Add(Actor.ToBsonValue(value));
 			return _array.Count - 1;
 		}
 	}
