@@ -131,7 +131,6 @@ task Package ConvertMarkdown, @{UpdateScript=1}, {
 
 	Copy-Item -Destination z\tools\Mdbc `
 	LICENSE.txt,
-	$ModuleRoot\LICENSE.CSharpDriver.txt,
 	$ModuleRoot\Mdbc.dll,
 	$ModuleRoot\Mdbc.Format.ps1xml,
 	$ModuleRoot\Mdbc.psd1,

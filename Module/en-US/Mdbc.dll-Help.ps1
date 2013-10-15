@@ -1057,16 +1057,16 @@ The argument value required by the command with one argument.
 		}
 		@{
 			code = {
-				# Commands with more then one argument use JSON-like hashes.
+				# Commands with more then one argument use JSON-like hashtables.
 				# The example command creates a capped collection with maximum
 				# set to 5 documents, adds 10 documents, then gets all back (5
 				# documents are expected).
 
-				Connect-Mdbc . test z -NewCollection
-				$null = Invoke-MdbcCommand @{create = 'z'; capped = $true; size = 1kb; max = 5 }
+				Connect-Mdbc . test test -NewCollection
+				$null = Invoke-MdbcCommand @{create = 'test'; capped = $true; size = 1kb; max = 5 }
 
 				# set the default collection
-				$Collection = $Database['z']
+				$Collection = $Database['test']
 
 				# use it in two command implicitly
 				1..10 | %{@{_id = $_}} | Add-MdbcData

@@ -4,14 +4,11 @@ Import-Module Mdbc
 
 # How to create a capped collection by Add-MdbcCollection
 task Add-MdbcCollection.Capped {
-	Connect-Mdbc . test
-	$null = $Database.DropCollection('test')
-
 	# add a capped collection (10 documents)
+	Connect-Mdbc -NewCollection
 	Add-MdbcCollection test -MaxSize 1mb -MaxDocuments 10
 
 	# add 20 documents
-	$Collection = $Database['test']
 	1..20 | %{@{Value=$_}} | Add-MdbcData
 
 	# test: expected 10 last documents
@@ -25,10 +22,8 @@ task Add-MdbcCollection.Capped {
 }
 
 task Add-MdbcCollection.-AutoIndexId {
-	Connect-Mdbc . test
-
 	# AutoIndexId 0
-	$null = $Database.DropCollection('test')
+	Connect-Mdbc -NewCollection
 	Add-MdbcCollection test -AutoIndexId 0 #todo bug in driver?
 
 	$Collection = $Database['test']
@@ -39,7 +34,7 @@ task Add-MdbcCollection.-AutoIndexId {
 	assert ($i.Count -eq 1) #?? should be 0
 
 	# default collection
-	$null = $Database.DropCollection('test')
+	Connect-Mdbc -NewCollection
 	Add-MdbcCollection test
 
 	$Collection = $Database['test']
