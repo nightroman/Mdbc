@@ -7,7 +7,7 @@
 . .\Zoo.ps1
 Import-Module Mdbc
 Set-StrictMode -Version 2
-Connect-Mdbc -NewCollection
+Connect-Mdbc
 
 # BsonValue errors
 task DocumentInput.BsonValueError {
@@ -18,25 +18,18 @@ task DocumentInput.BsonValueError {
 	$bad = @($Host) + $good
 
 	Invoke-Test {
-		$r = . $MakeData
 		assert ($e -like '.NET type * cannot be mapped to a BsonValue.')
 		assert ($PSVersionTable.PSVersion.Major -le 2 -or $e.TargetObject -eq $Host)
 		Test-Array -Force $r $good
 	}{
-		$MakeData = {
-			$bad | New-MdbcData -ErrorAction 0 -ErrorVariable e
-		}
+		$r = $bad | New-MdbcData -ErrorAction 0 -ErrorVariable e
 	}{
-		$MakeData = {
-			$null = $Collection.RemoveAll()
-			$bad | Add-MdbcData -ErrorAction 0 -ErrorVariable e
-			Get-MdbcData
-		}
+		$null = $Collection.RemoveAll()
+		$bad | Add-MdbcData -ErrorAction 0 -ErrorVariable e
+		$r = Get-MdbcData
 	}{
-		$MakeData = {
-			$bad | Export-MdbcData -ErrorAction 0 -ErrorVariable e -Path z.bson
-			Import-MdbcData z.bson
-		}
+		$bad | Export-MdbcData -ErrorAction 0 -ErrorVariable e -Path z.bson
+		$r = Import-MdbcData z.bson
 	}
 
 	Remove-Item z.bson
@@ -48,51 +41,35 @@ task DocumentInput.-Id {
 	$ps = New-Object PSObject -Property @{ id = 'id1'; name = 'name1' }
 
 	Invoke-Test {
+		Test-Error {test -NewId -Id 'bad' -ErrorAction 0} 'Parameters Id and NewId cannot be used together.'
+
 		# Create with value
-		$d = . $Data1
+		$d = test -Id 'value'
 		assert ($d.Count -eq 3)
 		assert ($d._id -eq 'value')
 
 		# Create with script
-		$d = . $Data2
+		$d = test -Id {$_.Id}
 		assert ($d.Count -eq 3)
 		assert ($d._id -eq 'id1')
 
 		# Generate _id
-		$d = . $Data3
+		$d = test -NewId
 		assert ($d.Count -eq 3)
 		assert ($d._id -is [MongoDB.Bson.ObjectId])
 	}{
-		$Data1 = {New-MdbcData $ps -Id 'value'}
-		$Data2 = {New-MdbcData $ps -Id {$_.Id}}
-		$Data3 = {New-MdbcData $ps -NewId -Id 'ignored'}
+		function test([switch]$NewId, $Id, $ErrorAction) {
+			New-MdbcData $ps @PSBoundParameters
+		}
 	}{
-		$Data1 = {
+		function test([switch]$NewId, $Id, $ErrorAction) {
 			$null = $Collection.RemoveAll()
-			Add-MdbcData $ps -Id 'value'
-			Get-MdbcData
-		}
-		$Data2 = {
-			$null = $Collection.RemoveAll()
-			Add-MdbcData $ps -Id {$_.Id}
-			Get-MdbcData
-		}
-		$Data3 = {
-			$null = $Collection.RemoveAll()
-			Add-MdbcData $ps -NewId -Id 'ignored'
+			Add-MdbcData $ps @PSBoundParameters
 			Get-MdbcData
 		}
 	}{
-		$Data1 = {
-			$ps | Export-MdbcData z.bson -Id 'value'
-			Import-MdbcData z.bson
-		}
-		$Data2 = {
-			$ps | Export-MdbcData z.bson -Id {$_.Id}
-			Import-MdbcData z.bson
-		}
-		$Data3 = {
-			$ps | Export-MdbcData z.bson -NewId -Id 'ignored'
+		function test([switch]$NewId, $Id, $ErrorAction) {
+			$ps | Export-MdbcData z.bson @PSBoundParameters
 			Import-MdbcData z.bson
 		}
 	}
@@ -100,32 +77,44 @@ task DocumentInput.-Id {
 	Remove-Item z.bson
 }
 
-
 #_131013_155413
 task DocumentInput.DocumentAsInput {
 	$mdbc = New-MdbcData @{x = 42; y = 0;}
 	$bson = $mdbc.Document()
 	assert ($mdbc.Count -eq 2)
 
-	# new is created and only x is there
+	# new, even if it is a copy
+	$mdbc1 = $mdbc | New-MdbcData
+	assert ($mdbc1.Count -eq 2)
+	assert (![object]::ReferenceEquals($mdbc1.Document(), $bson))
+
+	# new and only x is there
 	$mdbc2 = $mdbc | New-MdbcData -Property x
 	assert ($mdbc2.Count -eq 1)
 	assert (![object]::ReferenceEquals($mdbc2.Document(), $bson))
 
-	# new is created and only x is there
+	# new and only x is there
 	$mdbc2 = , $bson | New-MdbcData -Property x
 	assert ($mdbc2.Count -eq 1) $mdbc2.Count
 	assert (![object]::ReferenceEquals($mdbc2.Document(), $bson))
 
-	# the same is used and _id is added
+	# new and _id is added
 	$mdbc3 = $mdbc | New-MdbcData -Id 3
 	assert ($mdbc3.Count -eq 3)
 	assert ($mdbc3._id -eq 3)
-	assert ([object]::ReferenceEquals($mdbc3.Document(), $bson))
+	assert (![object]::ReferenceEquals($mdbc3.Document(), $bson))
 
-	# the same is used and _id is added
+	# new and _id is added
 	$mdbc4 = , $bson | New-MdbcData -Id 4
 	assert ($mdbc4.Count -eq 3)
 	assert ($mdbc4._id -eq 4)
-	assert ([object]::ReferenceEquals($mdbc4.Document(), $bson))
+	assert (![object]::ReferenceEquals($mdbc4.Document(), $bson))
+
+	# terminating error on duplicate _id
+	Test-Error {$mdbc4 | New-MdbcData -NewId -ErrorAction 0} "Duplicate element name '_id'."
+	Test-Error {$mdbc4 | New-MdbcData -Id 3 -ErrorAction 0} "Duplicate element name '_id'."
+	Test-Error {@{_id=1} | New-MdbcData -NewId -ErrorAction 0} "Duplicate element name '_id'."
+	Test-Error {@{_id=1} | New-MdbcData -Id 3 -ErrorAction 0} "Duplicate element name '_id'."
+
+	# + see _131015_123005 for New-MdbcData makes new even on RawBsonDocument
 }

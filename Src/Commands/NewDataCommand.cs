@@ -21,46 +21,48 @@ using MongoDB.Bson;
 
 namespace Mdbc.Commands
 {
-	[Cmdlet(VerbsCommon.New, "MdbcData", DefaultParameterSetName = NDocument)]
-	public sealed class NewDataCommand : PSCmdlet, IDocumentInput
+	[Cmdlet(VerbsCommon.New, "MdbcData", DefaultParameterSetName = nsDocument)]
+	public sealed class NewDataCommand : PSCmdlet
 	{
-		const string NDocument = "Document";
-		const string NValue = "Value";
+		const string nsDocument = "Document";
+		const string nsValue = "Value";
 		
-		[Parameter(ParameterSetName = NValue)]
+		[Parameter(ParameterSetName = nsValue)]
 		public PSObject Value { get; set; }
 		
-		[Parameter(Position = 0, ValueFromPipeline = true, ParameterSetName = NDocument)]
+		[Parameter(Position = 0, ValueFromPipeline = true, ParameterSetName = nsDocument)]
 		public PSObject InputObject { get; set; }
 		
-		[Parameter(ParameterSetName = NDocument)]
+		[Parameter(ParameterSetName = nsDocument)]
 		public PSObject Id { get; set; }
 		
-		[Parameter(ParameterSetName = NDocument)]
+		[Parameter(ParameterSetName = nsDocument)]
 		public SwitchParameter NewId { get; set; }
 		
-		[Parameter(ParameterSetName = NDocument)]
+		[Parameter(ParameterSetName = nsDocument)]
 		public ScriptBlock Convert { get; set; }
 		
-		[Parameter(ParameterSetName = NDocument)]
+		[Parameter(ParameterSetName = nsDocument)]
 		public object[] Property { get { return null; } set { _Selectors = Selector.Create(value, this); } }
 		IList<Selector> _Selectors;
 		
-		void WriteDocument(BsonDocument document)
-		{
-			DocumentInput.MakeId(document, this, SessionState);
-			WriteObject(new Dictionary(document));
-		}
 		protected override void ProcessRecord()
 		{
 			try
 			{
-				if (ParameterSetName == NValue)
+				if (ParameterSetName == nsValue)
+				{
 					WriteObject(Actor.ToBsonValue(Value));
-				else if (InputObject == null)
-					WriteDocument(new BsonDocument());
-				else
-					WriteDocument(Actor.ToBsonDocument(InputObject, new DocumentInput(SessionState, Convert), _Selectors));
+					return;
+				}
+				
+				// always new document
+				var document = DocumentInput.NewDocumentWithId(NewId, Id, InputObject, SessionState) ?? new BsonDocument();
+				
+				if (InputObject != null)
+					document = Actor.ToBsonDocument(document, InputObject, new DocumentInput(SessionState, Convert), _Selectors);
+
+				WriteObject(new Dictionary(document));
 			}
 			catch (ArgumentException ex)
 			{

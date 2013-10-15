@@ -1,4 +1,5 @@
-﻿/* Copyright 2011-2013 Roman Kuzmin
+﻿
+/* Copyright 2011-2013 Roman Kuzmin
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -15,6 +16,7 @@
 
 using System;
 using System.Management.Automation;
+using MongoDB.Bson;
 
 namespace Mdbc
 {
@@ -70,6 +72,50 @@ namespace Mdbc
 		{
 			if (Variable != null)
 				Variable.Value = OldValue;
+		}
+	}
+	public enum OutputType
+	{
+		Default,
+		Lazy,
+		Raw,
+		PS
+	}
+	class ParameterAs
+	{
+		internal readonly Type DeserializeType;
+		public ParameterAs(PSObject value)
+		{
+			Actor.Register();
+			
+			if (value == null)
+			{
+				DeserializeType = typeof(Dictionary);
+				return;
+			}
+
+			var type = value.BaseObject as Type;
+			if (type != null)
+			{
+				DeserializeType = (Type)LanguagePrimitives.ConvertTo(value, typeof(Type), null);
+				return;
+			}
+
+			switch ((OutputType)LanguagePrimitives.ConvertTo(value, typeof(OutputType), null))
+			{
+				case OutputType.Default:
+					DeserializeType = typeof(Dictionary);
+					return;
+				case OutputType.Lazy:
+					DeserializeType = typeof(LazyDictionary);
+					return;
+				case OutputType.Raw:
+					DeserializeType = typeof(RawDictionary);
+					return;
+				case OutputType.PS:
+					DeserializeType = typeof(PSObject);
+					return;
+			}
 		}
 	}
 }

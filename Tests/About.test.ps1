@@ -19,7 +19,7 @@ task About {
 	Get-Process | Add-MdbcData -Id {$_.Id} -Property Name, WorkingSet
 
 	# Query all data back as custom objects and print them formatted
-	Get-MdbcData -AsCustomObject | Format-Table -AutoSize | Out-String
+	Get-MdbcData -As PS | Format-Table -AutoSize | Out-String
 
 	# Get saved data of the process 'mongod' (expected at least one)
 	$data = Get-MdbcData (New-MdbcQuery Name -EQ mongod)
@@ -138,5 +138,33 @@ task SetDollar {
 		'name1'
 		'name2'
 		'System.Management.Automation.Runspaces.LocalRunspace'
+	)
+}
+
+task PublicTypes {
+	$types = [Reflection.Assembly]::GetAssembly(([Mdbc.Dictionary])).GetTypes() | ?{$_.IsPublic} | Sort-Object Name | Select-Object -ExpandProperty Name
+	Test-Array $types @(
+		'AbstractCollectionCommand'
+		'AbstractDatabaseCommand'
+		'AbstractWriteCommand'
+		'AddCollectionCommand'
+		'AddDataCommand'
+		'Collection'
+		'ConnectCommand'
+		'Dictionary'
+		'ExportDataCommand'
+		'GetDataCommand'
+		'ImportDataCommand'
+		'InvokeAggregateCommand'
+		'InvokeCommandCommand'
+		'InvokeMapReduceCommand'
+		'LazyDictionary'
+		'NewDataCommand'
+		'NewQueryCommand'
+		'NewUpdateCommand'
+		'OutputType'
+		'RawDictionary'
+		'RemoveDataCommand'
+		'UpdateDataCommand'
 	)
 }

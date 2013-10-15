@@ -17,10 +17,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Management.Automation;
 using MongoDB.Bson;
+using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
 using MongoDB.Driver.Builders;
 
@@ -28,9 +28,21 @@ namespace Mdbc
 {
 	static class Actor
 	{
-		internal const string ServerVariable = "Server";
-		internal const string DatabaseVariable = "Database";
-		internal const string CollectionVariable = "Collection";
+		public const string ServerVariable = "Server";
+		public const string DatabaseVariable = "Database";
+		public const string CollectionVariable = "Collection";
+		static bool _registered;
+		public static void Register()
+		{
+			if (_registered)
+				return;
+			
+			_registered = true;
+			BsonSerializer.RegisterSerializer(typeof(Dictionary), new DictionarySerializer());
+			BsonSerializer.RegisterSerializer(typeof(LazyDictionary), new LazyDictionarySerializer());
+			BsonSerializer.RegisterSerializer(typeof(RawDictionary), new RawDictionarySerializer());
+			BsonSerializer.RegisterSerializer(typeof(PSObject), new PSObjectSerializer());
+		}
 		public static object ToObject(BsonValue value) //_120509_173140 keep consistent
 		{
 			if (value == null)
@@ -68,7 +80,7 @@ namespace Mdbc
 
 				// case: custom
 				if (value is PSCustomObject) //! PSObject keeps properties
-					return ToBsonDocumentFromProperties(ps, input, null, cycle);
+					return ToBsonDocumentFromProperties(null, ps, input, null, cycle);
 			}
 
 			// case: BsonValue
@@ -84,7 +96,7 @@ namespace Mdbc
 			// case: dictionary
 			var dictionary = value as IDictionary;
 			if (dictionary != null)
-				return ToBsonDocumentFromDictionary(dictionary, input, null, cycle);
+				return ToBsonDocumentFromDictionary(null, dictionary, input, null, cycle);
 
 			// case: collection
 			var enumerable = value as IEnumerable;
@@ -121,7 +133,7 @@ namespace Mdbc
 				catch (RuntimeException re)
 				{
 					throw new ArgumentException( //! use this type
-						string.Format(CultureInfo.InvariantCulture, @"Converter script was called on ""{0}"" and failed with ""{1}"".", ae.Message, re.Message), re);
+						string.Format(null, @"Converter script was called on ""{0}"" and failed with ""{1}"".", ae.Message, re.Message), re);
 				}
 
 				if (value == null)
@@ -131,20 +143,22 @@ namespace Mdbc
 				return ToBsonValue(value, null, cycle);
 			}
 		}
-		static BsonDocument ToBsonDocumentFromDictionary(IDictionary dictionary, DocumentInput input, IEnumerable<Selector> properties, ArrayList cycle)
+		static BsonDocument ToBsonDocumentFromDictionary(BsonDocument source, IDictionary dictionary, DocumentInput input, IEnumerable<Selector> properties, ArrayList cycle)
 		{
 			PushCycle(dictionary, ref cycle);
 			try
 			{
-				//_131013_155413 Mdbc.Dictionary
-				if (properties == null)
+				//_131013_155413 reuse existing document as it is
+				if (source == null && properties == null)
 				{
 					var md = dictionary as Dictionary;
 					if (md != null)
 						return md.Document();
 				}
 
-				var document = new BsonDocument();
+				// existing or new document
+				var document = source ?? new BsonDocument();
+				
 				if (properties == null)
 				{
 					foreach (DictionaryEntry de in dictionary)
@@ -180,12 +194,14 @@ namespace Mdbc
 			}
 		}
 		// Input supposed to be not null
-		static BsonDocument ToBsonDocumentFromProperties(PSObject value, DocumentInput input, IEnumerable<Selector> properties, ArrayList cycle)
+		static BsonDocument ToBsonDocumentFromProperties(BsonDocument source, PSObject value, DocumentInput input, IEnumerable<Selector> properties, ArrayList cycle)
 		{
 			PushCycle((value.BaseObject is PSCustomObject ? value : value.BaseObject), ref cycle);
 			try
 			{
-				var document = new BsonDocument();
+				// existing or new document
+				var document = source ?? new BsonDocument();
+				
 				if (properties == null)
 				{
 					foreach (var pi in value.Properties)
@@ -232,31 +248,33 @@ namespace Mdbc
 				PopCycle(cycle);
 			}
 		}
-		public static BsonDocument ToBsonDocument(object value, DocumentInput input, IEnumerable<Selector> properties)
+		public static BsonDocument ToBsonDocument(BsonDocument source, object value, DocumentInput input, IEnumerable<Selector> properties)
 		{
-			return ToBsonDocument(value, input, properties, null);
+			return ToBsonDocument(source, value, input, properties, null);
 		}
-		static BsonDocument ToBsonDocument(object value, DocumentInput input, IEnumerable<Selector> properties, ArrayList cycle)
+		static BsonDocument ToBsonDocument(BsonDocument source, object value, DocumentInput input, IEnumerable<Selector> properties, ArrayList cycle)
 		{
 			var ps = value as PSObject;
 			if (ps != null)
 				value = ps.BaseObject;
 
-			//_131013_155413 BsonDocument
+			//_131013_155413 reuse existing document as it is or wrap
 			var document = value as BsonDocument;
 			if (document != null)
 			{
-				if (properties == null)
+				// reuse existing
+				if (source == null && properties == null)
 					return document;
 
+				// wrap
 				value = new Dictionary(document);
 			}
 
 			var dictionary = value as IDictionary;
 			if (dictionary != null)
-				return ToBsonDocumentFromDictionary(dictionary, input, properties, cycle);
+				return ToBsonDocumentFromDictionary(source, dictionary, input, properties, cycle);
 
-			return ToBsonDocumentFromProperties(ps ?? PSObject.AsPSObject(value), input, properties, cycle);
+			return ToBsonDocumentFromProperties(source, ps ?? PSObject.AsPSObject(value), input, properties, cycle);
 		}
 		public static IEnumerable<BsonValue> ToEnumerableBsonValue(object value)
 		{
@@ -363,6 +381,27 @@ namespace Mdbc
 				return Update.Combine(enumerable.Cast<object>().Select(Actor.ObjectToUpdate));
 
 			throw new PSInvalidCastException("Invalid update type. Valid types: update, dictionary.");
+		}
+		public static IEnumerable<BsonDocument> ObjectToBsonDocuments(object value)
+		{
+			var ps = value as PSObject;
+			if (ps != null)
+				value = ps.BaseObject;
+
+			var r = new List<BsonDocument>();
+
+			var enumerable = LanguagePrimitives.GetEnumerable(value);
+			if (enumerable == null)
+			{
+				r.Add(ToBsonDocument(null, value, null, null));
+			}
+			else
+			{
+				foreach(var it in enumerable)
+					r.Add(ToBsonDocument(null, it, null, null));
+			}
+
+			return r;
 		}
 		static void PushCycle(object value, ref ArrayList cycle)
 		{

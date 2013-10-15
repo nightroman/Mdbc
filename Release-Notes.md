@@ -1,6 +1,25 @@
 Mdbc Release Notes
 ==================
 
+## v4.1.0
+
+### New cmdlet `Invoke-MdbcAggregate`
+
+The driver currently provides just a raw API for aggregate operations. So does
+this cmdlet. When the API change the cmdlet will be redesigned.
+
+### `Get-MdbcData`, `Import-MdbcData`, `Invoke-MdbcMapReduce`
+
+Removed `AsCustomObject`. The parameter `As` is used for all types, including
+two new, `Lazy` and `Raw`. The argument is either a type or a shortcut enum.
+
+The result cursor always represents documents according to the type `As`.
+
+### `New-MdbcData`, `Add-MdbcData`, `Export-MdbcData`
+
+If `_id` is presented more than once by `Id`, `NewId`, `Property` or an input
+object then an exception is thrown.
+
 ## v4.0.0
 
 C# driver 1.8.3

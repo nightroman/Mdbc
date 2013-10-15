@@ -86,7 +86,7 @@ task . {
 	"Find match/where : $1"
 
 	Get-MdbcData (New-MdbcQuery Name mongod) | Update-MdbcData (New-MdbcUpdate -Inc @{HandleCount = 1})
-	$document = Get-MdbcData (New-MdbcQuery Name mongod) -AsCustomObject
+	$document = Get-MdbcData (New-MdbcQuery Name mongod) -As PS
 
 	$document | Format-List | Out-String
 }

@@ -14,37 +14,24 @@
 * limitations under the License.
 */
 
-using System;
-using System.IO;
+using System.Collections.Generic;
 using System.Management.Automation;
-using MongoDB.Bson.IO;
-using MongoDB.Bson.Serialization;
+using MongoDB.Bson;
 
 namespace Mdbc.Commands
 {
-	[Cmdlet(VerbsData.Import, "MdbcData")]
-	public sealed class ImportDataCommand : PSCmdlet
+	[Cmdlet(VerbsLifecycle.Invoke, "MdbcAggregate")]
+	public sealed class InvokeAggregateCommand : AbstractCollectionCommand
 	{
 		[Parameter(Position = 0, Mandatory = true)]
-		public string Path { get; set; }
-
-		[Parameter]
-		public PSObject As { get { return null; } set { _ParameterAs = new ParameterAs(value); } }
-		ParameterAs _ParameterAs;
+		public object Operation { get { return null; } set { _Operation = Actor.ObjectToBsonDocuments(value); } }
+		IEnumerable<BsonDocument> _Operation;
 
 		protected override void BeginProcessing()
 		{
-			var documentAs = _ParameterAs ?? new ParameterAs(null);
-
-			Path = GetUnresolvedProviderPathFromPSPath(Path);
-			using (var stream = File.OpenRead(Path))
-			{
-				long length = stream.Length;
-
-				while (stream.Position < length)
-					using (var _reader = BsonReader.Create(stream))
-						WriteObject(BsonSerializer.Deserialize(_reader, documentAs.DeserializeType));
-			}
+			var result = Collection.Aggregate(_Operation);
+			foreach (var document in result.ResultDocuments)
+				WriteObject(new Dictionary(document));
 		}
 	}
 }

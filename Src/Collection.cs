@@ -21,7 +21,7 @@ using MongoDB.Bson;
 
 namespace Mdbc
 {
-	public class Collection : IList
+	public sealed class Collection : IList
 	{
 		readonly BsonArray _array;
 		public Collection()
@@ -36,6 +36,12 @@ namespace Mdbc
 		{
 			return _array;
 		}
+		public void Dispose()
+		{
+			var dispose = _array as IDisposable;
+			if (dispose != null)
+				dispose.Dispose();
+		}
 		public IEnumerator GetEnumerator()
 		{
 			return _array.Select(Actor.ToObject).GetEnumerator();
@@ -47,8 +53,14 @@ namespace Mdbc
 		{
 			throw new NotImplementedException();
 		}
-		public bool IsFixedSize { get { return false; } }
-		public bool IsReadOnly { get { return false; } }
+		public bool IsFixedSize
+		{
+			get { return IsReadOnly; }
+		}
+		public bool IsReadOnly
+		{
+			get { return _array is RawBsonArray; }
+		}
 		public object this[int index]
 		{
 			get

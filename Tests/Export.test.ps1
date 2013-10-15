@@ -40,12 +40,12 @@ task Export.Basics {
 	Connect-Mdbc -NewCollection
 	$1, $2, $3 | Add-MdbcData
 	Set-Alias mongodump ([IO.Path]::GetDirectoryName((Get-Process mongod).Path) + '\mongodump.exe')
-	exec {mongodump --db test --collection test}
+	exec {mongodump -d test -c test}
 
 	# dump by mdbc
 	$1, $2 | Export-MdbcData test2.bson
 	Export-MdbcData test2.bson -InputObject $3 -Append
-	Import-MdbcData test2.bson -AsCustomObject | Format-Table -AutoSize | Out-String
+	Import-MdbcData test2.bson -As PS | Format-Table -AutoSize | Out-String
 
 	# the same file size
 	$file1 = Get-Item dump\test\test.bson
@@ -61,7 +61,7 @@ task Export.Basics {
 	Connect-Mdbc -NewCollection
 	assert ($collection.Count() -eq 0)
 	Set-Alias mongorestore ([IO.Path]::GetDirectoryName((Get-Process mongod).Path) + '\mongorestore.exe')
-	exec {mongorestore --collection test --db test test2.bson}
+	exec {mongorestore -d test -c test test2.bson}
 	$data2 = Get-MdbcData
 	Test-Dictionary3 $data1 $data2
 

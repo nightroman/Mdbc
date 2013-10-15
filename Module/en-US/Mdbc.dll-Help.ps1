@@ -12,10 +12,14 @@ Set-StrictMode -Version 2
 $IdParameter = @'
 The document _id value to be assigned or a script block returning this value
 for the input object represented by the variable $_.
+
+_id must not exist in input objects or be specified again by Property.
 '@
 
 $NewIdParameter = @'
 Tells to generate and assign a new document _id as MongoDB.Bson.ObjectId.
+
+_id must not exist in input objects or be specified again by Property.
 '@
 
 $ConvertParameter = @'
@@ -67,19 +71,43 @@ Supported types:
 $QueryParameter = "Specifies documents to be processed. $QueryTypes"
 
 $AsParameter = @'
-The custom type of returned documents. The type members must be compatible with
-a query unless a custom serialization is registered for the type.
-'@
+Specifies the representation of output documents. The argument is either a
+required type or a shortcut enum value for special types.
 
-$AsCustomObjectParameter = @'
-Tells to return documents represented by PSObject. PS objects are convenient in
-some scenarios, especially interactive. Performance is not always good enough.
+A type specifies the output type literally. Type properties must match the
+document fields or the custom type serialization must be registered.
+
+Shortcuts, either enum values or strings:
+
+	Default
+		Default output, Mdbc.Dictionary with underlying BsonDocument.
+
+	Lazy
+		Mdbc.LazyDictionary with underlying LazyBsonDocument.
+		Call Dispose() after use.
+
+	Raw
+		Mdbc.RawDictionary with underlying RawBsonDocument.
+		Read only. Call Dispose() after use.
+
+	PS
+		PowerShell custom object.
+
+By default result documents are represented by Mdbc.Dictionary with underlying
+BsonDocument. See New-MdbcData for details. Use of its Lazy or Raw form may
+improve performance in some cases.
+
+In some scenarios other output types may be suitable like native .NET types
+(-As ([Type])) and PowerShell custom objects (-As PS).
+
+On choosing an output type keep in mind that Mdbc.Dictionary (BsonDocument)
+field names are case sensitive unlike object properties in PowerShell.
 '@
 
 $SortByParameter = @'
 Specifies sorting field names and directions. Values are either field names or
-hashtables with single entries: @{Field = <Boolean>}. True and false or their
-equivalents (say, 1 and 0) are for ascending and descending directions.
+hashtables with single entries @{Field = <Boolean>}. $true and $false or their
+equivalents are for ascending and descending sorting.
 '@
 
 $TypeWriteConcernResult = @{
@@ -114,11 +142,6 @@ This type is the most effective and safe as input/output of Mdbc data cmdlets.
 The native C# driver document [MongoDB.Bson.BsonDocument] can be used as well
 but normally it should not be used directly. Its wrapper [Mdbc.Dictionary] is
 more suitable in PowerShell.
-
-NOTE: If the parameter Property is specified then the document is processed as
-IDictionary and a new document is created with the specified fields. Otherwise
-the input document is used directly and if Id or NewId is used then its _id is
-assigned as well.
 '@
 	}
 	@{
@@ -772,17 +795,6 @@ Gets documents or information from a database collection.
 This cmdlets invokes queries for the specified or default collection and
 outputs result documents or other requested data.
 
-By default documents are represented by the Mdbc.Dictionary type which wraps
-BsonDocument objects. This is the fastest way to obtain query results and the
-type is friendly for scripting. See New-MdbcData.
-
-It is sometimes more convenient to get data as custom types (use the parameter
-As) or as PS objects (use the switch AsCustomObject). Note that use of custom
-types is not always possible and performance of PS objects is not always good.
-
-On choosing the output type keep in mind that Mdbc.Dictionary (BsonDocument)
-field names are case sensitive unlike object properties in PowerShell.
-
 --------------------------------------------------
 '@
 	sets = @{
@@ -796,7 +808,6 @@ field names are case sensitive unlike object properties in PowerShell.
 	parameters = @{
 		Query = $QueryParameter
 		As = $AsParameter
-		AsCustomObject = $AsCustomObjectParameter
 		Count = @'
 Tells to return the number of all documents or documents that match a query.
 The First and Skip values are taken into account.
@@ -909,17 +920,14 @@ internally.
 	)
 }
 
-### Invoke-MdbcMapReduce command help
+### Invoke-MdbcMapReduce
 Merge-Helps $ACollection @{
 	command = 'Invoke-MdbcMapReduce'
 	synopsis = 'Invokes a Map/Reduce command.'
 	description = ''
 	parameters = @{
 		As = $AsParameter, @'
-This parameter is used with inline output only.
-'@
-		AsCustomObject = $AsCustomObjectParameter, @'
-This parameter is used with inline output only.
+This parameter is used with inline output.
 '@
 		First = @'
 The maximum number of input documents.
@@ -1082,7 +1090,7 @@ The argument value required by the command with one argument.
 
 $ExampleIOCode = {
 	@{ p1 = 'Name1'; p2 = 123 }, @{ p1 = 'Name2'; p2 = 3.14 } | Export-MdbcData test.bson
-	Import-MdbcData test.bson -AsCustomObject
+	Import-MdbcData test.bson -As PS
 }
 
 ### Export-MdbcData
@@ -1094,7 +1102,8 @@ The cmdlet writes BSON representation of input objects to the specified file.
 The output file has the same format as .bson files produced by mongodump.exe.
 
 Cmdlets Export-MdbcData and Import-MdbcData do not need any database connection
-or even installed MongoDB. They are used for file based object persistence.
+or even MongoDB installed. They are used for file based object persistence on
+their own.
 '@
 	parameters = @{
 		Path = @'
@@ -1122,7 +1131,7 @@ Specifies the path to the file where BSON representation of objects will be stor
 		}
 	)
 	links = @(
-		@{ text = ''; URI = '' }
+		@{ text = 'Export-MdbcData' }
 	)
 }
 
@@ -1135,20 +1144,24 @@ The cmdlet reads data from a BSON file. Such files are produced, for example,
 by the cmdlet Export-MdbcData or by the utility mongodump.exe.
 
 Cmdlets Export-MdbcData and Import-MdbcData do not need any database connection
-or even installed MongoDB. They are used for file based object persistence.
+or even MongoDB installed. They are used for file based object persistence on
+their own.
 '@
 	parameters = @{
 		Path = @'
 Specifies the path to the BSON file where objects will be restored from.
 '@
 		As = $AsParameter
-		AsCustomObject = $AsCustomObjectParameter
 	}
 	inputs = @()
 	outputs = @(
 		@{
-			type = ''
-			description = ''
+			type = '[Mdbc.Dictionary]'
+			description = 'Default, Lazy, or Raw form depending on the parameter As.'
+		}
+		@{
+			type = '[object]'
+			description = 'Custom objects specified by the parameter As.'
 		}
 	)
 	examples = @(
@@ -1157,6 +1170,49 @@ Specifies the path to the BSON file where objects will be restored from.
 		}
 	)
 	links = @(
-		@{ text = ''; URI = '' }
+		@{ text = 'Import-MdbcData' }
+	)
+}
+
+### Invoke-MdbcAggregate
+Merge-Helps $ACollection @{
+	command = 'Invoke-MdbcAggregate'
+	synopsis = 'Invokes aggregate operations and outputs result documents.'
+	description = @'
+The driver currently provides just a raw API for aggregate operations. So does
+this cmdlet. When the API change the cmdlet will be redesigned.
+'@
+	parameters = @{
+		Operation = @'
+One or more aggregation pipeline operations represented by JSON-like hashtables.
+'@
+	}
+	inputs = @()
+	outputs = @(
+		@{
+			type = '[Mdbc.Dictionary]'
+			description = 'Result documents.'
+		}
+	)
+	examples = @(
+		@{
+			# _131016_142302
+			code = {
+				# Data: current process names and memory working sets
+				Connect-Mdbc . test test -NewCollection
+				Get-Process | Add-MdbcData -Property Name, WorkingSet
+
+				# Group by names, count, sum memory, get top 3
+				Invoke-MdbcAggregate @(
+					@{ '$group' = @{
+						_id = '$Name'
+						Count = @{ '$sum' = 1 }
+						Memory = @{ '$sum' = '$WorkingSet' }
+					}}
+					@{ '$sort' = @{Memory = -1} }
+					@{ '$limit' = 3 }
+				)
+			}
+		}
 	)
 }

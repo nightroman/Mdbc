@@ -81,6 +81,7 @@
     <Compile Include="Commands\GetDataCommand.cs" />
     <Compile Include="Commands\AddCollectionCommand.cs" />
     <Compile Include="Commands\ImportDataCommand.cs" />
+    <Compile Include="Commands\InvokeAggregateCommand.cs" />
     <Compile Include="Commands\InvokeCommandCommand.cs" />
     <Compile Include="Commands\InvokeMapReduceCommand.cs" />
     <Compile Include="Commands\NewDataCommand.cs" />
@@ -93,8 +94,8 @@
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="DocumentInput.cs" />
     <Compile Include="GlobalSuppressions.cs" />
-    <Compile Include="PSObjectSerializer.cs" />
     <Compile Include="Selector.cs" />
+    <Compile Include="Serializer.cs" />
     <Compile Include="Zoo.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -29,46 +29,40 @@ namespace Mdbc.Commands
 		[Parameter(Position = 0, Mandatory = true)]
 		[ValidateCount(2, 3)]
 		public string[] Function { get; set; }
-		
+
 		[Parameter(Position = 1)]
 		public object Query { get { return null; } set { _Query = Actor.ObjectToQuery(value); } }
 		IMongoQuery _Query;
-		
+
 		[Parameter]
 		public object[] SortBy { get { return null; } set { _SortBy = Actor.ObjectsToSortBy(value); } }
 		IMongoSortBy _SortBy;
-		
+
 		[Parameter]
 		public int First { get; set; }
-		
+
 		[Parameter]
 		public IDictionary Scope { get; set; }
-		
+
 		[Parameter]
 		public SwitchParameter JSMode { get; set; }
-		
+
 		[Parameter]
 		public string ResultVariable { get; set; }
-		
+
 		[Parameter]
 		public MapReduceOutputMode OutMode { get; set; }
-		
+
 		[Parameter]
 		public string OutDatabase { get; set; }
-		
+
 		[Parameter]
 		public string OutCollection { get; set; }
-		
+
 		[Parameter]
-		public Type As { get; set; }
-		
-		[Parameter]
-		public SwitchParameter AsCustomObject { get; set; }
-		
-		Type GetDocumentType()
-		{
-			return AsCustomObject ? typeof(PSObject) : As ?? typeof(BsonDocument);
-		}
+		public PSObject As { get { return null; } set { _ParameterAs = new ParameterAs(value); } }
+		ParameterAs _ParameterAs;
+
 		protected override void BeginProcessing()
 		{
 			var options = new MapReduceOptionsBuilder();
@@ -107,20 +101,11 @@ namespace Mdbc.Commands
 			if (OutMode != MapReduceOutputMode.Inline)
 				return;
 
-			var documentType = GetDocumentType();
-			var documents = result.GetInlineResultsAs(documentType);
-			if (documentType == typeof(BsonDocument))
-			{
-				foreach (BsonDocument bson in documents)
-					WriteObject(new Dictionary(bson));
-			}
-			else
-			{
-				if (documentType == typeof(PSObject))
-					PSObjectSerializer.Register();
+			var documentAs = _ParameterAs ?? new ParameterAs(null);
 
-				WriteObject(documents, true);
-			}
+			//_131018_160000
+			foreach(var it in result.GetInlineResultsAs(documentAs.DeserializeType))
+				WriteObject(it);
 		}
 	}
 }

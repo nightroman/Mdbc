@@ -60,20 +60,15 @@ task Get-MdbcData.-Cursor {
 	assert ($cursor.Count() -eq 20)
 	assert ($cursor.Size() -eq 5)
 
-	# get raw data as an array; NB: raw BsonDocument and BsonValue are not so friendly
+	# get data as array
 	$set = @($cursor)
-	assert ($set[0]['Value'].AsInt32 -eq 15)
-	assert ($set[-1]['Value'].AsInt32 -eq 11)
-
-	# get data again, converted to Mdbc.Dictionary; NB: these data are more friendly
-	$set = $cursor | New-MdbcData
 	assert ($set[0].Value -eq 15)
 	assert ($set[-1].Value -eq 11)
 
 	# get and test ordered data
 	# Set* methods returns the cursor, both handy and gotcha
 	$cursor = Get-MdbcData -Cursor -First 5 -Skip 5
-	$set = $cursor.SetSortOrder('Value') | New-MdbcData
+	$set = @($cursor.SetSortOrder('Value'))
 	assert ($set[0].Value -eq 6)
 	assert ($set[-1].Value -eq 10)
 }

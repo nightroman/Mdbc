@@ -22,7 +22,7 @@ using MongoDB.Driver;
 namespace Mdbc.Commands
 {
 	[Cmdlet(VerbsCommon.Add, "MdbcData")]
-	public sealed class AddDataCommand : AbstractWriteCommand, IDocumentInput
+	public sealed class AddDataCommand : AbstractWriteCommand
 	{
 		[Parameter(Position = 0, ValueFromPipeline = true)]
 		public PSObject InputObject { get; set; }
@@ -50,13 +50,15 @@ namespace Mdbc.Commands
 
 			try
 			{
-				var bson = Actor.ToBsonDocument(InputObject, new DocumentInput(SessionState, Convert), _Selectors);
-				DocumentInput.MakeId(bson, this, SessionState);
+				// new document or none yet
+				var document = DocumentInput.NewDocumentWithId(NewId, Id, InputObject, SessionState);
+
+				document = Actor.ToBsonDocument(document, InputObject, new DocumentInput(SessionState, Convert), _Selectors);
 
 				if (Update)
-					WriteResult(Collection.Save(bson, WriteConcern));
+					WriteResult(Collection.Save(document, WriteConcern));
 				else
-					WriteResult(Collection.Insert(bson, WriteConcern));
+					WriteResult(Collection.Insert(document, WriteConcern));
 			}
 			catch (ArgumentException ex)
 			{

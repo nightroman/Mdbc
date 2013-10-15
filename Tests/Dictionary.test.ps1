@@ -1,4 +1,5 @@
 
+. .\Zoo.ps1
 Import-Module Mdbc
 Set-StrictMode -Version 2
 
@@ -14,6 +15,46 @@ task Dictionary.SetNull {
 	$d = New-MdbcData @{x = 1; y = 2}
 	$d.x = $null
 	assert ($d.Count -eq 2 -and $d.x -eq $null)
+}
+
+task Dictionary.RawBsonDocument.RawBsonArray {
+
+	# RawBsonDocument
+	Connect-Mdbc -NewCollection
+	@{array = 1, 2; document = @{name = 42}} | Add-MdbcData
+	$raw = Get-MdbcData -As ([MongoDB.Bson.RawBsonDocument])
+	Test-Type $raw MongoDB.Bson.RawBsonDocument
+
+	#_131015_123005 New-MdbcData makes new even on read only RawBsonDocument
+	$md = New-MdbcData $raw
+	assert (!$md.IsFixedSize)
+	assert (!$md.IsReadOnly)
+	Test-Type $md.Document() MongoDB.Bson.BsonDocument
+
+	#
+	$md = [Mdbc.Dictionary]$raw
+	assert ($md.IsFixedSize)
+	assert ($md.IsReadOnly)
+	Test-Type $md.Document() MongoDB.Bson.RawBsonDocument
+
+	&{
+		$a = $md.array
+		assert ($a.IsFixedSize)
+		assert ($a.IsReadOnly)
+		assert (!$a.Array().IsReadOnly) #todo driver bug
+		Test-Type $a.Array() MongoDB.Bson.RawBsonArray
+		assert (![object]::ReferenceEquals($a.Array(), $md.array.Array()))
+	}
+
+	&{
+		$d = $md.document
+		assert ($d.IsFixedSize)
+		assert ($d.IsReadOnly)
+		Test-Type $d.Document() MongoDB.Bson.RawBsonDocument
+		assert (![object]::ReferenceEquals($d.Document(), $md.document.Document()))
+	}
+
+	$md.Dispose(); $md.Dispose() #! twice is fine
 }
 
 task Dictionary.Operators {

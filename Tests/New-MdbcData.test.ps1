@@ -90,7 +90,7 @@ task DataTypes {
 	$data | %{ Test-Document $_ }
 
 	# get as PS objects
-	$data = Get-MdbcData -AsCustomObject
+	$data = Get-MdbcData -As PS
 	assert ($data.Count -eq 2)
 }
 

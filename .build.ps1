@@ -196,7 +196,7 @@ task CheckFiles {
 # Call tests.
 task Test {
 	Invoke-Build ** Tests -Result result
-	assert ($result.Tasks.Count -eq 48) $result.Tasks.Count
+	assert ($result.Tasks.Count -eq 53) $result.Tasks.Count
 }
 
 # Build, test and clean all.

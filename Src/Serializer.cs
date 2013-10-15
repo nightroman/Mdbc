@@ -24,17 +24,8 @@ using MongoDB.Bson.Serialization.Serializers;
 
 namespace Mdbc
 {
-	public class PSObjectSerializer : BsonBaseSerializer
+	sealed class PSObjectSerializer : BsonBaseSerializer
 	{
-		static bool _registered;
-		internal static void Register()
-		{
-			if (!_registered)
-			{
-				_registered = true;
-				BsonSerializer.RegisterSerializer(typeof(PSObject), new PSObjectSerializer());
-			}
-		}
 		static IList ReadArray(BsonReader bsonReader)
 		{
 			var array = new ArrayList();
@@ -82,13 +73,28 @@ namespace Mdbc
 		}
 		public override object Deserialize(BsonReader bsonReader, Type nominalType, Type actualType, IBsonSerializationOptions options)
 		{
-			if (bsonReader.GetCurrentBsonType() == BsonType.Null)
-			{
-				bsonReader.ReadNull();
-				return null;
-			}
-
 			return ReadCustomObject(bsonReader);
+		}
+	}
+	sealed class DictionarySerializer : BsonDocumentSerializer
+	{
+		public override object Deserialize(BsonReader bsonReader, Type nominalType, Type actualType, IBsonSerializationOptions options)
+		{
+			return new Dictionary((BsonDocument)base.Deserialize(bsonReader, typeof(BsonDocument), typeof(BsonDocument), options));
+		}
+	}
+	sealed class LazyDictionarySerializer : LazyBsonDocumentSerializer
+	{
+		public override object Deserialize(BsonReader bsonReader, Type nominalType, Type actualType, IBsonSerializationOptions options)
+		{
+			return new LazyDictionary((LazyBsonDocument)base.Deserialize(bsonReader, typeof(LazyBsonDocument), typeof(LazyBsonDocument), options));
+		}
+	}
+	sealed class RawDictionarySerializer : RawBsonDocumentSerializer
+	{
+		public override object Deserialize(BsonReader bsonReader, Type nominalType, Type actualType, IBsonSerializationOptions options)
+		{
+			return new RawDictionary((RawBsonDocument)base.Deserialize(bsonReader, typeof(RawBsonDocument), typeof(RawBsonDocument), options));
 		}
 	}
 }

@@ -18,13 +18,14 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Management.Automation;
+using MongoDB.Bson;
 using MongoDB.Bson.IO;
 using MongoDB.Bson.Serialization;
 
 namespace Mdbc.Commands
 {
 	[Cmdlet(VerbsData.Export, "MdbcData")]
-	public sealed class ExportDataCommand : PSCmdlet, IDocumentInput, IDisposable
+	public sealed class ExportDataCommand : PSCmdlet, IDisposable
 	{
 		[Parameter(Position = 0, Mandatory = true)]
 		public string Path { get; set; }
@@ -78,10 +79,12 @@ namespace Mdbc.Commands
 
 			try
 			{
-				var bson = Actor.ToBsonDocument(InputObject, new DocumentInput(SessionState, Convert), _Selectors);
-				DocumentInput.MakeId(bson, this, SessionState);
+				// new document or none yet
+				var document = DocumentInput.NewDocumentWithId(NewId, Id, InputObject, SessionState);
+				
+				document = Actor.ToBsonDocument(document, InputObject, new DocumentInput(SessionState, Convert), _Selectors);
 
-				BsonSerializer.Serialize(_writer, bson);
+				BsonSerializer.Serialize(_writer, document);
 			}
 			catch (ArgumentException ex)
 			{

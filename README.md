@@ -1,8 +1,6 @@
 Mdbc module - MongoDB Cmdlets for PowerShell
 ============================================
 
-![Powered by MongoDB](https://github.com/downloads/nightroman/Mdbc/PoweredMongoDBblue50.png)
-
 *Mdbc* is the *Windows PowerShell* module based on the official
 [MongoDB C# driver](https://github.com/mongodb/mongo-csharp-driver).
 It makes MongoDB scripting easy and represents yet another MongoDB shell.
@@ -50,7 +48,7 @@ PowerShell module directory, see `$env:PSModulePath`. For example:
     Get-Process | Add-MdbcData -Id {$_.Id} -Property Name, WorkingSet
 
     # Query all data back as custom objects and print them formatted
-    Get-MdbcData -AsCustomObject | Format-Table -AutoSize | Out-String
+    Get-MdbcData -As PS | Format-Table -AutoSize | Out-String
 
     # Get saved data of the process 'mongod' (expected at least one)
     $data = Get-MdbcData (New-MdbcQuery Name -EQ mongod)

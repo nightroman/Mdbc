@@ -16,89 +16,85 @@
 
 using System;
 using System.Management.Automation;
-using MongoDB.Bson;
 using MongoDB.Driver;
 
 namespace Mdbc.Commands
 {
-	[Cmdlet(VerbsCommon.Get, "MdbcData", DefaultParameterSetName = NAll)]
+	[Cmdlet(VerbsCommon.Get, "MdbcData", DefaultParameterSetName = nsAll)]
 	public sealed class GetDataCommand : AbstractCollectionCommand
 	{
-		const string NAll = "All";
-		const string NDistinct = "Distinct";
-		const string NCount = "Count";
-		const string NCursor = "Cursor";
-		const string NRemove = "Remove";
-		const string NUpdate = "Update";
-		
+		const string nsAll = "All";
+		const string nsDistinct = "Distinct";
+		const string nsCount = "Count";
+		const string nsCursor = "Cursor";
+		const string nsRemove = "Remove";
+		const string nsUpdate = "Update";
+
 		[Parameter(Position = 0)]
 		public object Query { get { return null; } set { _Query = Actor.ObjectToQuery(value); } }
 		IMongoQuery _Query;
-		
-		[Parameter(Mandatory = true, ParameterSetName = NDistinct)]
+
+		[Parameter(Mandatory = true, ParameterSetName = nsDistinct)]
 		public string Distinct { get; set; }
-		
-		[Parameter(Mandatory = true, ParameterSetName = NCount)]
+
+		[Parameter(Mandatory = true, ParameterSetName = nsCount)]
 		public SwitchParameter Count { get; set; }
-		
-		[Parameter(Mandatory = true, ParameterSetName = NCursor)]
+
+		[Parameter(Mandatory = true, ParameterSetName = nsCursor)]
 		public SwitchParameter Cursor { get; set; }
-		
-		[Parameter(Mandatory = true, ParameterSetName = NRemove)]
+
+		[Parameter(Mandatory = true, ParameterSetName = nsRemove)]
 		public SwitchParameter Remove { get; set; }
-		
-		[Parameter(Mandatory = true, ParameterSetName = NUpdate)]
+
+		[Parameter(Mandatory = true, ParameterSetName = nsUpdate)]
 		public object Update { get { return null; } set { _Update = Actor.ObjectToUpdate(value); } }
 		IMongoUpdate _Update;
-		
-		[Parameter(ParameterSetName = NUpdate)]
+
+		[Parameter(ParameterSetName = nsUpdate)]
 		public SwitchParameter New { get; set; }
-		
-		[Parameter(ParameterSetName = NUpdate)]
+
+		[Parameter(ParameterSetName = nsUpdate)]
 		public SwitchParameter Add { get; set; }
-		
-		[Parameter(ParameterSetName = NAll)]
-		[Parameter(ParameterSetName = NCount)]
-		[Parameter(ParameterSetName = NCursor)]
-		[Parameter(ParameterSetName = NRemove)]
-		[Parameter(ParameterSetName = NUpdate)]
+
+		[Parameter(ParameterSetName = nsAll)]
+		[Parameter(ParameterSetName = nsCount)]
+		[Parameter(ParameterSetName = nsCursor)]
+		[Parameter(ParameterSetName = nsRemove)]
+		[Parameter(ParameterSetName = nsUpdate)]
 		public QueryFlags Modes { get; set; }
-		
-		[Parameter(ParameterSetName = NAll)]
-		[Parameter(ParameterSetName = NCount)]
-		[Parameter(ParameterSetName = NCursor)]
+
+		[Parameter(ParameterSetName = nsAll)]
+		[Parameter(ParameterSetName = nsCount)]
+		[Parameter(ParameterSetName = nsCursor)]
 		public int First { get; set; }
-		
-		[Parameter(ParameterSetName = NAll)]
-		[Parameter(ParameterSetName = NCount)]
-		[Parameter(ParameterSetName = NCursor)]
+
+		[Parameter(ParameterSetName = nsAll)]
+		[Parameter(ParameterSetName = nsCount)]
+		[Parameter(ParameterSetName = nsCursor)]
 		public int Last { get; set; }
-		
-		[Parameter(ParameterSetName = NAll)]
-		[Parameter(ParameterSetName = NCount)]
-		[Parameter(ParameterSetName = NCursor)]
+
+		[Parameter(ParameterSetName = nsAll)]
+		[Parameter(ParameterSetName = nsCount)]
+		[Parameter(ParameterSetName = nsCursor)]
 		public int Skip { get; set; }
-		
-		[Parameter(ParameterSetName = NAll)]
-		[Parameter(ParameterSetName = NCursor)]
-		[Parameter(ParameterSetName = NUpdate)]
+
+		[Parameter(ParameterSetName = nsAll)]
+		[Parameter(ParameterSetName = nsCursor)]
+		[Parameter(ParameterSetName = nsUpdate)]
 		public string[] Property { get; set; }
-		
-		[Parameter(ParameterSetName = NAll)]
-		[Parameter(ParameterSetName = NCursor)]
-		[Parameter(ParameterSetName = NRemove)]
-		[Parameter(ParameterSetName = NUpdate)]
+
+		[Parameter(ParameterSetName = nsAll)]
+		[Parameter(ParameterSetName = nsCursor)]
+		[Parameter(ParameterSetName = nsRemove)]
+		[Parameter(ParameterSetName = nsUpdate)]
 		public object[] SortBy { get { return null; } set { _SortBy = Actor.ObjectsToSortBy(value); } }
 		IMongoSortBy _SortBy;
-		
-		[Parameter(ParameterSetName = NAll)]
-		[Parameter(ParameterSetName = NCursor)]
-		public Type As { get; set; }
-		
-		[Parameter(ParameterSetName = NAll)]
-		[Parameter(ParameterSetName = NCursor)]
-		public SwitchParameter AsCustomObject { get; set; }
-		
+
+		[Parameter(ParameterSetName = nsAll)]
+		[Parameter(ParameterSetName = nsCursor)]
+		public PSObject As { get { return null; } set { _ParameterAs = new ParameterAs(value); } }
+		ParameterAs _ParameterAs;
+
 		void DoCount()
 		{
 			WriteObject(Collection.Count(_Query));
@@ -127,37 +123,33 @@ namespace Mdbc.Commands
 			var result = Collection.FindAndModify(_Query, _SortBy, _Update, New, Add);
 			DoModified(result);
 		}
-		Type GetDocumentType()
-		{
-			return AsCustomObject ? typeof(PSObject) : As ?? typeof(BsonDocument);
-		}
 		protected override void BeginProcessing()
 		{
 			try
 			{
 				switch (ParameterSetName)
 				{
-					case NCount:
+					case nsCount:
 						if (First > 0 || Skip > 0)
 							break;
 						DoCount();
 						return;
 
-					case NDistinct:
+					case nsDistinct:
 						DoDistinct();
 						return;
 
-					case NRemove:
+					case nsRemove:
 						DoRemove();
 						return;
 
-					case NUpdate:
+					case nsUpdate:
 						DoUpdate();
 						return;
 				}
 
-				var documentType = GetDocumentType();
-				var cursor = Collection.FindAs(documentType, _Query);
+				var documentAs = _ParameterAs ?? new ParameterAs(null);
+				var cursor = Collection.FindAs(documentAs.DeserializeType, _Query);
 
 				if (Modes != QueryFlags.None)
 					cursor.SetFlags(Modes);
@@ -197,24 +189,12 @@ namespace Mdbc.Commands
 				if (Property != null)
 					cursor.SetFields(Property);
 
+				//_131018_160000 Do not use WriteObject(.., true), it seems to take a lot more memory
 				if (Cursor)
-				{
 					WriteObject(cursor);
-					return;
-				}
-
-				if (documentType == typeof(BsonDocument))
-				{
-					foreach (BsonDocument bson in cursor)
-						WriteObject(new Dictionary(bson));
-				}
 				else
-				{
-					if (documentType == typeof(PSObject))
-						PSObjectSerializer.Register();
-
-					WriteObject(cursor, true);
-				}
+					foreach(var it in cursor)
+						WriteObject(it);
 			}
 			catch (MongoException ex)
 			{

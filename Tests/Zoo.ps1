@@ -26,7 +26,7 @@ function Test-Type($Value, $TypeName) {
 }
 
 # Compares an expected error message
-function Test-Error($Command, $Pattern) {
+function Test-Error([Parameter()]$Command, $Pattern) {
 	$err = ''
 	try { & $Command }
 	catch { $err = "$_" }

@@ -49,7 +49,7 @@ namespace Mdbc.Commands
 		protected override void BeginProcessing()
 		{
 			// driver 1.8.1 needs this even before connection
-			PSObjectSerializer.Register();
+			Actor.Register();
 
 			if (ConnectionString == null)
 			{

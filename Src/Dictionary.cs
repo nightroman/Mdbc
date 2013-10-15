@@ -42,9 +42,21 @@ namespace Mdbc
 		{
 			return _document;
 		}
+		public void Dispose()
+		{
+			var dispose = _document as IDisposable;
+			if (dispose != null)
+				dispose.Dispose();
+		}
 		#region IDictionary
-		public bool IsFixedSize { get { return false; } }
-		public bool IsReadOnly { get { return false; } }
+		public bool IsFixedSize
+		{
+			get { return IsReadOnly; }
+		}
+		public bool IsReadOnly
+		{
+			get { return _document is RawBsonDocument; }
+		}
 		public bool IsSynchronized { get { return false; } }
 		public int Count { get { return _document.ElementCount; } }
 		public ICollection Keys { get { return _document.Names.ToArray(); } }
@@ -113,5 +125,13 @@ namespace Mdbc
 			public bool MoveNext() { return _that.MoveNext(); }
 		}
 		#endregion
+	}
+	public sealed class LazyDictionary : Dictionary
+	{
+		public LazyDictionary(LazyBsonDocument value) : base(value) { }
+	}
+	public sealed class RawDictionary : Dictionary
+	{
+		public RawDictionary(RawBsonDocument value) : base(value) { }
 	}
 }
