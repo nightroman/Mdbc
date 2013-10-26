@@ -24,14 +24,14 @@ task Add-MdbcCollection.Capped {
 task Add-MdbcCollection.-AutoIndexId {
 	# AutoIndexId 0
 	Connect-Mdbc -NewCollection
-	Add-MdbcCollection test -AutoIndexId 0 #todo bug in driver?
+	Add-MdbcCollection test -AutoIndexId 0
 
 	$Collection = $Database['test']
 	@{n = 1} | Add-MdbcData
 	$d = Get-MdbcData
 	assert ($d._id)
 	$i = @($Collection.GetIndexes())
-	assert ($i.Count -eq 1) #?? should be 0
+	assert ($i.Count -eq 1) #bug should be 0 https://jira.mongodb.org/browse/CSHARP-841
 
 	# default collection
 	Connect-Mdbc -NewCollection

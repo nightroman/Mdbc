@@ -41,8 +41,9 @@ use Framework\v4.0.30319 MSBuild
 
 # Build (incremental).
 task Build {
-	exec { MSBuild Src\Mdbc.csproj /t:Build /p:Configuration=$Configuration }
-}
+	exec { MSBuild Src\Mdbc.csproj /t:Build /p:Configuration=$Configuration /p:TargetFrameworkVersion=v3.5}
+},
+@{Help=1}
 
 # Rebuild all (force).
 task Rebuild {
@@ -56,15 +57,14 @@ task Clean RemoveMarkdownHtml, {
 	Remove-Item z, Src\bin, Src\obj, Module\Mdbc.dll, *.nupkg -Force -Recurse -ErrorAction 0
 }
 
-# Copy all to the module root directory and then build help.
+# Copy files to the module directory.
 # It is called as the post-build event of Mdbc.csproj.
 task PostBuild {
 	Copy-Item Src\Bin\$Configuration\Mdbc.dll Module
 	exec { robocopy Module $ModuleRoot /s /np /r:0 /xf *-Help.ps1 } (0..3)
-},
-@{Help=1}
+}
 
-# Build module help by Helps (https://github.com/nightroman/Helps).
+# Build help by Helps (https://github.com/nightroman/Helps).
 task Help -Inputs (Get-Item Src\Commands\*, Module\en-US\Mdbc.dll-Help.ps1) -Outputs "$ModuleRoot\en-US\Mdbc.dll-Help.xml" {
 	. Helps.ps1
 	Convert-Helps Module\en-US\Mdbc.dll-Help.ps1 $Outputs
@@ -161,7 +161,8 @@ task Version {
 task NuGet Package, Version, {
 	$text = @'
 Mdbc is the Windows PowerShell module based on the official MongoDB C# driver.
-It makes MongoDB scripting easy and represents yet another MongoDB shell.
+It makes MongoDB scripting in PowerShell easier and provides some extra
+features like bson file collections which do not require MongoDB.
 '@
 	# nuspec
 	Set-Content z\Package.nuspec @"
@@ -196,8 +197,9 @@ task CheckFiles {
 # Call tests.
 task Test {
 	Invoke-Build ** Tests -Result result
-	assert ($result.Tasks.Count -eq 53) $result.Tasks.Count
+	$testCount = 131
+	if ($testCount -ne $result.Tasks.Count) {Write-Warning "Unexpected test count:`n Sample : $testCount`n Result : $($result.Tasks.Count)"}
 }
 
 # Build, test and clean all.
-task . Rebuild, Test, TestHelp, Clean, CheckFiles
+task . Rebuild, TestHelp, Test, Clean, CheckFiles

@@ -43,16 +43,61 @@ LONG DESCRIPTION
 
         Invoke-MdbcCommand
 
-    File based data persistence even without MongoDB installed:
+    Bson file data persistence even without MongoDB:
 
         Export-MdbcData
         Import-MdbcData
 
-    This script adds some features for interactive sessions:
+    Bson file collections even without MongoDB:
+
+        Open-MdbcFile
+        Save-MdbcFile
+
+    Some more features for interactive sessions:
 
         Mdbc.ps1
 
+FILE COLLECTIONS
+    Mdbc introduces bson data file collections which do not require MongoDB.
+    They are opened and saved by Open-MdbcFile and Save-MdbcFile and support
+    commands Get-MdbcData, Add-MdbcData, Remove-MdbcData, and Update-MdbcData.
+
+    File collections keep data in memory. Unique _id are maintained by default.
+    The above cmdlets should work with files as with usual MongoDB collections
+    with some known differences.
+
+    KNOWN DIFFERENCES
+
+    Invalid element names *.*, $*
+
+        Documents obtained from MongoDB collections do not have elements with
+        invalid names.
+
+        File collections read documents from files as they are, element names
+        are not checked. This is not a problem for files created and maintained
+        by Open|Save-MdbcData and Add|Remove|Update-MdbcData, names are checked
+        on insertions. Other files, like created by Export-MdbcData, may have
+        issues if they contain invalid names.
+
+    Terminating errors
+
+        MongoException exceptions are caught by Mdbc cmdlets and converted into
+        not terminating errors.
+
+        Exceptions from file collections are not currently caught. Thus, all
+        exceptions result in terminating errors.
+
+    Not supported for file collections
+
+        * Parameter Result in Add-MdbcData, Remove-MdbcData, Update-MdbcData
+        * Parameter Cursor in Get-MdbcData
+        * Command Invoke-MdbcAggregate
+        * Command Invoke-MdbcMapReduce
+
+    Not supported for simple data (no _id)
+
+        * Parameter Update in Add-MdbcData
+
 SEE ALSO
     MongoDB http://www.mongodb.org
-    Driver manual http://www.mongodb.org/display/DOCS/CSharp+Language+Center
-    Driver repository https://github.com/mongodb/mongo-csharp-driver
+    C# driver https://github.com/mongodb/mongo-csharp-driver

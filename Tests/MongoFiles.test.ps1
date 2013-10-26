@@ -1,17 +1,41 @@
 
 <#
 .Synopsis
-	Tests data in test.files created by Scripts\Update-MongoFiles.ps1
+	Tests Update-MongoFiles.ps1 and Get-MongoFile.ps1.
 #>
 
 Import-Module Mdbc
 Set-StrictMode -Version 2
 
-task . {
-	$time1 = [DateTime]'2010-01-01'
+task Update-MongoFiles {
+	# add alien data
+	Connect-Mdbc -NewCollection
+	@{Name = 'alien'} | Add-MdbcData
+	assert (1 -eq (Get-MdbcData (New-MdbcQuery Name alien) -Count))
 
-	Connect-Mdbc . test files
+	# update files
+	Update-MongoFiles .. -CollectionName test
+	assert (0 -eq (Get-MdbcData (New-MdbcQuery Name alien) -Count))
+}
 
+task Get-MongoFile Update-MongoFiles, {
+	$r = @(Get-MongoFile -CollectionName test 'readme|license' | Sort-Object)
+	assert (2 -eq $r.Count)
+	assert ($r[0] -clike '*\Mdbc\LICENSE.txt')
+	assert ($r[1] -clike '*\Mdbc\README.md')
+
+	$r = @(Get-MongoFile -CollectionName test 'readme.md' -Name)
+	assert (1 -eq $r.Count)
+	assert ($r[0] -clike '*\Mdbc\README.md')
+}
+
+task Test-MongoFiles Update-MongoFiles, {
+	# minimum time
+	$time1 = (Get-ChildItem | Sort-Object LastWriteTime | Select-Object -First 1).LastWriteTime
+
+	Connect-Mdbc
+
+	# Write-Verbose is used because the function returns a number
 	function Test-Query($query) {
 		Write-Verbose -Verbose $query.ToString()
 		$watch = [System.Diagnostics.Stopwatch]::StartNew()
@@ -74,4 +98,8 @@ task . {
 	"Type"
 	$n1 = Test-Query (New-MdbcQuery Length -Type Int64)
 	assert ($n1 -eq $total - $MissingLength)
+
+	"Where (slow)"
+	$n1 = Test-Query (New-MdbcQuery -Where 'this.Length == null')
+	assert ($n1 -eq $MissingLength)
 }

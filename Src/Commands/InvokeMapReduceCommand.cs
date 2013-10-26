@@ -65,6 +65,8 @@ namespace Mdbc.Commands
 
 		protected override void BeginProcessing()
 		{
+			if (FileCollection != null) ThrowNotImplementedForFiles("MapReduce");
+			
 			var options = new MapReduceOptionsBuilder();
 
 			options.SetJSMode(JSMode);
@@ -93,7 +95,7 @@ namespace Mdbc.Commands
 			output.CollectionName = OutCollection;
 			options.SetOutput(output);
 
-			var result = Collection.MapReduce(new BsonJavaScript(Function[0]), new BsonJavaScript(Function[1]), options);
+			var result = MongoCollection.MapReduce(new BsonJavaScript(Function[0]), new BsonJavaScript(Function[1]), options);
 
 			if (ResultVariable != null)
 				SessionState.PSVariable.Set(ResultVariable, result);
@@ -104,7 +106,7 @@ namespace Mdbc.Commands
 			var documentAs = _ParameterAs ?? new ParameterAs(null);
 
 			//_131018_160000
-			foreach(var it in result.GetInlineResultsAs(documentAs.DeserializeType))
+			foreach(var it in result.GetInlineResultsAs(documentAs.Type))
 				WriteObject(it);
 		}
 	}

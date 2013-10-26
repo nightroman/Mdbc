@@ -4,7 +4,7 @@
 	Updates the file system snapshot database.
 
 .Description
-	Server: local, Database: test, Collection: files
+	Server: local, database: test, collection: files (by default)
 
 	Required modules:
 	* Mdbc: <https://github.com/nightroman/Mdbc>
@@ -29,6 +29,9 @@
 		The directory path which contents has to be updated in the test.test
 		collection. Note that for paths like C:\ it may take several minutes.
 
+.Parameter CollectionName
+		Specifies the collection name. Default: files.
+
 .Parameter Split
 		Tells to perform parallel data processing using Split-Pipeline from the
 		SplitPipeline module. Processing of massive data is typical for tasks
@@ -40,7 +43,8 @@
 
 param
 (
-	[Parameter()]$Path = '.',
+	[Parameter(Position=0)]$Path = '.',
+	$CollectionName = 'files',
 	[switch]$Split
 )
 
@@ -57,13 +61,13 @@ function Resolve-ExactCasePath($Path) {
 		$directory.Name.ToUpper()
 	}
 }
-$Path = Resolve-ExactCasePath $Path
+$Path = Resolve-ExactCasePath ($PSCmdlet.GetUnresolvedProviderPathFromPSPath($Path))
 if (!$Path.EndsWith('\')) {
 	$Path += '\'
 }
 
 Import-Module Mdbc
-Connect-Mdbc . test files
+Connect-Mdbc . test $CollectionName
 
 ### Gets input items.
 function Get-Input {
@@ -91,9 +95,9 @@ Write-Host "Updating data for existing files in $Path ..."
 if ($Split) {
 	Import-Module SplitPipeline
 	Get-Input |
-	Split-Pipeline -Auto -Load 100, 5000 -Verbose -Module Mdbc -Function New-Document -Variable Updated `
+	Split-Pipeline -Auto -Load 100, 5000 -Verbose -Module Mdbc -Function New-Document -Variable Updated, CollectionName `
 	-Begin {
-		Connect-Mdbc . test files
+		Connect-Mdbc . test $CollectionName
 	} `
 	-Script {
 		$input | New-Document | Add-MdbcData -Update -ErrorAction Continue

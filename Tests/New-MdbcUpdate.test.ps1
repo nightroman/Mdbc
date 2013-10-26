@@ -17,9 +17,50 @@ Test-Type $bsonArray MongoDB.Bson.BsonArray
 $mdbcArray = [Mdbc.Collection]$bsonArray
 Test-Type $mdbcArray Mdbc.Collection
 
-task New-MdbcUpdate.Expression {
-	### AddToSet, AddToSetEach
+# we want at least some operators to be in a predicted order
+task Order {
+	test { New-MdbcUpdate -Unset x -Rename @{x='y'} -Set @{x=1} -SetOnInsert @{x=1} } `
+	'{ "$unset" : { "x" : 1 }, "$rename" : { "x" : "y" }, "$set" : { "x" : 1 }, "$setOnInsert" : { "x" : 1 } }'
+}
 
+task Unset {
+	test { New-MdbcUpdate -Unset Name } '{ "$unset" : { "Name" : 1 } }'
+	test { New-MdbcUpdate -Unset a, b } '{ "$unset" : { "a" : 1, "b" : 1 } }'
+}
+task Rename {
+	test { New-MdbcUpdate -Rename @{One = 'Two'} } '{ "$rename" : { "One" : "Two" } }'
+	test { New-MdbcUpdate -Rename @{a = 1; b = 2}, @{c = 3} } '{ "$rename" : { "a" : "1", "b" : "2", "c" : "3" } }'
+}
+
+task Set-SetOnInsert {
+	test { New-MdbcUpdate @{Name = $null} } '{ "$set" : { "Name" : null } }'
+
+	test { New-MdbcUpdate -Set @{Name = 'one'} } '{ "$set" : { "Name" : "one" } }'
+	test { New-MdbcUpdate -SetOnInsert @{Name = 'one'} } '{ "$setOnInsert" : { "Name" : "one" } }'
+
+	test { New-MdbcUpdate -Set @{a = 1; b = 2}, @{c = 3} } '{ "$set" : { "a" : 1, "b" : 2, "c" : 3 } }'
+	test { New-MdbcUpdate -SetOnInsert @{a = 1; b = 2}, @{c = 3} } '{ "$setOnInsert" : { "a" : 1, "b" : 2, "c" : 3 } }'
+}
+
+task Inc {
+	test { New-MdbcUpdate -Inc @{Name = 1} } '{ "$inc" : { "Name" : 1 } }'
+	test { New-MdbcUpdate -Inc @{Name = 1L} } '{ "$inc" : { "Name" : NumberLong(1) } }'
+	test { New-MdbcUpdate -Inc @{Name = 1.1} } '{ "$inc" : { "Name" : 1.1 } }'
+	test { New-MdbcUpdate -Inc @{a = 1; b = 2}, @{c = 3} } '{ "$inc" : { "a" : 1, "b" : 2, "c" : 3 } }'
+}
+
+task Bitwise {
+	test { New-MdbcUpdate -BitwiseAnd @{Name = 1} } '{ "$bit" : { "Name" : { "and" : 1 } } }'
+	test { New-MdbcUpdate -BitwiseOr @{Name = 1} } '{ "$bit" : { "Name" : { "or" : 1 } } }'
+
+	test { New-MdbcUpdate -BitwiseAnd @{Name = 1L} } '{ "$bit" : { "Name" : { "and" : NumberLong(1) } } }'
+	test { New-MdbcUpdate -BitwiseOr @{Name = 1L} } '{ "$bit" : { "Name" : { "or" : NumberLong(1) } } }'
+
+	test { New-MdbcUpdate -BitwiseAnd @{a = 1; b = 2}, @{c = 3} } '{ "$bit" : { "a" : { "and" : 1 }, "b" : { "and" : 2 }, "c" : { "and" : 3 } } }'
+	test { New-MdbcUpdate -BitwiseOr @{a = 1; b = 2}, @{c = 3} } '{ "$bit" : { "a" : { "or" : 1 }, "b" : { "or" : 2 }, "c" : { "or" : 3 } } }'
+}
+
+task AddToSet {
 	test { New-MdbcUpdate -AddToSet @{Name = 1} } '{ "$addToSet" : { "Name" : 1 } }'
 	test { New-MdbcUpdate -AddToSetEach @{Name = 1} } '{ "$addToSet" : { "Name" : { "$each" : [1] } } }'
 
@@ -35,34 +76,24 @@ task New-MdbcUpdate.Expression {
 	test { New-MdbcUpdate -AddToSet @{a = 1; b = 2}, @{c = 3} } '{ "$addToSet" : { "a" : 1, "b" : 2, "c" : 3 } }'
 	test { New-MdbcUpdate -AddToSetEach @{a = 1; b = 2}, @{c = 3} } `
 	'{ "$addToSet" : { "a" : { "$each" : [1] }, "b" : { "$each" : [2] }, "c" : { "$each" : [3] } } }'
+}
 
-	### BitwiseAnd, BitwiseOr
-
-	test { New-MdbcUpdate -BitwiseAnd @{Name = 1} } '{ "$bit" : { "Name" : { "and" : 1 } } }'
-	test { New-MdbcUpdate -BitwiseOr @{Name = 1} } '{ "$bit" : { "Name" : { "or" : 1 } } }'
-
-	test { New-MdbcUpdate -BitwiseAnd @{Name = 1L} } '{ "$bit" : { "Name" : { "and" : NumberLong(1) } } }'
-	test { New-MdbcUpdate -BitwiseOr @{Name = 1L} } '{ "$bit" : { "Name" : { "or" : NumberLong(1) } } }'
-
-	test { New-MdbcUpdate -BitwiseAnd @{a = 1; b = 2}, @{c = 3} } '{ "$bit" : { "a" : { "and" : 1 }, "b" : { "and" : 2 }, "c" : { "and" : 3 } } }'
-	test { New-MdbcUpdate -BitwiseOr @{a = 1; b = 2}, @{c = 3} } '{ "$bit" : { "a" : { "or" : 1 }, "b" : { "or" : 2 }, "c" : { "or" : 3 } } }'
-
-	### Inc
-
-	test { New-MdbcUpdate -Inc @{Name = 1} } '{ "$inc" : { "Name" : 1 } }'
-	test { New-MdbcUpdate -Inc @{Name = 1L} } '{ "$inc" : { "Name" : NumberLong(1) } }'
-	test { New-MdbcUpdate -Inc @{Name = 1.1} } '{ "$inc" : { "Name" : 1.1 } }'
-	test { New-MdbcUpdate -Inc @{a = 1; b = 2}, @{c = 3} } '{ "$inc" : { "a" : 1, "b" : 2, "c" : 3 } }'
-
-	### PopFirst, PopLast
-
+task Pop {
 	test { New-MdbcUpdate -PopFirst Name } '{ "$pop" : { "Name" : -1 } }'
 	test { New-MdbcUpdate -PopLast Name } '{ "$pop" : { "Name" : 1 } }'
 
 	test { New-MdbcUpdate -PopFirst a, b } '{ "$pop" : { "a" : -1, "b" : -1 } }'
 	test { New-MdbcUpdate -PopLast a, b } '{ "$pop" : { "a" : 1, "b" : 1 } }'
+}
 
-	### Pull, PullAll
+task Pull {
+	# Pull query
+	$q = New-MdbcQuery x -GT 1
+	test { New-MdbcUpdate -Pull @{a = $q} } '{ "$pull" : { "a" : { "x" : { "$gt" : 1 } } } }'
+	test { New-MdbcUpdate -Pull @{a = $q; b = $q } } '{ "$pull" : { "a" : { "x" : { "$gt" : 1 } }, "b" : { "x" : { "$gt" : 1 } } } }'
+	test { New-MdbcUpdate -Pull @{a = $q}, @{b = $q } } '{ "$pull" : { "a" : { "x" : { "$gt" : 1 } }, "b" : { "x" : { "$gt" : 1 } } } }'
+
+	# Pull and PullAll
 
 	test { New-MdbcUpdate -Pull @{Name = 1} } '{ "$pull" : { "Name" : 1 } }'
 	test { New-MdbcUpdate -PullAll @{Name = 1} } '{ "$pullAll" : { "Name" : [1] } }'
@@ -78,9 +109,9 @@ task New-MdbcUpdate.Expression {
 
 	test { New-MdbcUpdate -Pull @{a = 1; b = 2}, @{c = 3} } '{ "$pull" : { "a" : 1, "b" : 2, "c" : 3 } }'
 	test { New-MdbcUpdate -PullAll @{a = 1; b = 2}, @{c = 3} } '{ "$pullAll" : { "a" : [1], "b" : [2], "c" : [3] } }'
+}
 
-	### Push, PushAll
-
+task Push {
 	test { New-MdbcUpdate -Push @{Name = 1} } '{ "$push" : { "Name" : 1 } }'
 	test { New-MdbcUpdate -PushAll @{Name = 1} } '{ "$pushAll" : { "Name" : [1] } }'
 
@@ -95,31 +126,4 @@ task New-MdbcUpdate.Expression {
 
 	test { New-MdbcUpdate -Push @{a = 1; b = 2}, @{c = 3} } '{ "$push" : { "a" : 1, "b" : 2, "c" : 3 } }'
 	test { New-MdbcUpdate -PushAll @{a = 1; b = 2}, @{c = 3} } '{ "$pushAll" : { "a" : [1], "b" : [2], "c" : [3] } }'
-
-	### Pull query
-
-	$q = New-MdbcQuery x -GT 1
-	test { New-MdbcUpdate -Pull @{a = $q} } '{ "$pull" : { "a" : { "x" : { "$gt" : 1 } } } }'
-	test { New-MdbcUpdate -Pull @{a = $q; b = $q } } '{ "$pull" : { "a" : { "x" : { "$gt" : 1 } }, "b" : { "x" : { "$gt" : 1 } } } }'
-	test { New-MdbcUpdate -Pull @{a = $q}, @{b = $q } } '{ "$pull" : { "a" : { "x" : { "$gt" : 1 } }, "b" : { "x" : { "$gt" : 1 } } } }'
-
-	### Rename
-
-	test { New-MdbcUpdate -Rename @{One = 'Two'} } '{ "$rename" : { "One" : "Two" } }'
-	test { New-MdbcUpdate -Rename @{a = 1; b = 2}, @{c = 3} } '{ "$rename" : { "a" : "1", "b" : "2", "c" : "3" } }'
-
-	### Set, SetOnInsert
-
-	test { New-MdbcUpdate @{Name = $null} } '{ "$set" : { "Name" : null } }'
-
-	test { New-MdbcUpdate -Set @{Name = 'one'} } '{ "$set" : { "Name" : "one" } }'
-	test { New-MdbcUpdate -SetOnInsert @{Name = 'one'} } '{ "$setOnInsert" : { "Name" : "one" } }'
-
-	test { New-MdbcUpdate -Set @{a = 1; b = 2}, @{c = 3} } '{ "$set" : { "a" : 1, "b" : 2, "c" : 3 } }'
-	test { New-MdbcUpdate -SetOnInsert @{a = 1; b = 2}, @{c = 3} } '{ "$setOnInsert" : { "a" : 1, "b" : 2, "c" : 3 } }'
-
-	### Unset
-
-	test { New-MdbcUpdate -Unset Name } '{ "$unset" : { "Name" : 1 } }'
-	test { New-MdbcUpdate -Unset a, b } '{ "$unset" : { "a" : 1, "b" : 1 } }'
 }

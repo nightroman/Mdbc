@@ -18,23 +18,36 @@ using System.Management.Automation;
 
 namespace Mdbc.Commands
 {
-	[Cmdlet(VerbsData.Import, "MdbcData")]
-	public sealed class ImportDataCommand : PSCmdlet
+	[Cmdlet(VerbsCommon.Open, "MdbcFile")]
+	public sealed class OpenFileCommand : PSCmdlet
 	{
-		[Parameter(Position = 0, Mandatory = true)]
+		[Parameter(Position = 0)]
 		public string Path { get; set; }
 
 		[Parameter]
-		public PSObject As { get { return null; } set { _ParameterAs = new ParameterAs(value); } }
-		ParameterAs _ParameterAs;
+		[ValidateNotNull]
+		public string CollectionVariable { get; set; }
+
+		[Parameter]
+		public SwitchParameter NewCollection { get; set; }
+
+		[Parameter]
+		public SwitchParameter Simple { get; set; }
 
 		protected override void BeginProcessing()
 		{
-			var documentAs = _ParameterAs ?? new ParameterAs(null);
-			Path = GetUnresolvedProviderPathFromPSPath(Path);
+			if (!string.IsNullOrEmpty(Path))
+				Path = GetUnresolvedProviderPathFromPSPath(Path);
+			
+			DataFile collection;
+			if (Simple)
+				collection = new SimpleDataFile(Path);
+			else
+				collection = new NormalDataFile(Path);
 
-			foreach (var doc in DataFile.GetDocumentsFromFileAs(documentAs.Type, Path))
-				WriteObject(doc);
+			collection.Read(NewCollection);
+
+			SessionState.PSVariable.Set(CollectionVariable ?? Actor.CollectionVariable, collection);
 		}
 	}
 }

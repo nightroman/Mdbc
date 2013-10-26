@@ -21,29 +21,31 @@ function Test-Type($Value, $TypeName) {
 	if (($tick = $name.IndexOf('`')) -ge 0) {$name = $name.Substring(0, $tick)}
 
 	if ($TypeName -ne $name) {
-		Write-Error -ErrorAction Stop "Expected type: $TypeName, actual type: $name"
+		Write-Error -ErrorAction 1 "Expected type: $TypeName, actual type: $name"
 	}
 }
 
-# Compares an expected error message
-function Test-Error([Parameter()]$Command, $Pattern) {
-	$err = ''
-	try { & $Command }
-	catch { $err = "$_" }
+# Invokes a command and checks the error and the sample.
+# Arguments: [0] script block [1] sample error wildcard.
+function Test-Error {
+	${private:+command}, ${private:+sample} = $args
+	${private:+result} = $null
+	try { & ${+command} }
+	catch { ${+result} = $_ }
 
-	if ($err -notlike $Pattern) {
-		Write-Error -ErrorAction Stop "Expected error: [[$Pattern]], actual: [[$err]]."
+	if (${+result} -notlike ${+sample}) {
+		Write-Error -ErrorAction 1 "`n Sample error : ${+sample}`n Result error : ${+result}"
 	}
 }
 
-# Compares two dictionaries
-function Test-Dictionary([System.Collections.IDictionary]$1, [System.Collections.IDictionary]$2) {
+# Compares two dictionaries.
+function Test-Table([System.Collections.IDictionary]$1, [System.Collections.IDictionary]$2, [switch]$Force) {
 	if ($1.Count -ne $2.Count) {
-		Write-Error -ErrorAction Stop "Different counts: $($1.Count) and $($2.Count)."
+		Write-Error -ErrorAction 1 "Different dictionary counts: $($1.Count) and $($2.Count)."
 	}
 	foreach($key in $1.Keys) {
 		if (!$2.Contains($key)) {
-			Write-Error -ErrorAction Stop "Second dictionary is missing key '$key'."
+			Write-Error -ErrorAction 1 "Second dictionary ($key) entry is missing."
 		}
 		$v1 = $1[$key]
 		$v2 = $2[$key]
@@ -51,28 +53,37 @@ function Test-Dictionary([System.Collections.IDictionary]$1, [System.Collections
 		if (($null -eq $v1) -and ($null -eq $v2)) {continue}
 
 		if (($null -eq $v1) -ne ($null -eq $v2)) {
-			Write-Error -ErrorAction Stop "Key '$key' has different nulls: $($null -eq $v1) and $($null -eq $v2)."
+			Write-Error -ErrorAction 1 "Different dictionary ($key) nulls: $($null -eq $v1) and $($null -eq $v2)."
 		}
 
-		if ($v1.GetType() -ne $v2.GetType()) {
-			Write-Error -ErrorAction Stop "Key '$key' has different types: $($v1.GetType()) and $($v2.GetType())."
+		if ($v1.GetType() -ne $v2.GetType() -and (!$Force -or !(
+			($v1 -is [System.Collections.IDictionary] -and $v2 -is [System.Collections.IDictionary]) -or
+			($v1 -is [System.Collections.IList] -and $v2 -is [System.Collections.IList])))) {
+			Write-Error -ErrorAction 1 "Different dictionary ($key) types: $($v1.GetType()) and $($v2.GetType())."
 		}
 
 		if ($v1 -is [System.Collections.IDictionary]) {
-			Test-Dictionary $v1 $v2
+			try { Test-Table $v1 $v2 -Force:$Force }
+			catch { Write-Error -ErrorAction 1 "Dictionary ($key): $_" }
+			continue
+		}
+
+		if ($v1 -is [System.Collections.IList]) {
+			try { Test-List $v1 $v2 -Force:$Force }
+			catch { Write-Error -ErrorAction 1 "Dictionary ($key): $_" }
 			continue
 		}
 
 		if ($v1 -cne $v2) {
-			Write-Error -ErrorAction Stop "Key '$key' has different values: '$v1' and '$v2'."
+			Write-Error -ErrorAction 1 "Different dictionary ($key) values: ($v1) and ($v2)."
 		}
 	}
 }
 
-# Compares two arrays. -Force: treat similar types equal.
-function Test-Array([object[]]$1, [object[]]$2, [switch]$Force) {
+# Compares two lists.
+function Test-List([System.Collections.IList]$1, [System.Collections.IList]$2, [switch]$Force) {
 	if ($1.Count -ne $2.Count) {
-		Write-Error -ErrorAction Stop "Different counts: $($1.Count) and $($2.Count)."
+		Write-Error -ErrorAction 1 "Different list counts: $($1.Count) and $($2.Count)."
 	}
 	for($i = 0; $i -lt $1.Count; ++$i) {
 		$v1 = $1[$i]
@@ -81,34 +92,38 @@ function Test-Array([object[]]$1, [object[]]$2, [switch]$Force) {
 		if (($null -eq $v1) -and ($null -eq $v2)) {continue}
 
 		if (($null -eq $v1) -ne ($null -eq $v2)) {
-			Write-Error -ErrorAction Stop "Index '$i': different nulls: $($null -eq $v1) and $($null -eq $v2)."
+			Write-Error -ErrorAction 1 "Different list ($i) nulls: $($null -eq $v1) and $($null -eq $v2)."
 		}
 
-		if ($Force -and $v1 -is [System.Collections.IDictionary] -and $v2 -is [System.Collections.IDictionary]) {
-			Test-Dictionary $v1 $v2
-			continue
-		}
-
-		if ($v1.GetType() -ne $v2.GetType()) {
-			Write-Error -ErrorAction Stop "Index '$i': different types: $($v1.GetType()) and $($v2.GetType())."
+		if ($v1.GetType() -ne $v2.GetType() -and (!$Force -or !(
+				($v1 -is [System.Collections.IDictionary] -and $v2 -is [System.Collections.IDictionary]) -or
+				($v1 -is [System.Collections.IList] -and $v2 -is [System.Collections.IList])))) {
+			Write-Error -ErrorAction 1 "Different list ($i) types: $($v1.GetType()) and $($v2.GetType())."
 		}
 
 		if ($v1 -is [System.Collections.IDictionary]) {
-			Test-Dictionary $v1 $v2
+			try { Test-Table $v1 $v2 -Force:$Force }
+			catch { Write-Error -ErrorAction 1 "List ($i): $_" }
+			continue
+		}
+
+		if ($v1 -is [System.Collections.IList]) {
+			try { Test-List $v1 $v2 -Force:$Force }
+			catch { Write-Error -ErrorAction 1 "List ($i): $_" }
 			continue
 		}
 
 		if ($v1 -cne $v2) {
-			Write-Error -ErrorAction Stop "Index '$i': different values: '$v1' and '$v2'."
+			Write-Error -ErrorAction 1 "Different list ($i) values: ($v1) and ($v2)."
 		}
 	}
 }
 
-# Log and test the expression and expected representation
-function Test-Expression($expression, $result) {
-	"$expression => $result"
-	$actual = (. $expression).ToString()
-	if ($actual -cne $result) {
-		Write-Error -ErrorAction 1 "`nExpected : $result`nActual   : $actual"
+# Log expression and sample, invoke expression, compare with sample
+function Test-Expression($expression, $sample) {
+	"$expression => $sample"
+	$result = (. $expression).ToString()
+	if ($result -cne $sample) {
+		Write-Error -ErrorAction 1 "`n Sample : $sample`n Result : $result"
 	}
 }

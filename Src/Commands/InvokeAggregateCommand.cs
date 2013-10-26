@@ -29,7 +29,9 @@ namespace Mdbc.Commands
 
 		protected override void BeginProcessing()
 		{
-			var result = Collection.Aggregate(_Operation);
+			if (FileCollection != null) ThrowNotImplementedForFiles("Aggregate");
+			
+			var result = MongoCollection.Aggregate(_Operation);
 			foreach (var document in result.ResultDocuments)
 				WriteObject(new Dictionary(document));
 		}

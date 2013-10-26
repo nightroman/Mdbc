@@ -1,13 +1,14 @@
 Mdbc module - MongoDB Cmdlets for PowerShell
 ============================================
 
-*Mdbc* is the *Windows PowerShell* module based on the official
+Mdbc is the Windows PowerShell module based on the official
 [MongoDB C# driver](https://github.com/mongodb/mongo-csharp-driver).
-It makes MongoDB scripting easy and represents yet another MongoDB shell.
+Mdbc makes MongoDB scripting in PowerShell easier and provides some extra
+features like bson file collections which do not require MongoDB installed.
 
 ## Quick Start
 
-**Step 1:** Get and install *Mdbc*:
+**Step 1:** Get and install Mdbc:
 
 An easy way to get and install is the PowerShell tool
 [PsGet](https://github.com/psget/psget):
@@ -66,7 +67,7 @@ PowerShell module directory, see `$env:PSModulePath`. For example:
     # Query again, just get the count, 0 is expected
     Get-MdbcData (New-MdbcQuery Name -EQ mongod) -Count
 
-This is it. If the code above works then the module is installed and ready to use.
+If the code above works then the module is installed and ready to use.
 
 Next Steps
 ----------
@@ -74,13 +75,10 @@ Next Steps
 Read cmdlet help topics and take a look at their examples, they show some basic
 use cases to start with.
 
-Take a look at the scripts in the *Scripts* directory, the interactive profile
-*Mdbc.ps1* in the first place. Other scripts are rather toys but may be useful.
+Take a look at scripts in the directory *Scripts*, especially the interactive
+profile *Mdbc.ps1*. Other scripts are rather toys but may be useful. Even more
+examples can be found in the directory *Tests* of the project repository.
 
-Even more examples can be found in the *Tests* directory. Download the sources.
-These tests cover all the cmdlets and most of other helper features.
-
-*Mdbc* cmdlets are designed for rather trivial routine operations. For advanced
-operations the C# driver API should be used. This is easy but one has to know
-how. The C# driver claims to be PowerShell friendly, some API was specifically
-designed with PowerShell in mind. Read the C# driver manuals.
+Mdbc cmdlets are designed for rather simple jobs. For advanced operations the
+C# driver API should be used directly. Some API was specifically designed with
+PowerShell in mind. See the C# driver manuals.

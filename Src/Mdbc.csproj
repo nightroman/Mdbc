@@ -15,7 +15,7 @@
     <OldToolsVersion>3.5</OldToolsVersion>
     <UpgradeBackupLocation>
     </UpgradeBackupLocation>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <PublishUrl>publish\</PublishUrl>
     <Install>true</Install>
     <InstallFrom>Disk</InstallFrom>
@@ -72,11 +72,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Actor.cs" />
+    <Compile Include="Commands\Abstract.cs" />
     <Compile Include="Commands\AbstractCollectionCommand.cs" />
     <Compile Include="Commands\AbstractDatabaseCommand.cs" />
     <Compile Include="Commands\AbstractWriteCommand.cs" />
     <Compile Include="Commands\AddDataCommand.cs" />
     <Compile Include="Commands\ConnectCommand.cs" />
+    <Compile Include="Commands\OpenFileCommand.cs" />
     <Compile Include="Commands\ExportDataCommand.cs" />
     <Compile Include="Commands\GetDataCommand.cs" />
     <Compile Include="Commands\AddCollectionCommand.cs" />
@@ -88,14 +90,19 @@
     <Compile Include="Commands\NewQueryCommand.cs" />
     <Compile Include="Commands\NewUpdateCommand.cs" />
     <Compile Include="Commands\RemoveDataCommand.cs" />
+    <Compile Include="Commands\SaveFileCommand.cs" />
     <Compile Include="Commands\UpdateDataCommand.cs" />
     <Compile Include="Collection.cs" />
     <Compile Include="Dictionary.cs" />
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="DocumentInput.cs" />
+    <Compile Include="DataFile.cs" />
+    <Compile Include="FieldCompiler.cs" />
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="Selector.cs" />
     <Compile Include="Serializer.cs" />
+    <Compile Include="QueryCompiler.cs" />
+    <Compile Include="UpdateCompiler.cs" />
     <Compile Include="Zoo.cs" />
   </ItemGroup>
   <ItemGroup>

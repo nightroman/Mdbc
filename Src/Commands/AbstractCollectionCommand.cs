@@ -20,31 +20,68 @@ using MongoDB.Driver;
 
 namespace Mdbc.Commands
 {
-	public abstract class AbstractCollectionCommand : PSCmdlet
+	public abstract class AbstractCollectionCommand : Abstract
 	{
 		[Parameter]
 		[ValidateNotNull]
-		public MongoCollection Collection
+		public object Collection
 		{
 			get
 			{
-				if (_Collection == null)
-				{
-					_Collection = GetVariableValue(Actor.CollectionVariable) as MongoCollection;
-					if (_Collection == null) throw new PSArgumentException("Specify a collection by the parameter or variable Collection.");
-				}
 				return _Collection;
 			}
 			set
 			{
-				_Collection = value;
+				SetCollection(value);
 			}
 		}
-		MongoCollection _Collection;
-
-		protected void WriteException(Exception value, object target)
+		object _Collection;
+		DataFile _FileCollection;
+		MongoCollection _MongoCollection;
+		void SetCollection(object value)
 		{
-			WriteError(new ErrorRecord(value, "Driver", ErrorCategory.WriteError, target));
+			if (value == null)
+			{
+				value = GetVariableValue(Actor.CollectionVariable);
+				if (value == null)
+					throw new PSArgumentException("Specify a collection by the parameter or variable Collection.");
+			}
+
+			_Collection = PSObject.AsPSObject(value).BaseObject;
+
+			_MongoCollection = _Collection as MongoCollection;
+			if (_MongoCollection != null)
+				return;
+
+			_FileCollection = _Collection as DataFile;
+			if (_FileCollection != null)
+				return;
+
+			throw new PSArgumentException("Unexpected type of parameter or variable Collection.");
+		}
+		internal DataFile FileCollection
+		{
+			get
+			{
+				if (_Collection == null)
+					SetCollection(null);
+
+				return _FileCollection;
+			}
+		}
+		protected MongoCollection MongoCollection
+		{
+			get
+			{
+				if (_Collection == null)
+					SetCollection(null);
+
+				return _MongoCollection;
+			}
+		}
+		protected static void ThrowNotImplementedForFiles(string what)
+		{
+			throw new NotImplementedException(what + " is not implemented for data files.");
 		}
 	}
 }

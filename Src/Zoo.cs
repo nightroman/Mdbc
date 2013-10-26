@@ -15,6 +15,7 @@
 */
 
 using System;
+using System.Collections.Generic;
 using System.Management.Automation;
 using MongoDB.Bson;
 
@@ -31,7 +32,7 @@ namespace Mdbc
 			else if (value is long)
 				Long = (long)value;
 			else
-				throw new InvalidCastException("Invalid value type. Expected types: int, long.");
+				throw new InvalidCastException("Invalid type. Expected types: int, long.");
 		}
 	}
 	class IntLongDouble
@@ -48,7 +49,7 @@ namespace Mdbc
 			else if (value is double)
 				Double = (double)value;
 			else
-				throw new InvalidCastException("Invalid value type. Expected types: int, long, double.");
+				throw new InvalidCastException("Invalid type. Expected types: int, long, double.");
 		}
 	}
 	class SetDollar : IDisposable
@@ -83,39 +84,433 @@ namespace Mdbc
 	}
 	class ParameterAs
 	{
-		internal readonly Type DeserializeType;
+		internal readonly Type Type;
 		public ParameterAs(PSObject value)
 		{
 			Actor.Register();
-			
+
 			if (value == null)
 			{
-				DeserializeType = typeof(Dictionary);
+				Type = typeof(Dictionary);
 				return;
 			}
 
 			var type = value.BaseObject as Type;
 			if (type != null)
 			{
-				DeserializeType = (Type)LanguagePrimitives.ConvertTo(value, typeof(Type), null);
+				Type = (Type)LanguagePrimitives.ConvertTo(value, typeof(Type), null);
 				return;
 			}
 
 			switch ((OutputType)LanguagePrimitives.ConvertTo(value, typeof(OutputType), null))
 			{
 				case OutputType.Default:
-					DeserializeType = typeof(Dictionary);
+					Type = typeof(Dictionary);
 					return;
 				case OutputType.Lazy:
-					DeserializeType = typeof(LazyDictionary);
+					Type = typeof(LazyDictionary);
 					return;
 				case OutputType.Raw:
-					DeserializeType = typeof(RawDictionary);
+					Type = typeof(RawDictionary);
 					return;
 				case OutputType.PS:
-					DeserializeType = typeof(PSObject);
+					Type = typeof(PSObject);
 					return;
 			}
+		}
+	}
+	class BsonValueEqualityComparer : IEqualityComparer<BsonValue>
+	{
+		public int GetHashCode(BsonValue obj)
+		{
+			if (obj == null) return 0;
+			switch (obj.BsonType)
+			{
+				case BsonType.Int32: return ((double)obj.AsInt32).GetHashCode();
+				case BsonType.Int64: return ((double)obj.AsInt64).GetHashCode();
+				case BsonType.Double: return obj.AsDouble.GetHashCode();
+				default: return obj.GetHashCode();
+			}
+		}
+		public bool Equals(BsonValue x, BsonValue y)
+		{
+			return x == null ? y == null : x.CompareTo(y) == 0;
+		}
+	}
+	static class MyValue
+	{
+		public const string Id = "_id";
+		public static double ToDoubleOrZero(this BsonValue value)
+		{
+			switch (value.BsonType)
+			{
+				case BsonType.Int32: return value.AsInt32;
+				case BsonType.Int64: return value.AsInt64;
+				case BsonType.Double: return value.AsDouble;
+				default: return 0;
+			}
+		}
+		public static BsonValue Add(BsonValue v1, BsonValue v2)
+		{
+			switch (v1.BsonType)
+			{
+				case BsonType.Int32:
+					switch (v2.BsonType)
+					{
+						case BsonType.Int32:
+							return new BsonInt32(v1.AsInt32 + v2.AsInt32);
+						case BsonType.Int64:
+							var v3264 = v1.AsInt32 + v2.AsInt64;
+							if (v3264 > int.MaxValue || v3264 < int.MinValue)
+								return new BsonInt64(v3264);
+							else
+								return new BsonInt32((int)v3264);
+						case BsonType.Double:
+							return new BsonDouble(v1.AsInt32 + v2.AsDouble);
+						default: break;
+					}
+					break;
+				case BsonType.Int64:
+					switch (v2.BsonType)
+					{
+						case BsonType.Int32:
+							return new BsonInt64(v1.AsInt64 + v2.AsInt32);
+						case BsonType.Int64:
+							return new BsonInt64(v1.AsInt64 + v2.AsInt64);
+						case BsonType.Double:
+							return new BsonDouble(v1.AsInt64 + v2.AsDouble);
+						default: break;
+					}
+					break;
+				case BsonType.Double:
+					switch (v2.BsonType)
+					{
+						case BsonType.Int32:
+							return new BsonDouble(v1.AsDouble + v2.AsInt32);
+						case BsonType.Int64:
+							return new BsonDouble(v1.AsDouble + v2.AsInt64);
+						case BsonType.Double:
+							return new BsonDouble(v1.AsDouble + v2.AsDouble);
+						default: break;
+					}
+					break;
+				default:
+					break;
+			}
+			throw new InvalidOperationException("Addition expects numeric values.");
+		}
+		public static BsonValue BitwiseAnd(BsonValue v1, BsonValue v2)
+		{
+			switch (v1.BsonType)
+			{
+				case BsonType.Int32:
+					switch (v2.BsonType)
+					{
+						case BsonType.Int32:
+							return new BsonInt32(v1.AsInt32 & v2.AsInt32);
+						case BsonType.Int64:
+							return new BsonInt32((int)(v1.AsInt32 & v2.AsInt64));
+						default: break;
+					}
+					break;
+				case BsonType.Int64:
+					switch (v2.BsonType)
+					{
+						case BsonType.Int32:
+							return new BsonInt64(v1.AsInt64 & v2.AsInt32);
+						case BsonType.Int64:
+							return new BsonInt64(v1.AsInt64 & v2.AsInt64);
+						default: break;
+					}
+					break;
+				default:
+					break;
+			}
+			throw new InvalidOperationException("Bitwise AND expects Int32 or Int64 values.");
+		}
+		public static BsonValue BitwiseOr(BsonValue v1, BsonValue v2)
+		{
+			switch (v1.BsonType)
+			{
+				case BsonType.Int32:
+					switch (v2.BsonType)
+					{
+						case BsonType.Int32:
+							return new BsonInt32(v1.AsInt32 | v2.AsInt32);
+						case BsonType.Int64:
+							var v64 = (uint)v1.AsInt32 | v2.AsInt64;
+							if (v64 < int.MinValue || v64 > int.MaxValue)
+								return new BsonInt64(v64);
+							else
+								return new BsonInt32((int)v64);
+						default: break;
+					}
+					break;
+				case BsonType.Int64:
+					switch (v2.BsonType)
+					{
+						case BsonType.Int32:
+							return new BsonInt64(v1.AsInt64 | (uint)v2.AsInt32);
+						case BsonType.Int64:
+							return new BsonInt64(v1.AsInt64 | v2.AsInt64);
+						default: break;
+					}
+					break;
+				default:
+					break;
+			}
+			throw new InvalidOperationException("Bitwise OR expects Int32 or Int64 values.");
+		}
+	}
+	static class MyArray
+	{
+		public static void AddToSet(this BsonArray that, BsonValue value)
+		{
+			if (!that.ContainsByCompareTo(value))
+				that.Add(value);
+		}
+		public static void AddToSetEach(this BsonArray that, BsonArray value)
+		{
+			foreach (var it in value)
+				if (!that.ContainsByCompareTo(it))
+					that.Add(it);
+		}
+		public static bool ContainsByCompareTo(this BsonArray that, BsonValue value)
+		{
+			foreach (var v in that)
+				if (v.CompareTo(value) == 0)
+					return true;
+			return false;
+		}
+		// < 0 - insert at 0; >= n - add nulls and value; else return false
+		public static bool InsertOutOfRange(this BsonArray that, int index, Func<BsonValue> value)
+		{
+			if (index < 0)
+			{
+				that.Insert(0, value());
+				return true;
+			}
+
+			if (index < that.Count)
+				return false;
+
+			for (int i = that.Count; i < index; ++i)
+				that.Add(BsonNull.Value);
+			that.Add(value());
+			return true;
+		}
+		// Gets an iterator of matching values for a key with dots.
+		public static IEnumerable<BsonValue> GetNestedValues(this BsonArray that, string key)
+		{
+			int index;
+
+			int dot = key.IndexOf('.');
+			if (dot < 0 && int.TryParse(key, out index))
+			{
+				// single arrayIndex, return a valid item
+				if (index >= 0 && index < that.Count)
+					yield return that[index];
+			}
+			else if (dot >= 0 && int.TryParse(key.Substring(0, dot), out index))
+			{
+				// the first key is arrayIndex, skip out of range
+				if (index < 0 || index >= that.Count)
+					yield break;
+
+				// pass the rest in a document
+				var value = that[index];
+				if (value.BsonType == BsonType.Document)
+					foreach (var it in value.AsBsonDocument.GetNestedValues(key.Substring(dot + 1)))
+						yield return it;
+			}
+			else
+			{
+				// pass the key to documents
+				foreach (var it in that)
+				{
+					if (it.BsonType == BsonType.Document)
+						foreach (var value in it.AsBsonDocument.GetNestedValues(key))
+							yield return value;
+				}
+			}
+		}
+	}
+	class ResolvedDocumentPath
+	{
+		public BsonDocument Document;
+		public string Key;
+		public BsonArray Array;
+		public int Index;
+	}
+	static class MyDocument
+	{
+		public static BsonValue EnsureId(this BsonDocument that)
+		{
+			BsonValue id;
+			if (that.TryGetValue(MyValue.Id, out id))
+				return id;
+
+			id = new BsonObjectId(ObjectId.GenerateNewId());
+			that.InsertAt(0, new BsonElement(MyValue.Id, id));
+			return id;
+		}
+		// Gets matching values for a key with dots or an empty set if nothing is found.
+		// For arrays compiler gets an iterator which can be stopped on a first queried value.
+		public static IEnumerable<BsonValue> GetNestedValues(this BsonDocument that, string key)
+		{
+			int index;
+			BsonValue value;
+			if ((index = key.IndexOf('.')) < 0)
+				return that.TryGetValue(key, out value) ? new BsonValue[] { value } : new BsonValue[] { };
+
+			var key1 = key.Substring(0, index);
+			if (!that.TryGetValue(key1, out value))
+				return new BsonValue[] { };
+
+			var key2 = key.Substring(index + 1);
+
+			if (value.BsonType == BsonType.Document)
+				return value.AsBsonDocument.GetNestedValues(key2);
+
+			if (value.BsonType != BsonType.Array)
+				return new BsonValue[] { };
+
+			if (value.BsonType == BsonType.Array)
+				return value.AsBsonArray.GetNestedValues(key2);
+
+			return new BsonValue[] { };
+		}
+		public static ResolvedDocumentPath EnsurePath(this BsonDocument that, string path)
+		{
+			var r = new ResolvedDocumentPath();
+
+			if (path.IndexOf('.') < 0)
+			{
+				r.Document = that;
+				r.Key = path;
+				return r;
+			}
+
+			var document = that;
+			var keys = path.Split('.');
+			int last = keys.Length - 1;
+			for (int i = 0; i <= last; ++i)
+			{
+				var key = keys[i];
+				if (i == last)
+				{
+					r.Document = document;
+					r.Key = key;
+					return r;
+				}
+
+				BsonValue value;
+				if (!document.TryGetValue(key, out value))
+				{
+					var newDocument = new BsonDocument();
+					document.Add(key, newDocument);
+					document = newDocument;
+					continue;
+				}
+
+				if (value.BsonType == BsonType.Document)
+				{
+					document = value.AsBsonDocument;
+					continue;
+				}
+
+				int arrayIndex;
+				if (value.BsonType == BsonType.Array && int.TryParse(keys[i + 1], out arrayIndex))
+				{
+					var array = value.AsBsonArray;
+					if (i == last - 1)
+					{
+						r.Array = array;
+						r.Index = arrayIndex;
+						return r;
+					}
+
+					if (!array.InsertOutOfRange(arrayIndex, () => document = new BsonDocument()))
+					{
+						var value2 = array[arrayIndex];
+						if (value2.BsonType != BsonType.Document)
+							throw new InvalidOperationException(string.Format(null, "Array item at ({0}) in ({1}) is not a document.", arrayIndex, path));
+
+						document = value2.AsBsonDocument;
+					}
+					++i;
+					continue;
+				}
+
+				throw new InvalidOperationException(string.Format(null, "Field ({0}) in ({1}) is not a document.", key, path)); //TODO type of exceprtions to catch?
+			}
+
+			return null;
+		}
+		// Returns one of:
+		// - Document and Key, Key may be missing
+		// - Array and Index, Index is always valid
+		public static ResolvedDocumentPath ResolvePath(this BsonDocument that, string path, bool noArrays = false)
+		{
+			var r = new ResolvedDocumentPath();
+
+			if (path.IndexOf('.') < 0)
+			{
+				r.Document = that;
+				r.Key = path;
+				return r;
+			}
+
+			var document = that;
+			var keys = path.Split('.');
+			int last = keys.Length - 1;
+			for (int i = 0; i <= last; ++i)
+			{
+				var key = keys[i];
+				if (i == last)
+				{
+					r.Document = document;
+					r.Key = key;
+					return r;
+				}
+
+				BsonValue value;
+				if (!document.TryGetValue(key, out value))
+					return null;
+
+				if (value.BsonType == BsonType.Document)
+				{
+					document = value.AsBsonDocument;
+					continue;
+				}
+
+				int arrayIndex;
+				if (value.BsonType != BsonType.Array || !int.TryParse(keys[i + 1], out arrayIndex))
+					return null;
+
+				if (noArrays)
+					throw new InvalidOperationException("Array indexes are not supported.");
+
+				var array = value.AsBsonArray;
+				if (arrayIndex < 0 || arrayIndex >= array.Count)
+					return null;
+
+				if (i == last - 1)
+				{
+					r.Array = array;
+					r.Index = arrayIndex;
+					return r;
+				}
+
+				var value2 = array[arrayIndex];
+				if (value2.BsonType != BsonType.Document)
+					return null;
+
+				document = value2.AsBsonDocument;
+				++i;
+			}
+
+			return null;
 		}
 	}
 }

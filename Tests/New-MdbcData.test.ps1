@@ -204,20 +204,22 @@ task New-MdbcData.-Convert {
 }
 
 task New-MdbcData.Cyclic {
+	$message = 'Data exceed the default maximum serialization depth.'
+
 	# dictionary
 	$d = @{}
 	$d.p1 = $d
-	Test-Error { New-MdbcData $d } 'Cyclic reference.'
+	Test-Error { New-MdbcData $d } $message
 
 	# complex
 	$d = New-Object PSObject -Property @{Document=$null}
 	$d.Document = $d
-	Test-Error { New-MdbcData $d } 'Cyclic reference.'
+	Test-Error { New-MdbcData $d } $message
 
 	# array
 	$a = [Collections.ArrayList]@()
 	$null = $a.Add($a)
-	Test-Error { New-MdbcData -Value $a } 'Cyclic reference.'
+	Test-Error { New-MdbcData -Value $a } $message
 
 	#! not a cycle
 	$d = @{x = 1}

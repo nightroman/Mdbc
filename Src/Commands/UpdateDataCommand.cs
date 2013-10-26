@@ -23,8 +23,9 @@ namespace Mdbc.Commands
 	public sealed class UpdateDataCommand : AbstractWriteCommand
 	{
 		[Parameter(Position = 0, Mandatory = true)]
-		public object Update { get { return null; } set { _Update = Actor.ObjectToUpdate(value); } }
+		public object Update { get { return null; } set { _Update = Actor.ObjectToUpdate(value, x => _UpdateError = x); } } //_131102_111738
 		IMongoUpdate _Update;
+		string _UpdateError;
 
 		[Parameter(Position = 1, Mandatory = true, ValueFromPipeline = true)]
 		public object Query { get { return null; } set { _Input = value; _Query = Actor.ObjectToQuery(value); } }
@@ -34,11 +35,24 @@ namespace Mdbc.Commands
 		[Parameter]
 		public UpdateFlags Modes { get; set; }
 
+		protected override void BeginProcessing()
+		{
+			//_131102_111738
+			if (_Update == null) throw new PSArgumentException(_UpdateError);
+		}
 		protected override void ProcessRecord()
 		{
 			try
 			{
-				WriteResult(Collection.Update(_Query, _Update, Modes, WriteConcern));
+				if (FileCollection == null)
+				{
+					WriteResult(MongoCollection.Update(_Query, _Update, Modes, WriteConcern));
+				}
+				else
+				{
+					if (Result) ThrowNotImplementedForFiles("Parameter Result"); //TODO
+					FileCollection.Update(_Query, _Update, Modes);
+				}
 			}
 			catch (MongoException ex)
 			{

@@ -14,6 +14,7 @@
 * limitations under the License.
 */
 
+using System;
 using System.Management.Automation;
 using MongoDB.Driver;
 
@@ -27,10 +28,23 @@ namespace Mdbc.Commands
 		[Parameter]
 		public SwitchParameter Result { get; set; }
 		
-		protected void WriteResult(WriteConcernResult value)
+		protected void WriteResult(CommandResult result)
 		{
-			if (Result && value != null)
-				WriteObject(value);
+			if (Result && result != null)
+				WriteObject(result);
+		}
+		protected override void WriteException(Exception exception, object target)
+		{
+			// error first
+			base.WriteException(exception, target);
+			
+			// then result
+			if (Result)
+			{
+				var wce = exception as WriteConcernException;
+				if (wce != null)
+					WriteResult(wce.CommandResult);
+			}
 		}
 	}
 }

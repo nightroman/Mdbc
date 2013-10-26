@@ -56,9 +56,33 @@ namespace Mdbc.Commands
 				document = Actor.ToBsonDocument(document, InputObject, new DocumentInput(SessionState, Convert), _Selectors);
 
 				if (Update)
-					WriteResult(Collection.Save(document, WriteConcern));
+				{
+					if (FileCollection == null)
+					{
+						WriteResult(MongoCollection.Save(document, WriteConcern));
+					}
+					else if (FileCollection is NormalDataFile)
+					{
+						if (Result) ThrowNotImplementedForFiles("Parameter Result"); //TODO
+						FileCollection.SaveDocument(document);
+					}
+					else
+					{
+						throw new NotSupportedException("Add -Update is not supported for simple data files.");
+					}
+				}
 				else
-					WriteResult(Collection.Insert(document, WriteConcern));
+				{
+					if (FileCollection == null)
+					{
+						WriteResult(MongoCollection.Insert(document, WriteConcern));
+					}
+					else
+					{
+						if (Result) ThrowNotImplementedForFiles("Parameter Result"); //TODO
+						FileCollection.InsertDocument(document);
+					}
+				}
 			}
 			catch (ArgumentException ex)
 			{

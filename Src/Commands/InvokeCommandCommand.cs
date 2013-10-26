@@ -24,33 +24,48 @@ namespace Mdbc.Commands
 	public sealed class InvokeCommandCommand : AbstractDatabaseCommand
 	{
 		[Parameter(Position = 0, Mandatory = true)]
-		public PSObject Command { get; set; }
+		public PSObject Command
+		{
+			get { return null; }
+			set
+			{
+				_CommandName = value.BaseObject as string;
+				if (_CommandName == null)
+				{
+					var dictionary = value.BaseObject as IDictionary;
+					if (dictionary != null)
+						_CommandDocument = new CommandDocument(Actor.ToBsonDocument(dictionary));
+					else
+						throw new PSArgumentException("Invalid command object type.");
+				}
+			}
+		}
+		string _CommandName;
+		CommandDocument _CommandDocument;
 		
 		[Parameter(Position = 1)]
 		public object Value { get; set; }
 		
 		protected override void BeginProcessing()
 		{
-			CommandDocument document;
-			var commandName = Command.BaseObject as string;
-			if (commandName != null)
+			if (_CommandDocument == null)
 			{
 				if (Value == null)
-					document = new CommandDocument(commandName, 1);
+					_CommandDocument = new CommandDocument(_CommandName, 1);
 				else
-					document = new CommandDocument(commandName, Actor.ToBsonValue(Value));
-			}
-			else
-			{
-				var dictionary = Command.BaseObject as IDictionary;
-				if (dictionary != null)
-					document = new CommandDocument(dictionary);
-				else
-					throw new PSArgumentException("Invalid command type.", "Command");
+					_CommandDocument = new CommandDocument(_CommandName, Actor.ToBsonValue(Value));
 			}
 
-			var result = Database.RunCommand(document);
-			WriteObject(new Dictionary(result.Response));
+			try
+			{
+				var result = Database.RunCommand(_CommandDocument);
+				WriteObject(new Dictionary(result.Response));
+			}
+			catch (MongoCommandException ex)
+			{
+				WriteException(ex, null);
+				WriteObject(new Dictionary(ex.CommandResult.Response));
+			}
 		}
 	}
 }

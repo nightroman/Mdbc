@@ -17,51 +17,51 @@ Test-Type $bsonArray MongoDB.Bson.BsonArray
 $mdbcArray = [Mdbc.Collection]$bsonArray
 Test-Type $mdbcArray Mdbc.Collection
 
-task New-MdbcQuery.Expression {
-	### [ Comparison ]
-
-	### EQ
+task EQ {
 	test { New-MdbcQuery Name 42 } '{ "Name" : 42 }'
 	test { New-MdbcQuery Name -EQ 42 } '{ "Name" : 42 }'
 	test { New-MdbcQuery -Not (New-MdbcQuery Name -EQ 42) } '{ "Name" : { "$ne" : 42 } }'
 
 	# EQ is used on its own
 	Test-Error { New-MdbcQuery Name -EQ 42 -GT 15 } 'Parameter set cannot be resolved using the specified named parameters.'
+}
 
-	### GT
-	test { New-MdbcQuery Name -GT 42 } '{ "Name" : { "$gt" : 42 } }'
-	test { New-MdbcQuery -Not (New-MdbcQuery Name -GT 42) } '{ "Name" : { "$not" : { "$gt" : 42 } } }'
-
-	### GTE
-	test { New-MdbcQuery Name -GTE 42 } '{ "Name" : { "$gte" : 42 } }'
-	test { New-MdbcQuery -Not (New-MdbcQuery Name -GTE 42) } '{ "Name" : { "$not" : { "$gte" : 42 } } }'
-
-	### LT
-	test { New-MdbcQuery Name -LT 42 } '{ "Name" : { "$lt" : 42 } }'
-	test { New-MdbcQuery -Not (New-MdbcQuery Name -LT 42) } '{ "Name" : { "$not" : { "$lt" : 42 } } }'
-
-	### LTE
-	test { New-MdbcQuery Name -LTE 42 } '{ "Name" : { "$lte" : 42 } }'
-	test { New-MdbcQuery -Not (New-MdbcQuery Name -LTE 42) } '{ "Name" : { "$not" : { "$lte" : 42 } } }'
-
-	### NE
+task NE {
 	test { New-MdbcQuery Name -NE 42 } '{ "Name" : { "$ne" : 42 } }'
 	test { New-MdbcQuery -Not (New-MdbcQuery Name -NE 42) } '{ "Name" : 42 }'
+}
 
-	### [ Ignore Case ]
+task GT {
+	test { New-MdbcQuery Name -GT 42 } '{ "Name" : { "$gt" : 42 } }'
+	test { New-MdbcQuery -Not (New-MdbcQuery Name -GT 42) } '{ "Name" : { "$not" : { "$gt" : 42 } } }'
+}
 
-	### IEQ
+task GTE {
+	test { New-MdbcQuery Name -GTE 42 } '{ "Name" : { "$gte" : 42 } }'
+	test { New-MdbcQuery -Not (New-MdbcQuery Name -GTE 42) } '{ "Name" : { "$not" : { "$gte" : 42 } } }'
+}
+
+task LT {
+	test { New-MdbcQuery Name -LT 42 } '{ "Name" : { "$lt" : 42 } }'
+	test { New-MdbcQuery -Not (New-MdbcQuery Name -LT 42) } '{ "Name" : { "$not" : { "$lt" : 42 } } }'
+}
+
+task LTE {
+	test { New-MdbcQuery Name -LTE 42 } '{ "Name" : { "$lte" : 42 } }'
+	test { New-MdbcQuery -Not (New-MdbcQuery Name -LTE 42) } '{ "Name" : { "$not" : { "$lte" : 42 } } }'
+}
+
+task IEQ {
 	test { New-MdbcQuery Name -IEQ te*xt } '{ "Name" : /^te\*xt$/i }'
 	test { New-MdbcQuery -Not (New-MdbcQuery Name -IEQ te*xt) } '{ "Name" : { "$not" : /^te\*xt$/i } }'
+}
 
-	### INE
+task INE {
 	test { New-MdbcQuery Name -INE te*xt } '{ "Name" : { "$not" : /^te\*xt$/i } }'
 	test { New-MdbcQuery -Not (New-MdbcQuery Name -INE te*xt) } '{ "Name" : /^te\*xt$/i }'
+}
 
-	### [ Misc ]
-
-	### Exists, NotExists
-
+task Exists {
 	test { New-MdbcQuery Name -Exists } '{ "Name" : { "$exists" : true } }'
 	test { New-MdbcQuery Name -Exists:$false } '{ "Name" : { "$exists" : false } }'
 	test { New-MdbcQuery -Not (New-MdbcQuery Name -Exists) } '{ "Name" : { "$exists" : false } }'
@@ -69,27 +69,31 @@ task New-MdbcQuery.Expression {
 	test { New-MdbcQuery Name -NotExists } '{ "Name" : { "$exists" : false } }'
 	test { New-MdbcQuery Name -NotExists:$false } '{ "Name" : { "$exists" : true } }'
 	test { New-MdbcQuery -Not (New-MdbcQuery Name -NotExists) } '{ "Name" : { "$exists" : true } }'
+}
 
-	### Mod
+task Mod {
 	test { New-MdbcQuery Name -Mod 2, 1 } '{ "Name" : { "$mod" : [2, 1] } }'
 	test { New-MdbcQuery -Not (New-MdbcQuery Name -Mod 2, 1) } '{ "Name" : { "$not" : { "$mod" : [2, 1] } } }'
+}
 
-	### Size
+task Size {
 	test { New-MdbcQuery Name -Size 42 } '{ "Name" : { "$size" : 42 } }'
 	test { New-MdbcQuery -Not (New-MdbcQuery Name -Size 42) } '{ "Name" : { "$not" : { "$size" : 42 } } }'
+}
 
-	### Type
-
+task Type {
 	test { New-MdbcQuery Name -Type 1 } '{ "Name" : { "$type" : 1 } }'
 	test { New-MdbcQuery Name -Type Double } '{ "Name" : { "$type" : 1 } }'
 	test { New-MdbcQuery -Not (New-MdbcQuery Name -Type Double) } '{ "Name" : { "$not" : { "$type" : 1 } } }'
+}
 
-	### Where
+task Where {
 	test { New-MdbcQuery -Where 'this.Length == null' } '{ "$where" : { "$code" : "this.Length == null" } }'
-	test { New-MdbcQuery -Not (New-MdbcQuery -Where 'this.Length == null') } '{ "$where" : { "$ne" : { "$code" : "this.Length == null" } } }' #todo why $ne?
+	#bug $ne -> $not https://jira.mongodb.org/browse/CSHARP-840
+	test { New-MdbcQuery -Not (New-MdbcQuery -Where 'this.Length == null') } '{ "$where" : { "$ne" : { "$code" : "this.Length == null" } } }'
+}
 
-	### Match
-
+task Match {
 	test { New-MdbcQuery Name -Matches '^text$' } '{ "Name" : /^text$/ }'
 	test { New-MdbcQuery -Not (New-MdbcQuery Name -Matches '^text$') } '{ "Name" : { "$not" : /^text$/ } }'
 
@@ -99,15 +103,18 @@ task New-MdbcQuery.Expression {
 	$regex = New-Object regex '^text$', "IgnoreCase, Multiline, IgnorePatternWhitespace, Singleline"
 	test { New-MdbcQuery Name -Matches $regex } '{ "Name" : /^text$/imxs }'
 	test { New-MdbcQuery -Not (New-MdbcQuery Name -Matches $regex) } '{ "Name" : { "$not" : /^text$/imxs } }'
+}
 
-	### ElemMatch
+task ElemMatch {
 	$query = New-MdbcQuery -And (New-MdbcQuery a 1), (New-MdbcQuery b 2)
 	test { New-MdbcQuery Name -ElemMatch $query } '{ "Name" : { "$elemMatch" : { "a" : 1, "b" : 2 } } }'
 	test { New-MdbcQuery -Not (New-MdbcQuery Name -ElemMatch $query) } '{ "Name" : { "$not" : { "$elemMatch" : { "a" : 1, "b" : 2 } } } }'
 
-	### [ Sets ]
+	#TODO weird query, the whole array is treated as _id
+	test { New-MdbcQuery Name -ElemMatch @{x=1}, @{y=2} } '{ "Name" : { "$elemMatch" : { "_id" : [{ "x" : 1 }, { "y" : 2 }] } } }'
+}
 
-	### All
+task All {
 	test { New-MdbcQuery Name -All $bsonArray } '{ "Name" : { "$all" : [1, 2, 3] } }'
 	test { New-MdbcQuery Name -All $mdbcArray } '{ "Name" : { "$all" : [1, 2, 3] } }'
 	test { New-MdbcQuery Name -All $true } '{ "Name" : { "$all" : [true] } }'
@@ -125,8 +132,9 @@ task New-MdbcQuery.Expression {
 	test { New-MdbcQuery Name -All 1L, more } '{ "Name" : { "$all" : [NumberLong(1), "more"] } }'
 	test { New-MdbcQuery Name -All text, more } '{ "Name" : { "$all" : ["text", "more"] } }'
 	test { New-MdbcQuery -Not (New-MdbcQuery Name -All text, more) } '{ "Name" : { "$not" : { "$all" : ["text", "more"] } } }'
+}
 
-	### In
+task In {
 	test { New-MdbcQuery Name -In $bsonArray } '{ "Name" : { "$in" : [1, 2, 3] } }'
 	test { New-MdbcQuery Name -In $mdbcArray } '{ "Name" : { "$in" : [1, 2, 3] } }'
 	test { New-MdbcQuery Name -In $true } '{ "Name" : { "$in" : [true] } }'
@@ -144,8 +152,9 @@ task New-MdbcQuery.Expression {
 	test { New-MdbcQuery Name -In 1L, more } '{ "Name" : { "$in" : [NumberLong(1), "more"] } }'
 	test { New-MdbcQuery Name -In text, more } '{ "Name" : { "$in" : ["text", "more"] } }'
 	test { New-MdbcQuery -Not (New-MdbcQuery Name -In text, more) } '{ "Name" : { "$nin" : ["text", "more"] } }'
+}
 
-	### NotIn
+task NotIn {
 	test { New-MdbcQuery Name -NotIn $bsonArray } '{ "Name" : { "$nin" : [1, 2, 3] } }'
 	test { New-MdbcQuery Name -NotIn $mdbcArray } '{ "Name" : { "$nin" : [1, 2, 3] } }'
 	test { New-MdbcQuery Name -NotIn $true } '{ "Name" : { "$nin" : [true] } }'
@@ -163,14 +172,14 @@ task New-MdbcQuery.Expression {
 	test { New-MdbcQuery Name -NotIn 1L, more } '{ "Name" : { "$nin" : [NumberLong(1), "more"] } }'
 	test { New-MdbcQuery Name -NotIn text, more } '{ "Name" : { "$nin" : ["text", "more"] } }'
 	test { New-MdbcQuery -Not (New-MdbcQuery Name -NotIn text, more) } '{ "Name" : { "$not" : { "$nin" : ["text", "more"] } } }'
+}
 
-	### [ Binary Operators ]
-
-	### And
+task And {
 	test { New-MdbcQuery -And (New-MdbcQuery x 1), (New-MdbcQuery y 2) } '{ "x" : 1, "y" : 2 }'
 	test { New-MdbcQuery -Not (New-MdbcQuery -And (New-MdbcQuery x 1), (New-MdbcQuery y 2)) } '{ "$nor" : [{ "x" : 1, "y" : 2 }] }'
+}
 
-	### Or
+task Or {
 	test { New-MdbcQuery -Or (New-MdbcQuery x 1), (New-MdbcQuery y 2) } '{ "$or" : [{ "x" : 1 }, { "y" : 2 }] }'
 	test { New-MdbcQuery -Not (New-MdbcQuery -Or (New-MdbcQuery x 1), (New-MdbcQuery y 2)) } '{ "$nor" : [{ "x" : 1 }, { "y" : 2 }] }'
 }

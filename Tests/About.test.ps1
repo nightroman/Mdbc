@@ -46,14 +46,14 @@ task ModuleFormatFile {
 	}}
 }
 
-# Test the function Test-Dictionary
-task Test-Dictionary {
-	Test-Error { Test-Dictionary @{x=1} @{} } 'Different counts: 1 and 0.'
-	Test-Error { Test-Dictionary @{x=1} @{y=1} } "Second dictionary is missing key 'x'."
-	Test-Error { Test-Dictionary @{x=1} @{x=2} } "Key 'x' has different values: '1' and '2'."
-	Test-Error { Test-Dictionary @{x=$null} @{x=2} } "Key 'x' has different nulls: True and False."
-	Test-Error { Test-Dictionary @{x='One'} @{x=2} } "Key 'x' has different types: string and int."
-	Test-Dictionary @{x=@{x=1}} @{x=@{x=1}}
+# Test the function Test-Table
+task Test-Table {
+	Test-Error { Test-Table @{x=1} @{} } 'Different dictionary counts: 1 and 0.'
+	Test-Error { Test-Table @{x=1} @{y=1} } 'Second dictionary (x) entry is missing.'
+	Test-Error { Test-Table @{x=$null} @{x=2} } 'Different dictionary (x) nulls: True and False.'
+	Test-Error { Test-Table @{x='One'} @{x=2} } 'Different dictionary (x) types: string and int.'
+	Test-Error { Test-Table @{x=1} @{x=2} } 'Different dictionary (x) values: (1) and (2).'
+	Test-Table @{x=@{x=1}} @{x=@{x=1}}
 }
 
 # Test the function Invoke-Test
@@ -89,7 +89,7 @@ task Invoke-Test {
 
 	# show and test the log
 	$log
-	Test-Array $log @(
+	Test-List $log @(
 		'test begin'
 		'do begin1'
 		'test end'
@@ -134,7 +134,7 @@ task SetDollar {
 
 	$log
 
-	Test-Array $log @(
+	Test-List $log @(
 		'name1'
 		'name2'
 		'System.Management.Automation.Runspaces.LocalRunspace'
@@ -143,7 +143,8 @@ task SetDollar {
 
 task PublicTypes {
 	$types = [Reflection.Assembly]::GetAssembly(([Mdbc.Dictionary])).GetTypes() | ?{$_.IsPublic} | Sort-Object Name | Select-Object -ExpandProperty Name
-	Test-Array $types @(
+	Test-List $types @(
+		'Abstract'
 		'AbstractCollectionCommand'
 		'AbstractDatabaseCommand'
 		'AbstractWriteCommand'
@@ -162,9 +163,13 @@ task PublicTypes {
 		'NewDataCommand'
 		'NewQueryCommand'
 		'NewUpdateCommand'
+		'OpenFileCommand'
 		'OutputType'
+		'QueryCompiler'
 		'RawDictionary'
 		'RemoveDataCommand'
+		'SaveFileCommand'
+		'UpdateCompiler'
 		'UpdateDataCommand'
 	)
 }

@@ -50,7 +50,7 @@ namespace Mdbc.Commands
 					options.SetMaxDocuments(MaxDocuments);
 			}
 
-			// auto index explicitly, otherwise default is used
+			// auto arrayIndex explicitly, otherwise default is used
 			if (_setAutoIndexId)
 				options.SetAutoIndexId(_AutoIndexId);
 

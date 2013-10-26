@@ -14,27 +14,22 @@
 * limitations under the License.
 */
 
+using System.IO;
 using System.Management.Automation;
+using MongoDB.Driver;
 
 namespace Mdbc.Commands
 {
-	[Cmdlet(VerbsData.Import, "MdbcData")]
-	public sealed class ImportDataCommand : PSCmdlet
+	[Cmdlet(VerbsData.Save, "MdbcFile")]
+	public sealed class SaveFileCommand : AbstractCollectionCommand
 	{
-		[Parameter(Position = 0, Mandatory = true)]
+		[Parameter(Position = 0)]
 		public string Path { get; set; }
-
-		[Parameter]
-		public PSObject As { get { return null; } set { _ParameterAs = new ParameterAs(value); } }
-		ParameterAs _ParameterAs;
-
+		
 		protected override void BeginProcessing()
 		{
-			var documentAs = _ParameterAs ?? new ParameterAs(null);
-			Path = GetUnresolvedProviderPathFromPSPath(Path);
-
-			foreach (var doc in DataFile.GetDocumentsFromFileAs(documentAs.Type, Path))
-				WriteObject(doc);
+			if (FileCollection != null)
+				FileCollection.Save(string.IsNullOrEmpty(Path) ? null : GetUnresolvedProviderPathFromPSPath(Path));
 		}
 	}
 }

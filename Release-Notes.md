@@ -1,6 +1,48 @@
 Mdbc Release Notes
 ==================
 
+## v4.2.0
+
+### Bson file collections
+
+This release introduces bson data file collections which do not require
+MongoDB. They are opened and saved by new cmdlets `Open-MdbcFile` and
+`Save-MdbcFile` and support commands `Get-MdbcData`, `Add-MdbcData`,
+`Remove-MdbcData`, and `Update-MdbcData`.
+
+See FILE COLLECTIONS in help:
+
+    Import-Module Mdbc; help about_Mdbc
+
+The concept is yet experimental and features may change.
+
+### Other changes
+
+`New-MdbcQuery`:
+
+- Parameter `Mod` accepts `long` values
+- Some parameters accept nulls if they are accepted in native queries
+
+`Get-MdbcData`
+
+- Parameters `Remove` and `Update` can be used with `As`.
+- Parameters `First` and `Last` are not used together.
+- Parameter `Property` also accepts `IMongoFields`.
+- Fixed `Last` with `Count`.
+
+`Add-MdbcData`, `Remove-MdbcData`, `Update-MdbcData`
+
+- If `Result` is specified then it is written on non terminating errors.
+
+`Invoke-MdbcCommand`
+
+- The response is written on non terminating errors.
+
+`Update-MongoFiles.ps1` and `Get-MongoFile.ps1`:
+
+- New named parameter `CollectionName`
+- The current PowerShell path is used instead of the current directory
+
 ## v4.1.0
 
 ### New cmdlet `Invoke-MdbcAggregate`

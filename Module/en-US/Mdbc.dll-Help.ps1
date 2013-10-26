@@ -9,6 +9,12 @@ Set-StrictMode -Version 2
 
 ### Shared descriptions
 
+$CollectionVariable = @'
+Name of a new variable in the current scope with the connected collection. The
+default variable name is Collection. The default variable is used implicitly by
+cmdlets operating on collection data.
+'@
+
 $IdParameter = @'
 The document _id value to be assigned or a script block returning this value
 for the input object represented by the variable $_.
@@ -139,9 +145,9 @@ Add-MdbcData and Export-MdbcData.
 Objects created by New-MdbcData or obtained by Get-MdbcData or Import-MdbcData.
 This type is the most effective and safe as input/output of Mdbc data cmdlets.
 
-The native C# driver document [MongoDB.Bson.BsonDocument] can be used as well
-but normally it should not be used directly. Its wrapper [Mdbc.Dictionary] is
-more suitable in PowerShell.
+The native driver document [MongoDB.Bson.BsonDocument] can be used as well but
+normally it should not be used directly. Its wrapper [Mdbc.Dictionary] is more
+suitable in PowerShell.
 '@
 	}
 	@{
@@ -201,7 +207,7 @@ specified then they are assumed to be ., test, test respectively.
 	Connection string (see driver manuals for details):
 	mongodb://[username:password@]hostname[:port][/[database][?options]]
 
-	"." is used for the default C# driver connection.
+	"." is used for the default driver connection.
 
 	Example:
 	mongodb://localhost:27017
@@ -211,7 +217,7 @@ specified then they are assumed to be ., test, test respectively.
 		NewCollection = 'Tells to remove an existing collection if any and connect a new one.'
 		ServerVariable = 'Name of a new variable in the current scope with the connected server. The default variable name is Server.'
 		DatabaseVariable = 'Name of a new variable in the current scope with the connected database. The default variable name is Database.'
-		CollectionVariable = 'Name of a new variable in the current scope with the connected collection. The default variable name is Collection.'
+		CollectionVariable = $CollectionVariable
 	}
 	inputs = @()
 	outputs = @(
@@ -293,8 +299,7 @@ specified then they are assumed to be ., test, test respectively.
 		@{ text = 'Get-MdbcData' }
 		@{ text = 'Remove-MdbcData' }
 		@{ text = 'Update-MdbcData' }
-		@{ text = 'MongoDB'; URI = 'http://www.mongodb.org/' }
-		@{ text = 'C# driver'; URI = 'http://www.mongodb.org/display/DOCS/CSharp+Driver+Tutorial' }
+		@{ text = 'MongoDB'; URI = 'http://www.mongodb.org' }
 	)
 }
 
@@ -302,7 +307,7 @@ specified then they are assumed to be ., test, test respectively.
 $ADatabase = @{
 	parameters = @{
 		Database = @'
-The database instance. If it is not specified then the variable $Database is
+The database instance. If it is not specified then the variable Database is
 used: it is defined by Connect-Mdbc or assigned explicitly before the call.
 '@
 	}
@@ -326,7 +331,7 @@ $AWrite = Merge-Helps $ACollection @{
 ### New-MdbcData
 @{
 	command = 'New-MdbcData'
-	synopsis = 'Creates data documents and some other C# driver types.'
+	synopsis = 'Creates data documents and some other driver types.'
 	description = @'
 This command is used to create one or more documents (input objects come from
 the pipeline or as the first parameter InputObject) or a single BsonValue (by
@@ -497,7 +502,7 @@ types like hashtables.
 	synopsis = 'Creates a query expression for other commands.'
 	description = @'
 The cmdlet creates a query expression used by Get-MdbcData, Remove-MdbcData,
-Update-MdbcData. Parameters are named after C# driver query builder methods.
+Update-MdbcData. Parameters are named after the driver query builder methods.
 Most of queries have their alternative JSON-like forms, see parameter help.
 '@
 	parameters = @{
@@ -580,11 +585,13 @@ Element type test.
 JSON-like form: @{name = @{'$type' = type}}
 '@
 		In = @'
-Checks if the field value is equal to one the specified.
+Checks if the field value equals or matches to one of the specified values or
+regular expressions.
 JSON-like form: @{name = @{'$in' = @(value1, value2, ...)}
 '@
 		NotIn = @'
-Checks if the field value is missing or not equal to any specified.
+Checks if the field is missing or its value does not equal or match to any of
+the specified values or regular expressions.
 JSON-like form: @{name = @{'$nin' = @(value1, value2, ...)}
 '@
 		All = @'
@@ -615,7 +622,7 @@ server-side processing page for more information (official site).
 		@{ text = 'Get-MdbcData' }
 		@{ text = 'Remove-MdbcData' }
 		@{ text = 'Update-MdbcData' }
-		@{ text = 'Query operators'; URI = 'http://docs.mongodb.org/manual/reference/operator/nav-query/' }
+		@{ text = 'MongoDB'; URI = 'http://www.mongodb.org' }
 	)
 }
 
@@ -625,7 +632,7 @@ server-side processing page for more information (official site).
 	synopsis = 'Creates an update expression for Update-MdbcData.'
 	description = @'
 This cmdlet creates update expressions used by Update-MdbcData. Parameters are
-named after C# driver update builder methods. They can be combined in order to
+named after driver update builder methods. They can be combined in order to
 create complex updates in a single call.
 
 Some parameters (Unset, PopFirst, PopLast) require only field names (String[]).
@@ -793,32 +800,22 @@ Gets documents or information from a database collection.
 '@
 	description = @'
 This cmdlets invokes queries for the specified or default collection and
-outputs result documents or other requested data.
-
---------------------------------------------------
+outputs result documents or other data according to the parameters.
 '@
-	sets = @{
-		All = 'Gets documents.'
-		Count = 'Gets document count.'
-		Cursor = 'Gets the result cursor.'
-		Distinct = 'Gets distinct field values.'
-		Remove = 'Removes and gets the first document specified by Query and SortBy.'
-		Update = 'Updates and gets the first document specified by Query and SortBy.'
-	}
 	parameters = @{
 		Query = $QueryParameter
 		As = $AsParameter
 		Count = @'
-Tells to return the number of all documents or documents that match a query.
+Tells to return the number of all documents or matching the Query.
 The First and Skip values are taken into account.
 '@
 		Cursor = @'
 Tells to return a cursor to be used for further operations.
-See the C# driver manual.
+See the driver manual.
 '@
 		Distinct = @'
-Tells to return distinct values for a given field for all documents or
-documents that match a query.
+Specifies the field name and tells to return its distinct values for all
+documents or documents matching the Query.
 '@
 		Remove = @'
 Tells to remove and get the first document specified by Query and SortBy.
@@ -828,30 +825,37 @@ Specifies an update expression and tells to update and get the first document
 specified by Query and SortBy (FindAndModify method).
 '@
 		New = @'
-Tells to return the new document on Update.
-By default the old document is returned.
+Tells to return new documents on Update.
+By default old documents are returned.
 '@
 		Add = @'
-Tells to add a new document on Update if the old document does not exist.
+Tells to add new documents on Update if old documents do not exist.
 '@
 		Property = @'
-Subset of fields to be retrieved. The document _id is always included, thus,
-expressions @() and _id are the same.
+Subset of fields to be retrieved. Note that the field _id is always included
+unless it is explicitly excluded.
+
+The argument is either strings specifying fields to be included or a single
+IMongoFields object which provides more options on selection of fields and
+their data (Include, Exclude, Slice, ElemMatch).
 '@
 		SortBy = $SortByParameter
 		Modes = @'
 Additional query options.
-See the C# driver manual.
+See the driver manual.
 '@
 		First = @'
 Specifies the number of first documents to be returned.
+Non positive values are ignored.
 '@
 		Last = @'
 Specifies the number of last documents to be returned.
+Non positive values are ignored.
 '@
 		Skip = @'
-Number of documents to skip from the beginning or from the end if Last is
-specified.
+Specifies the number of documents to skip from the beginning or from the end if
+Last is specified. Skipping is applied to results before taking First or Last.
+Non positive values are ignored.
 '@
 	}
 	inputs = @()
@@ -886,7 +890,7 @@ Merge-Helps $AWrite @{
 	description = 'Removes specified documents from the collection.', $AboutResultAndErrors
 	parameters = @{
 		Query = $QueryParameter
-		Modes = 'Additional removal flags. See the C# driver manual.'
+		Modes = 'Additional removal flags. See the driver manual.'
 	}
 	inputs = $QueryInputs
 	outputs = $TypeWriteConcernResult
@@ -905,7 +909,7 @@ Applies the specified update to documents matching the specified query.
 '@, $AboutResultAndErrors
 	parameters = @{
 		Query = $QueryParameter
-		Modes = 'Additional update flags. See the C# driver manual.'
+		Modes = 'Additional update flags. See the driver manual.'
 		Update = @'
 One or more update expressions either created by New-MdbcUpdate or hashtables
 representing JSON-like updates. Two and more expression are combined together
@@ -917,6 +921,175 @@ internally.
 	links = @(
 		@{ text = 'Connect-Mdbc' }
 		@{ text = 'New-MdbcUpdate' }
+	)
+}
+
+### Add-MdbcCollection
+Merge-Helps $ADatabase @{
+	command = 'Add-MdbcCollection'
+	synopsis = 'Creates a new collection in a database.'
+	description = @'
+This cmdlet is needed only for creation of collections with extra options, like
+capped collections. Ordinary collections do not have to be added explicitly.
+'@
+	parameters = @{
+		Name = @'
+The name of a new collection.
+'@
+		MaxSize = @'
+Sets the max size of a capped collection.
+'@
+		MaxDocuments = @'
+Sets the max number of documents in a capped collection in addition to MaxSize.
+'@
+		AutoIndexId = @'
+It may be set to true or false to explicitly enable or disable automatic
+creation of a unique key index on the _id field.
+'@
+	}
+	inputs = @()
+	outputs = @()
+}
+
+### Invoke-MdbcCommand
+Merge-Helps $ADatabase @{
+	command = 'Invoke-MdbcCommand'
+	synopsis = 'Invokes a command for a database.'
+	description = @'
+This cmdlet is normally used in order to invoke commands not covered by the
+driver or Mdbc helpers. See MongoDB manuals for available commands and their
+parameters.
+'@
+	parameters = @{
+		Command = @'
+Either the name of command with no arguments or one argument or a JSON-like
+hashtable that defines a more complex command, for example:
+
+	Invoke-MdbcCommand @{create='test'; capped=$true; size=1kb; max=5 }
+
+If the element order in a command is important then hashtables may not work.
+Use Mdbc.Dictionary instead:
+
+	$c = New-MdbcData
+	$c.create = 'test'
+	$c.capped = $true
+	$c.size = 1kb
+	$c.max = 5
+	Invoke-MdbcCommand $c
+'@
+		Value = @'
+The argument value required by the command with one argument.
+'@
+	}
+	inputs = @()
+	outputs = @{
+		type = 'Mdbc.Dictionary'
+		description = 'The response document wrapped by Mdbc.Dictionary.'
+	}
+	links = @(
+		@{ text = 'MongoDB'; URI = 'http://www.mongodb.org' }
+	)
+	examples = @(
+		@{
+			code = {
+				# Invoke the command `serverStatus` just by name.
+
+				Connect-Mdbc . test
+				Invoke-MdbcCommand serverStatus
+			}
+			test = {
+				$response = . $args[0]
+				if ($response.host -ne $env:COMPUTERNAME) {throw}
+			}
+		}
+		@{
+			code = {
+				# Connect to the database `test` and invoke the command with a
+				# single parameter `global` with the `admin` database specified
+				# explicitly (because the current is `test` and the command is
+				# admin-only)
+
+				Connect-Mdbc . test
+				Invoke-MdbcCommand getLog global -Database $Server['admin']
+			}
+			test = {
+				$response = . $args[0]
+				if (!$response.log) {throw}
+			}
+		}
+		@{
+			code = {
+				# The example command creates a capped collection with maximum
+				# set to 5 documents, adds 10 documents, then gets all back (5
+				# documents are expected).
+
+				Connect-Mdbc . test test -NewCollection
+
+				$c = New-MdbcData
+				$c.create = 'test'
+				$c.capped = $true
+				$c.size = 1kb
+				$c.max = 5
+
+				$null = Invoke-MdbcCommand $c
+
+				# set the default collection
+				$Collection = $Database['test']
+
+				# add 10 documents
+				1..10 | %{ @{_id = $_} } | Add-MdbcData
+
+				# get 5 documents
+				Get-MdbcData
+			}
+			test = {
+				$data = . $args[0]
+				if ($data.Count -ne 5) {throw}
+			}
+		}
+	)
+}
+
+### Invoke-MdbcAggregate
+Merge-Helps $ACollection @{
+	command = 'Invoke-MdbcAggregate'
+	synopsis = 'Invokes aggregate operations and outputs result documents.'
+	description = @'
+The driver currently provides just a raw API for aggregate operations. So does
+this cmdlet. When the API change the cmdlet will be redesigned.
+'@
+	parameters = @{
+		Operation = @'
+One or more aggregation pipeline operations represented by JSON-like hashtables.
+'@
+	}
+	inputs = @()
+	outputs = @(
+		@{
+			type = '[Mdbc.Dictionary]'
+			description = 'Result documents.'
+		}
+	)
+	examples = @(
+		@{
+			# _131016_142302
+			code = {
+				# Data: current process names and memory working sets
+				Connect-Mdbc . test test -NewCollection
+				Get-Process | Add-MdbcData -Property Name, WorkingSet
+
+				# Group by names, count, sum memory, get top 3
+				Invoke-MdbcAggregate @(
+					@{ '$group' = @{
+						_id = '$Name'
+						Count = @{ '$sum' = 1 }
+						Memory = @{ '$sum' = '$WorkingSet' }
+					}}
+					@{ '$sort' = @{Memory = -1} }
+					@{ '$limit' = 3 }
+				)
+			}
+		}
 	)
 }
 
@@ -978,122 +1151,15 @@ This parameter is used together with Query.
 		}
 	)
 	links = @(
-		@{ text = 'MapReduce'; URI = 'http://www.mongodb.org/display/DOCS/MapReduce' }
+		@{ text = 'MongoDB'; URI = 'http://www.mongodb.org' }
 	)
-}
-
-### Add-MdbcCollection
-Merge-Helps $ADatabase @{
-	command = 'Add-MdbcCollection'
-	synopsis = 'Creates a new collection in a database.'
-	description = @'
-This cmdlet is needed only for creation of collections with extra options, like
-capped collections. Ordinary collections do not have to be added explicitly.
-'@
-	parameters = @{
-		Name = @'
-The name of a new collection.
-'@
-		MaxSize = @'
-Sets the max size of a capped collection.
-'@
-		MaxDocuments = @'
-Sets the max number of documents in a capped collection in addition to MaxSize.
-'@
-		AutoIndexId = @'
-It may be set to true or false to explicitly enable or disable automatic
-creation of a unique key index on the _id field.
-'@
-	}
-	inputs = @()
-	outputs = @()
-}
-
-### Invoke-MdbcCommand
-Merge-Helps $ADatabase @{
-	command = 'Invoke-MdbcCommand'
-	synopsis = 'Invokes a command for a database.'
-	description = @'
-This cmdlet is normally used in order to invoke commands not covered by C#
-driver or Mdbc helpers. See MongoDB manuals for available commands and their
-parameters.
-'@
-	parameters = @{
-		Command = @'
-Either the name of command with no arguments or one argument or a JSON-like
-hashtable that defines a more complex command.
-'@
-		Value = @'
-The argument value required by the command with one argument.
-'@
-	}
-	inputs = @()
-	outputs = @{
-		type = 'Mdbc.Dictionary'
-		description = 'The response document wrapped by Mdbc.Dictionary.'
-	}
-	links = @(
-		@{ text = 'Commands'; URI = 'http://www.mongodb.org/display/DOCS/Commands' }
-	)
-	examples = @(
-		@{
-			code = {
-				# Invoke the command `serverStatus` just by name.
-
-				Connect-Mdbc . test
-				Invoke-MdbcCommand serverStatus
-			}
-			test = {
-				$response = . $args[0]
-				if ($response.host -ne $env:COMPUTERNAME) {throw}
-			}
-		}
-		@{
-			code = {
-				# Connect to the database `test` and invoke the command with a
-				# single parameter `global` with the `admin` database specified
-				# explicitly (because the current is `test` and the command is
-				# admin-only)
-
-				Connect-Mdbc . test
-				Invoke-MdbcCommand getLog global -Database $Server['admin']
-			}
-			test = {
-				$response = . $args[0]
-				if (!$response.log) {throw}
-			}
-		}
-		@{
-			code = {
-				# Commands with more then one argument use JSON-like hashtables.
-				# The example command creates a capped collection with maximum
-				# set to 5 documents, adds 10 documents, then gets all back (5
-				# documents are expected).
-
-				Connect-Mdbc . test test -NewCollection
-				$null = Invoke-MdbcCommand @{create = 'test'; capped = $true; size = 1kb; max = 5 }
-
-				# set the default collection
-				$Collection = $Database['test']
-
-				# use it in two command implicitly
-				1..10 | %{@{_id = $_}} | Add-MdbcData
-				Get-MdbcData
-			}
-			test = {
-				$data = . $args[0]
-				if ($data.Count -ne 5) {throw}
-			}
-		}
-	)
-}
-
-$ExampleIOCode = {
-	@{ p1 = 'Name1'; p2 = 123 }, @{ p1 = 'Name2'; p2 = 3.14 } | Export-MdbcData test.bson
-	Import-MdbcData test.bson -As PS
 }
 
 ### Export-MdbcData
+$ExampleIOCode = {
+	@{ p1 = 'Name1'; p2 = 42 }, @{ p1 = 'Name2'; p2 = 3.14 } | Export-MdbcData test.bson
+	Import-MdbcData test.bson -As PS
+}
 @{
 	command = 'Export-MdbcData'
 	synopsis = 'Exports objects to a BSON file.'
@@ -1131,7 +1197,9 @@ Specifies the path to the file where BSON representation of objects will be stor
 		}
 	)
 	links = @(
-		@{ text = 'Export-MdbcData' }
+		@{ text = 'Import-MdbcData' }
+		@{ text = 'Open-MdbcFile' }
+		@{ text = 'Save-MdbcFile' }
 	)
 }
 
@@ -1170,49 +1238,113 @@ Specifies the path to the BSON file where objects will be restored from.
 		}
 	)
 	links = @(
-		@{ text = 'Import-MdbcData' }
+		@{ text = 'Export-MdbcData' }
+		@{ text = 'Open-MdbcFile' }
+		@{ text = 'Save-MdbcFile' }
 	)
 }
 
-### Invoke-MdbcAggregate
-Merge-Helps $ACollection @{
-	command = 'Invoke-MdbcAggregate'
-	synopsis = 'Invokes aggregate operations and outputs result documents.'
+### Open-MdbcFile
+$OpenSaveExample = @{
+	code = {
+		# Open existing or new bson file collection
+		Open-MdbcFile data.bson
+
+		# Use Get-MdbcData, Add-MdbcData, Remove-MdbcData, Update-MdbcData
+		# ...
+
+		# Save data
+		Save-MdbcFile
+	}
+}
+@{
+	command = 'Open-MdbcFile'
+	synopsis = 'Opens a bson file as a collection.'
 	description = @'
-The driver currently provides just a raw API for aggregate operations. So does
-this cmdlet. When the API change the cmdlet will be redesigned.
+This cmdlet opens a bson file as a collection for operations Get-MdbcData,
+Add-MdbcData, Remove-MdbcData, and Update-MdbcData. Save-MdbcFile is used in
+order to save data to the source file or another file. Such scenarios do not
+require MongoDB running or even installed.
+
+NORMAL AND SIMPLE DATA
+
+In the normal mode which is the default documents in a file must have unique
+_id's. If new documents have no _id's then they are generated on insertions.
+
+The simple mode is specified by the switch Simple. Presence and uniqueness of
+document _id's is not maintained. Operations like Add-MdbcData -Update are not
+supported.
+
+INVALID ELEMENT NAMES
+
+Document element names like *.* and $* are invalid in collections because query
+and update expressions use the dot notation for nested items and special names
+$* for operators.
+
+Nevertheless Open-MdbcFile does not perform name checks on reading assuming
+that the file was created and maintained only by cmdlets listed above and it
+contains valid names.
+
+Remember that files created in a different way, for example by Export-MdbcData,
+may contain problematic names for using them as collections with Open-MdbcFile.
 '@
 	parameters = @{
-		Operation = @'
-One or more aggregation pipeline operations represented by JSON-like hashtables.
+		Path = @'
+Specifies the bson file path. If the file does not exists then the collection
+is empty and the file is not created until it is saved. If the path is omitted
+or empty then the collection is empty and Save-MdbcFile will require a path.
+'@
+		Simple = @'
+Tells to operate on simple data, i.e. do not maintain presence and uniqueness
+of document _id's. Some operations like Add-MdbcData -Update are not supported.
+'@
+		NewCollection = @'
+Tells to open an empty collection. If the source file path is specified then it
+is simply stored for saving, the source file is not touched at this moment.
+'@
+		CollectionVariable = $CollectionVariable
+	}
+	inputs = @()
+	outputs = @()
+	examples = @($OpenSaveExample)
+	links = @(
+		@{ text = 'Save-MdbcFile' }
+		@{ text = 'Get-MdbcData' }
+		@{ text = 'Add-MdbcData' }
+		@{ text = 'Remove-MdbcData' }
+		@{ text = 'Update-MdbcData' }
+	)
+}
+
+### Save-MdbcFile
+@{
+	command = 'Save-MdbcFile'
+	synopsis = 'Saves data to a bson file.'
+	description = @'
+This cmdlet saves the collection data to the specified or the original file.
+'@
+	parameters = @{
+		Collection = @'
+Collection object created by Open-MdbcFile. If it is omitted then the variable
+Collection is used which is assumed to be created by Open-MdbcFile by default.
+
+It is not an error to call this cmdlet for a native driver collection. Such a
+call is simply ignored.
+'@
+		Path = @'
+Specifies the bson file path for saving data. If it is omitted or empty then
+the path used on opening is assumed. If it was not provided as well then an
+error is thrown.
 '@
 	}
 	inputs = @()
-	outputs = @(
-		@{
-			type = '[Mdbc.Dictionary]'
-			description = 'Result documents.'
-		}
-	)
-	examples = @(
-		@{
-			# _131016_142302
-			code = {
-				# Data: current process names and memory working sets
-				Connect-Mdbc . test test -NewCollection
-				Get-Process | Add-MdbcData -Property Name, WorkingSet
-
-				# Group by names, count, sum memory, get top 3
-				Invoke-MdbcAggregate @(
-					@{ '$group' = @{
-						_id = '$Name'
-						Count = @{ '$sum' = 1 }
-						Memory = @{ '$sum' = '$WorkingSet' }
-					}}
-					@{ '$sort' = @{Memory = -1} }
-					@{ '$limit' = 3 }
-				)
-			}
-		}
+	outputs = @()
+	examples = @($OpenSaveExample)
+	links = @(
+		@{ text = 'Open-MdbcFile' }
+		@{ text = 'Get-MdbcData' }
+		@{ text = 'Add-MdbcData' }
+		@{ text = 'Remove-MdbcData' }
+		@{ text = 'Update-MdbcData' }
 	)
 }

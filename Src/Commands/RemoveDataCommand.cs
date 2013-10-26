@@ -25,15 +25,23 @@ namespace Mdbc.Commands
 		[Parameter(Position = 0, Mandatory = true, ValueFromPipeline = true)]
 		public object Query { get { return null; } set { _Query = Actor.ObjectToQuery(value); } }
 		IMongoQuery _Query;
-		
+
 		[Parameter]
 		public RemoveFlags Modes { get; set; }
-		
+
 		protected override void ProcessRecord()
 		{
 			try
 			{
-				WriteResult(Collection.Remove(_Query, Modes, WriteConcern));
+				if (FileCollection == null)
+				{
+					WriteResult(MongoCollection.Remove(_Query, Modes, WriteConcern));
+				}
+				else
+				{
+					if (Result) ThrowNotImplementedForFiles("Parameter Result"); //TODO
+					FileCollection.Remove(_Query, Modes);
+				}
 			}
 			catch (MongoException ex)
 			{

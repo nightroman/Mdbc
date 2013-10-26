@@ -7,13 +7,16 @@
 	Requires: Mdbc module
 	Server: local
 	Database: test
-	Collection: files
+	Collection: files (default)
 
 	The script searches for file paths by a regular expression pattern or a
 	name. It works with data created by Update-MongoFiles.ps1.
 
 .Parameter Pattern
 		Regular expression pattern or literal file name.
+
+.Parameter CollectionName
+		Specifies the collection name. Default: files.
 
 .Parameter Name
 		Tells that the Pattern is a literal name.
@@ -32,12 +35,13 @@
 
 param
 (
-	[Parameter(Mandatory=$true)][string]$Pattern,
+	[Parameter(Position=0, Mandatory=$true)][string]$Pattern,
+	$CollectionName = 'files',
 	[switch]$Name
 )
 
 Import-Module Mdbc
-Connect-Mdbc . test files
+Connect-Mdbc . test $CollectionName
 
 if ($Name) {
 	$query = New-MdbcQuery Name -IEQ $Pattern
@@ -46,4 +50,4 @@ else {
 	$query = New-MdbcQuery Name -Matches $Pattern, i
 }
 
-Get-MdbcData $query -Property @() | .{process{ $_._id }}
+foreach($_ in Get-MdbcData $query -Property @()) { $_._id }

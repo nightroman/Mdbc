@@ -19,7 +19,7 @@ using MongoDB.Driver;
 
 namespace Mdbc.Commands
 {
-	public abstract class AbstractDatabaseCommand : PSCmdlet
+	public abstract class AbstractDatabaseCommand : Abstract
 	{
 		[Parameter]
 		public MongoDatabase Database

@@ -29,11 +29,11 @@ task Export.Basics {
 
 	function Test-Dictionary3 {
 		'[0]'
-		Test-Dictionary $data1[0] $data2[0]
+		Test-Table $data1[0] $data2[0]
 		'[1]'
-		Test-Dictionary $data1[1] $data2[1]
+		Test-Table $data1[1] $data2[1]
 		'[2]'
-		Test-Dictionary $data1[2] $data2[2]
+		Test-Table $data1[2] $data2[2]
 	}
 
 	# dump by mongodump

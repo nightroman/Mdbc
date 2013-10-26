@@ -21,7 +21,9 @@
 		nmd - New-MdbcData
 		nmq - New-MdbcQuery
 		nmu - New-MdbcUpdate
+		omf - Open-MdbcFile
 		rmd - Remove-MdbcData
+		smf - Save-MdbcFile
 		umd - Update-MdbcData
 
 	Functions:
@@ -83,7 +85,7 @@ Import-Module Mdbc
 		Tells to get all commands including internal.
 
 .Link
-	http://www.mongodb.org/display/DOCS/Commands
+	Invoke-MdbcCommand
 #>
 function global:Get-MdbcHelp([Parameter()]$Name='*', $Database=$Database, [switch]$All)
 {
@@ -113,7 +115,9 @@ Set-Alias -Scope global -Name imd -Value Import-MdbcData
 Set-Alias -Scope global -Name nmd -Value New-MdbcData
 Set-Alias -Scope global -Name nmq -Value New-MdbcQuery
 Set-Alias -Scope global -Name nmu -Value New-MdbcUpdate
+Set-Alias -Scope global -Name omf -Value Open-MdbcFile
 Set-Alias -Scope global -Name rmd -Value Remove-MdbcData
+Set-Alias -Scope global -Name smf -Value Save-MdbcFile
 Set-Alias -Scope global -Name umd -Value Update-MdbcData
 
 ### Query operators

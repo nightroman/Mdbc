@@ -14,27 +14,16 @@
 * limitations under the License.
 */
 
+using System;
 using System.Management.Automation;
 
 namespace Mdbc.Commands
 {
-	[Cmdlet(VerbsData.Import, "MdbcData")]
-	public sealed class ImportDataCommand : PSCmdlet
+	public abstract class Abstract : PSCmdlet
 	{
-		[Parameter(Position = 0, Mandatory = true)]
-		public string Path { get; set; }
-
-		[Parameter]
-		public PSObject As { get { return null; } set { _ParameterAs = new ParameterAs(value); } }
-		ParameterAs _ParameterAs;
-
-		protected override void BeginProcessing()
+		protected virtual void WriteException(Exception exception, object target)
 		{
-			var documentAs = _ParameterAs ?? new ParameterAs(null);
-			Path = GetUnresolvedProviderPathFromPSPath(Path);
-
-			foreach (var doc in DataFile.GetDocumentsFromFileAs(documentAs.Type, Path))
-				WriteObject(doc);
+			WriteError(new ErrorRecord(exception, "Mdbc", ErrorCategory.NotSpecified, target));
 		}
 	}
 }

@@ -33,7 +33,7 @@ namespace Mdbc
 			Session = session;
 			Convert = convert;
 		}
-		// Called on exceptions. If it returns null an exception is rethrown. So for a valid null return it as BsonNull.
+		// Called on exceptions. If that returns null an exception is rethrown. So for a valid null return that as BsonNull.
 		public object ConvertValue(object value)
 		{
 			if (Convert == null)
@@ -56,14 +56,14 @@ namespace Mdbc
 			if (newId && id != null) throw new PSInvalidOperationException("Parameters Id and NewId cannot be used together.");
 			
 			if (newId)
-				return new BsonDocument().Add("_id", new BsonObjectId(ObjectId.GenerateNewId()));
+				return new BsonDocument().Add(MyValue.Id, new BsonObjectId(ObjectId.GenerateNewId()));
 
 			if (id == null)
 				return null;
 
 			var sb = id.BaseObject as ScriptBlock;
 			if (sb == null)
-				return new BsonDocument().Add("_id", BsonValue.Create(id.BaseObject));
+				return new BsonDocument().Add(MyValue.Id, BsonValue.Create(id.BaseObject));
 
 			using (new SetDollar(session, input))
 			{
@@ -71,7 +71,7 @@ namespace Mdbc
 				if (arr.Count != 1)
 					throw new ArgumentException("-Id script must return a single object."); //! use this type
 
-				return new BsonDocument().Add("_id", BsonValue.Create(arr[0].BaseObject));
+				return new BsonDocument().Add(MyValue.Id, BsonValue.Create(arr[0].BaseObject));
 			}
 		}
 		public static ErrorRecord NewErrorRecordBsonValue(Exception value, object targetObject)

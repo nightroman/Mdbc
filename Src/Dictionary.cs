@@ -29,13 +29,14 @@ namespace Mdbc
 		{
 			_document = new BsonDocument();
 		}
-		public Dictionary(string id)
+		public Dictionary(object id)
 		{
 			_document = new BsonDocument();
-			_document["_id"] = id;
+			_document.Add(MyValue.Id, BsonValue.Create(id));
 		}
 		public Dictionary(BsonDocument document)
 		{
+			if (document == null) throw new ArgumentNullException("document");
 			_document = document;
 		}
 		public BsonDocument Document()

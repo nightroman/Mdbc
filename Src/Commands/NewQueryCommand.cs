@@ -88,9 +88,11 @@ namespace Mdbc.Commands
 		public SwitchParameter Exists { get; set; }
 
 		[Parameter(Mandatory = true, ParameterSetName = nsGT)]
+		[AllowNull]
 		public PSObject GT { get; set; }
 
 		[Parameter(Mandatory = true, ParameterSetName = nsGTE)]
+		[AllowNull]
 		public PSObject GTE { get; set; }
 
 		[Parameter(Mandatory = true, ParameterSetName = nsIEQ)]
@@ -103,9 +105,11 @@ namespace Mdbc.Commands
 		public string INE { get; set; }
 
 		[Parameter(Mandatory = true, ParameterSetName = nsLT)]
+		[AllowNull]
 		public PSObject LT { get; set; }
 
 		[Parameter(Mandatory = true, ParameterSetName = nsLTE)]
+		[AllowNull]
 		public PSObject LTE { get; set; }
 
 		[Parameter(Mandatory = true, ParameterSetName = nsMatches)]
@@ -114,7 +118,7 @@ namespace Mdbc.Commands
 
 		[Parameter(Mandatory = true, ParameterSetName = nsMod)]
 		[ValidateCount(2, 2)]
-		public int[] Mod { get; set; }
+		public long[] Mod { get; set; }
 
 		[Parameter(Mandatory = true, ParameterSetName = nsNE)]
 		[AllowNull]
