@@ -22,13 +22,13 @@ task Constructors {
 }
 
 # $null should be preserved
-task Dictionary.SetNull {
+task SetNull {
 	$d = New-MdbcData @{x = 1; y = 2}
 	$d.x = $null
 	assert ($d.Count -eq 2 -and $d.x -eq $null)
 }
 
-task Dictionary.RawBsonDocument.RawBsonArray {
+task RawBson {
 
 	# RawBsonDocument
 	Connect-Mdbc -NewCollection

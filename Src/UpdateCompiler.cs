@@ -298,31 +298,73 @@ namespace Mdbc
 			var field = Expression.Constant(name, typeof(string));
 
 			BsonDocument d;
-			if (value.BsonType == BsonType.Document && (d = value.AsBsonDocument).ElementCount > 0)
+			BsonElement e;
+			if (value.BsonType == BsonType.Document && (d = value.AsBsonDocument).ElementCount > 0 && (e = d.GetElement(0)).Name == "$each")
 			{
-				var e = d.GetElement(0);
-				if (e.Name == "$each")
+				if (e.Value.BsonType != BsonType.Array)
+					throw new ArgumentException("Push all/each value must be array.");
+
+				var each = e.Value.AsBsonArray;
+
+				BsonValue sort = null, slice = null;
+				for (int i = 1; i < d.ElementCount; ++i)
 				{
-					if (d.ElementCount > 1)
-						throw new NotImplementedException("Not implemented form of $push $each");
-
-					if (e.Value.BsonType != BsonType.Array)
-						throw new ArgumentException("Push all value must be array.");
-
-					return Expression.Call(that, GetMethod("PushAll"), Data, field, Expression.Constant(e.Value, typeof(BsonValue)));
+					e = d.GetElement(i);
+					switch (e.Name)
+					{
+						case "$sort":
+							sort = e.Value;
+							break;
+						case "$slice":
+							slice = e.Value;
+							break;
+						default:
+							throw new ArgumentException("$each term takes only $slice (and optionally $sort) as complements.");
+					}
 				}
+
+				if (sort == null && slice == null)
+					return Expression.Call(that, GetMethod("PushAll"), Data, field, Expression.Constant(each, typeof(BsonValue)));
+
+				if (sort != null)
+				{
+					//! order
+
+					if (sort.BsonType != BsonType.Document)
+						throw new ArgumentException("$sort component of $push must be an object.");
+
+					foreach (var d1 in each)
+						if (d1.BsonType != BsonType.Document)
+							throw new ArgumentException("$sort requires $each to be an array of objects.");
+
+					if (slice == null)
+						throw new ArgumentException("$push $each cannot have a $sort without a $slice.");
+
+					// sort
+					each = new BsonArray(QueryCompiler.Query(each.Cast<BsonDocument>(), null, new SortByDocument(sort.AsBsonDocument), 0, 0));
+				}
+
+				if (!slice.IsNumeric)
+					throw new ArgumentException("$slice value must be a numeric integer.");
+
+				int sliceVal = slice.ToInt32();
+				if (sliceVal > 0)
+					throw new ArgumentException("$slice value must be negative or zero.");
+
+				return Expression.Call(that, GetMethod("PushAll"), Data, field, Expression.Constant(each.Slice(0, sliceVal), typeof(BsonValue)));
 			}
 			return Expression.Call(that, GetMethod("Push"), Data, field, Expression.Constant(value, typeof(BsonValue)));
 		}
-		UpdateCompiler Push(BsonDocument document, string name, BsonValue value) //TODO each, sort, slice
+		UpdateCompiler Push(BsonDocument document, string name, BsonValue value)
 		{
+
 			Push(document, name, value, false);
 			return this;
 		}
 		static Expression PushAll(Expression that, string name, BsonValue value)
 		{
 			if (value.BsonType != BsonType.Array)
-				throw new ArgumentException("Push all value must be array.");
+				throw new ArgumentException("Push all/each value must be array.");
 
 			return Expression.Call(that, GetMethod("PushAll"), Data, Expression.Constant(name, typeof(string)), Expression.Constant(value, typeof(BsonValue)));
 		}
@@ -479,7 +521,7 @@ namespace Mdbc
 				{
 					if (isName) ThrowMixedOperatorsAndNames();
 					isOper = true;
-					
+
 					foreach (var fieldElement in element.Value.AsBsonDocument)
 					{
 						var fieldName = fieldElement.Name;
@@ -491,7 +533,7 @@ namespace Mdbc
 				{
 					if (isOper) ThrowMixedOperatorsAndNames();
 					isName = true;
-					
+
 					ValidateFieldName(name, names);
 					expression = Set(expression, name, element.Value);
 				}

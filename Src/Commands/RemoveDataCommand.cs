@@ -33,15 +33,7 @@ namespace Mdbc.Commands
 		{
 			try
 			{
-				if (FileCollection == null)
-				{
-					WriteResult(MongoCollection.Remove(_Query, Modes, WriteConcern));
-				}
-				else
-				{
-					if (Result) ThrowNotImplementedForFiles("Parameter Result"); //TODO
-					FileCollection.Remove(_Query, Modes);
-				}
+				WriteResult(TargetCollection.Remove(_Query, Modes, WriteConcern, Result));
 			}
 			catch (MongoException ex)
 			{

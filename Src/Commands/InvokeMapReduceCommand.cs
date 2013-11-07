@@ -14,7 +14,6 @@
 * limitations under the License.
 */
 
-using System;
 using System.Collections;
 using System.Management.Automation;
 using MongoDB.Bson;
@@ -65,8 +64,9 @@ namespace Mdbc.Commands
 
 		protected override void BeginProcessing()
 		{
-			if (FileCollection != null) ThrowNotImplementedForFiles("MapReduce");
-			
+			var mc = TargetCollection.Collection as MongoCollection;
+			if (mc == null) ThrowNotImplementedForFiles("MapReduce");
+
 			var options = new MapReduceOptionsBuilder();
 
 			options.SetJSMode(JSMode);
@@ -95,7 +95,7 @@ namespace Mdbc.Commands
 			output.CollectionName = OutCollection;
 			options.SetOutput(output);
 
-			var result = MongoCollection.MapReduce(new BsonJavaScript(Function[0]), new BsonJavaScript(Function[1]), options);
+			var result = mc.MapReduce(new BsonJavaScript(Function[0]), new BsonJavaScript(Function[1]), options);
 
 			if (ResultVariable != null)
 				SessionState.PSVariable.Set(ResultVariable, result);
@@ -106,7 +106,7 @@ namespace Mdbc.Commands
 			var documentAs = _ParameterAs ?? new ParameterAs(null);
 
 			//_131018_160000
-			foreach(var it in result.GetInlineResultsAs(documentAs.Type))
+			foreach (var it in result.GetInlineResultsAs(documentAs.Type))
 				WriteObject(it);
 		}
 	}

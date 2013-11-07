@@ -1,6 +1,14 @@
 
+. .\Zoo.ps1
+Import-Module Mdbc
+
+task Invalid {
+	Test-Error { Invoke-MdbcAggregate $null } "*'Operation' because it is null.*"
+	Test-Error { Invoke-MdbcAggregate -Operation bad } '*Cannot convert System.String to BsonDocument.*'
+}
+
 #_131016_142302 see help example
-task Invoke-MdbcAggregate.HelpExample {
+task HelpExample {
 	$r = .{
 		# Data: current process names and memory working sets
 		Connect-Mdbc . test test -NewCollection

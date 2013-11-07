@@ -35,9 +35,7 @@ namespace Mdbc.Commands
 				SetCollection(value);
 			}
 		}
-		object _Collection;
-		DataFile _FileCollection;
-		MongoCollection _MongoCollection;
+		ICollectionHost _Collection;
 		void SetCollection(object value)
 		{
 			if (value == null)
@@ -47,36 +45,32 @@ namespace Mdbc.Commands
 					throw new PSArgumentException("Specify a collection by the parameter or variable Collection.");
 			}
 
-			_Collection = PSObject.AsPSObject(value).BaseObject;
+			value = Actor.BaseObject(value);
 
-			_MongoCollection = _Collection as MongoCollection;
-			if (_MongoCollection != null)
+			var mc = value as MongoCollection;
+			if (mc != null)
+			{
+				_Collection = new MongoCollectionHost(mc);
 				return;
-
-			_FileCollection = _Collection as DataFile;
-			if (_FileCollection != null)
+			}
+			
+			var fc = value as FileCollection;
+			if (fc != null)
+			{
+				_Collection = fc;
 				return;
+			}
 
 			throw new PSArgumentException("Unexpected type of parameter or variable Collection.");
 		}
-		internal DataFile FileCollection
+		internal ICollectionHost TargetCollection
 		{
 			get
 			{
 				if (_Collection == null)
 					SetCollection(null);
 
-				return _FileCollection;
-			}
-		}
-		protected MongoCollection MongoCollection
-		{
-			get
-			{
-				if (_Collection == null)
-					SetCollection(null);
-
-				return _MongoCollection;
+				return _Collection;
 			}
 		}
 		protected static void ThrowNotImplementedForFiles(string what)

@@ -39,11 +39,11 @@ namespace Mdbc.Commands
 			if (!string.IsNullOrEmpty(Path))
 				Path = GetUnresolvedProviderPathFromPSPath(Path);
 			
-			DataFile collection;
+			FileCollection collection;
 			if (Simple)
-				collection = new SimpleDataFile(Path);
+				collection = new SimpleFileCollection(Path);
 			else
-				collection = new NormalDataFile(Path);
+				collection = new NormalFileCollection(Path);
 
 			collection.Read(NewCollection);
 

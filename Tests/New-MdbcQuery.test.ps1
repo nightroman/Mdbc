@@ -110,8 +110,8 @@ task ElemMatch {
 	test { New-MdbcQuery Name -ElemMatch $query } '{ "Name" : { "$elemMatch" : { "a" : 1, "b" : 2 } } }'
 	test { New-MdbcQuery -Not (New-MdbcQuery Name -ElemMatch $query) } '{ "Name" : { "$not" : { "$elemMatch" : { "a" : 1, "b" : 2 } } } }'
 
-	#TODO weird query, the whole array is treated as _id
-	test { New-MdbcQuery Name -ElemMatch @{x=1}, @{y=2} } '{ "Name" : { "$elemMatch" : { "_id" : [{ "x" : 1 }, { "y" : 2 }] } } }'
+	#_131110_085122
+	Test-Error { New-MdbcQuery Name -ElemMatch 1,2 } '_id cannot be an array.'
 }
 
 task All {
@@ -186,7 +186,7 @@ task Or {
 
 # Mdbc cmdlets use ObjectToQuery to create IMongoQuery from objects.
 # Let's test ObjectToQuery using New-MdbcQuery -Or.
-task New-MdbcQuery.ObjectToQuery {
+task ObjectToQuery {
 	# PSCustomObject - _id
 	test { New-MdbcQuery -Or (New-Object PSObject -Property @{_id = 'PSCustomObject'}) } '{ "_id" : "PSCustomObject" }'
 
@@ -208,7 +208,7 @@ task New-MdbcQuery.ObjectToQuery {
 }
 
 # fixes
-task New-MdbcQuery.Nulls {
-	New-MdbcQuery null -EQ $null
-	New-MdbcQuery null -NE $null
+task Nulls {
+	test { New-MdbcQuery null -EQ $null } '{ "null" : null }'
+	test { New-MdbcQuery null -NE $null } '{ "null" : { "$ne" : null } }'
 }

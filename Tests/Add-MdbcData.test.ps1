@@ -3,11 +3,10 @@
 Import-Module Mdbc
 
 task WithSameIdAndWithUpdate {
-	$db = $true
 	Invoke-Test {
 		# New document
 		$document = New-MdbcData
-		$document._id = 12345
+		$document._id = 131107103027
 		$document.Name = 'Hello'
 
 		# Add the document
@@ -17,18 +16,21 @@ task WithSameIdAndWithUpdate {
 		$document.Name = 'World'
 
 		# This throws an exception
-		Test-Error {$document | Add-MdbcData -ErrorAction Stop} '*12345*'
+		Test-Error {$document | Add-MdbcData -ErrorAction Stop} '*131107103027*'
 
-		if ($db) {
-			# This writes an error to the specified variable
-			$document | Add-MdbcData -ErrorAction 0 -ErrorVariable ev
-			assert ("$ev" -like 'WriteConcern detected an error*')
-		}
+		# This writes an error to the specified variable
+		$document | Add-MdbcData -ErrorAction 0 -ErrorVariable e
+		assert ($e -like '*131107103027*')
 
-		if ($db) {
-			# This fails silently and returns nothing
+		# error on Unacknowledged
+		if ('test.test' -eq $Collection) {
+			# native collection works and gets no result
 			$result = $document | Add-MdbcData -Result -WriteConcern ([MongoDB.Driver.WriteConcern]::Unacknowledged)
 			assert ($null -eq $result)
+		}
+		else {
+			# file collection fails
+			Test-Error { $document | Add-MdbcData -Result -WriteConcern ([MongoDB.Driver.WriteConcern]::Unacknowledged) } '*131107103027*'
 		}
 
 		# Test: Name is still 'Hello', 'World' is not added or saved
@@ -48,22 +50,96 @@ task WithSameIdAndWithUpdate {
 		Connect-Mdbc -NewCollection
 	}{
 		Open-MdbcFile
-		$db = $false
 	}
 }
 
 task ErrorAddSameId {
-	Connect-Mdbc -NewCollection
-
-	# same _id
-	$d1 = @{_id = 1; Name = 'name1'};
+	# two objects with same _id
+	$d1 = @{_id = 1; Name = 'name1'}
 	$d2 = @{_id = 1; Name = 'name2'}
+	Invoke-Test {
+		# add and get result
+		$d1, $d2 | Add-MdbcData -ErrorAction 0 -ErrorVariable e
+		$r = Get-MdbcData
+		assert ($e -like $131111_121454) $e
+		assert ($PSVersionTable.PSVersion.Major -le 2 -or $e.TargetObject -eq $d2)
+		Test-Table $d1 $r
+	}{
+		Connect-Mdbc -NewCollection
+		$131111_121454 = '*E11000 duplicate key error index: test.test.$_id_  dup key: { : 1 }*'
+	}{
+		Open-MdbcFile
+		$131111_121454 = 'Document with _id 1 already exists.'
+	}
+}
 
-	# add and get result
-	$d1, $d2 | Add-MdbcData -ErrorAction 0 -ErrorVariable e
-	$r = Get-MdbcData
+task ErrorIdCannotBeAnArray {
+	$d = @{_id = 1,2}
+	Invoke-Test {
+		Test-Error { $d | Add-MdbcData } '*_id cannot be an array*'
+	}{
+		Connect-Mdbc -NewCollection
+	}{
+		Open-MdbcFile
+	}
+}
 
-	assert ($e -like '*E11000 duplicate key error index: test.test.$_id_  dup key: { : 1 }*')
-	assert ($PSVersionTable.PSVersion.Major -le 2 -or $e.TargetObject -eq $d2)
-	Test-Table $r $d1
+task WriteConcernResult {
+	Invoke-Test {
+		@{_id=1; x=1}, @{_id=2; x=2} | Add-MdbcData
+
+		# 0 added due to error
+		$r = @{_id=2; x=2} | Add-MdbcData -Result -ErrorAction 0 -ErrorVariable e
+		assert ("$(Get-MdbcData -Distinct _id)" -eq '1 2')
+		assert ($r.DocumentsAffected -eq 0)
+		assert (!$r.UpdatedExisting)
+		assert ($null -eq $r.ErrorMessage)
+		assert ($r.Ok)
+		$m = if ('test.test' -eq "$Collection") {'*dup key*'} else {'*already exists*'}
+		assert ($r.LastErrorMessage -like $m)
+		assert ($e -like $m)
+
+		# 1 added, 1 result
+		$r = @{_id=3; x=3} | Add-MdbcData -Result
+		assert ("$(Get-MdbcData -Distinct _id)" -eq '1 2 3')
+		assert ($r.DocumentsAffected -eq 0)
+		assert (!$r.UpdatedExisting)
+		assert ($null -eq $r.LastErrorMessage)
+		assert ($null -eq $r.ErrorMessage)
+		assert ($r.Ok)
+
+		# 2 added, 2 results
+		$r = @{_id=4; x=4}, @{_id=5; x=5} | Add-MdbcData -Result
+		assert ("$(Get-MdbcData -Distinct _id)" -eq '1 2 3 4 5')
+		assert ($r.Count -eq 2)
+		foreach($r in $r) {
+			assert ($r.DocumentsAffected -eq 0)
+			assert (!$r.UpdatedExisting)
+			assert ($null -eq $r.LastErrorMessage)
+			assert ($null -eq $r.ErrorMessage)
+			assert ($r.Ok)
+		}
+
+		# 1 added with -Update
+		$r = @{_id=6; x=6} | Add-MdbcData -Result -Update
+		assert ("$(Get-MdbcData -Distinct _id)" -eq '1 2 3 4 5 6')
+		assert ($r.DocumentsAffected -eq 1)
+		assert (!$r.UpdatedExisting)
+		assert ($null -eq $r.LastErrorMessage)
+		assert ($null -eq $r.ErrorMessage)
+		assert ($r.Ok)
+
+		# 1 updated with -Update
+		$r = @{_id=1; x=1} | Add-MdbcData -Result -Update
+		assert ("$(Get-MdbcData -Distinct _id)" -eq '1 2 3 4 5 6')
+		assert ($r.DocumentsAffected -eq 1)
+		assert ($r.UpdatedExisting)
+		assert ($null -eq $r.LastErrorMessage)
+		assert ($null -eq $r.ErrorMessage)
+		assert ($r.Ok)
+	}{
+		Connect-Mdbc -NewCollection
+	}{
+		Open-MdbcFile
+	}
 }

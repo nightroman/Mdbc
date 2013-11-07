@@ -11,7 +11,7 @@ Connect-Mdbc -NewCollection
 
 # To be sure the enum values are fine, e.g. PSObject was a bad name for enum
 # value. Also, if this fails update the manuals.
-task DocumentOutput.Enum {
+task Enum {
 	assert ([enum]::GetValues([Mdbc.OutputType]).Count -eq 4)
 	assert (0 -eq [Mdbc.OutputType]::Default)
 	assert (1 -eq [Mdbc.OutputType]::Lazy)
@@ -19,7 +19,7 @@ task DocumentOutput.Enum {
 	assert (3 -eq [Mdbc.OutputType]::PS)
 }
 
-task DocumentOutput.-As {
+task As {
 	# input data
 	$data = @{_id = 1; document = @{array = 1, 2}}
 	$data | Add-MdbcData

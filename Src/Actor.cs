@@ -38,10 +38,13 @@ namespace Mdbc
 				return;
 
 			_registered = true;
+			
 			BsonSerializer.RegisterSerializer(typeof(Dictionary), new DictionarySerializer());
 			BsonSerializer.RegisterSerializer(typeof(LazyDictionary), new LazyDictionarySerializer());
 			BsonSerializer.RegisterSerializer(typeof(RawDictionary), new RawDictionarySerializer());
 			BsonSerializer.RegisterSerializer(typeof(PSObject), new PSObjectSerializer());
+
+			BsonTypeMapper.RegisterCustomTypeMapper(typeof(PSObject), new PSObjectTypeMapper());
 		}
 		public static object BaseObject(object value)
 		{
@@ -62,6 +65,19 @@ namespace Mdbc
 				return ps.BaseObject;
 			custom = ps;
 			return ps;
+		}
+		public static IEnumerable AsEnumerable(object value)
+		{
+			if (value == null)
+				return null;
+			var ps = value as PSObject;
+			value = ps == null ? value : ps.BaseObject;
+			IEnumerable enumerable;
+			if (null == (enumerable = value as IEnumerable))
+				return null;
+			if (value is string)
+				return null;
+			return enumerable;
 		}
 		public static object ToObject(BsonValue value) //_120509_173140 keep consistent
 		{
@@ -131,6 +147,7 @@ namespace Mdbc
 			// try to create BsonValue
 			try
 			{
+				Register();
 				return BsonValue.Create(value);
 			}
 			catch (ArgumentException ae)
@@ -204,6 +221,10 @@ namespace Mdbc
 		{
 			IncSerializationDepth(ref depth);
 
+			var type = value.BaseObject.GetType();
+			if (type.IsPrimitive || type == typeof(string))
+				throw new InvalidCastException(string.Format("Cannot convert {0} to BsonDocument.", type));
+
 			// existing or new document
 			var document = source ?? new BsonDocument();
 
@@ -265,7 +286,7 @@ namespace Mdbc
 			PSObject custom;
 			value = BaseObject(value, out custom);
 
-			//_131013_155413 reuse existing document as that is or wrap
+			//_131013_155413 reuse existing document as is or wrap
 			var document = value as BsonDocument;
 			if (document != null)
 			{
@@ -296,7 +317,7 @@ namespace Mdbc
 		{
 			BsonValue id;
 			if (!document.TryGetValue(MyValue.Id, out id))
-				throw new ArgumentException("Document used as _id query must have _id."); //[1]
+				throw new ArgumentException("Document used as _id query must have _id."); //_131110_084858
 
 			return Query.EQ(MyValue.Id, id);
 		}
@@ -323,6 +344,16 @@ namespace Mdbc
 
 			throw new ArgumentException(string.Format(null, "Invalid query object type {0}.", query.GetType()));
 		}
+		static IMongoQuery IdToQuery(object id)
+		{
+			Register();
+			var value = BsonValue.Create(id);
+			
+			if (value.BsonType == BsonType.Array)
+				throw new ArgumentException("_id cannot be an array."); //_131110_085122
+			
+			return Query.EQ(MyValue.Id, value);
+		}
 		public static IMongoQuery ObjectToQuery(object value)
 		{
 			if (value == null)
@@ -337,9 +368,9 @@ namespace Mdbc
 				{
 					var id = ps.Properties[MyValue.Id];
 					if (id == null)
-						throw new ArgumentException("Object used as _id query must have _id."); //[1]
+						throw new ArgumentException("Object used as _id query must have _id."); //_131110_084858
 
-					return Query.EQ(MyValue.Id, BsonValue.Create(id.Value));
+					return IdToQuery(id.Value);
 				}
 			}
 
@@ -359,7 +390,7 @@ namespace Mdbc
 			if (dictionary != null)
 				return new QueryDocument(dictionary);
 
-			return Query.EQ(MyValue.Id, BsonValue.Create(value));
+			return IdToQuery(value);
 		}
 		/// <summary>
 		/// Converts PS objects to a SortBy object.
@@ -428,11 +459,10 @@ namespace Mdbc
 
 			var dictionary = value as IDictionary;
 			if (dictionary != null)
-				//_131102_084424 Do not pass IDictionary, it may have PSObject's
-				return new UpdateDocument(ToBsonDocumentFromDictionary(null, dictionary, null, null, 0));
+				return new UpdateDocument(dictionary);
 
-			var enumerable = LanguagePrimitives.GetEnumerable(value);
-			if (enumerable != null)
+			var enumerable = value as IEnumerable;
+			if (enumerable != null && !(value is string))
 				return Update.Combine(enumerable.Cast<object>().Select(x => ObjectToUpdate(x, error)));
 
 			var message = string.Format(null, "Invalid update object type: {0}. Valid types: update(s), dictionary(s).", value.GetType());
@@ -444,22 +474,16 @@ namespace Mdbc
 		}
 		public static IEnumerable<BsonDocument> ObjectToBsonDocuments(object value)
 		{
-			var ps = value as PSObject;
-			if (ps != null)
-				value = ps.BaseObject;
-
 			var r = new List<BsonDocument>();
-
-			var enumerable = LanguagePrimitives.GetEnumerable(value);
+			if (value == null)
+				return r;
+			
+			var enumerable = AsEnumerable(value);
 			if (enumerable == null)
-			{
 				r.Add(ToBsonDocument(null, value, null, null, 0));
-			}
 			else
-			{
 				foreach (var it in enumerable)
 					r.Add(ToBsonDocument(null, it, null, null, 0));
-			}
 
 			return r;
 		}

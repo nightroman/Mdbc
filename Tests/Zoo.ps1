@@ -4,8 +4,9 @@
 	Common tools used by tests.
 #>
 
-# Invokes several tests with different context functions
-function Invoke-Test([scriptblock]$Test)
+# Invokes the test repeatedly with the specified contexts.
+# Args: the test script block and context script blocks.
+function Invoke-Test($Test)
 {
 	foreach(${+} in $args) {&{
 		Write-Build 8 "At $(${+}.File):$(${+}.StartPosition.StartLine)"
@@ -26,7 +27,7 @@ function Test-Type($Value, $TypeName) {
 }
 
 # Invokes a command and checks the error and the sample.
-# Arguments: [0] script block [1] sample error wildcard.
+# Args: [0] script block [1] sample error wildcard.
 function Test-Error {
 	${private:+command}, ${private:+sample} = $args
 	${private:+result} = $null

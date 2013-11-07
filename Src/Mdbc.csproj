@@ -72,6 +72,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Actor.cs" />
+    <Compile Include="CollectionHost.cs" />
     <Compile Include="Commands\Abstract.cs" />
     <Compile Include="Commands\AbstractCollectionCommand.cs" />
     <Compile Include="Commands\AbstractDatabaseCommand.cs" />
@@ -96,8 +97,8 @@
     <Compile Include="Dictionary.cs" />
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="DocumentInput.cs" />
-    <Compile Include="DataFile.cs" />
     <Compile Include="FieldCompiler.cs" />
+    <Compile Include="FileCollection.cs" />
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="Selector.cs" />
     <Compile Include="Serializer.cs" />

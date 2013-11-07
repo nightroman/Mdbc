@@ -2,7 +2,7 @@
 . .\Zoo.ps1
 Import-Module Mdbc
 
-task Export.Basics {
+task Basics {
 	# test relative paths
 	Set-Location C:\TEMP
 

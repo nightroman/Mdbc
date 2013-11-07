@@ -1,15 +1,15 @@
 
 <#
 .Synopsis
-	Interactive profile with helpers for the Mdbc module.
+	Mdbc module helpers.
 
 .Description
 	NOTE: This script is a profile for interactive use, it reflects personal
 	preferences, features may not be suitable for all scenarios and they may
-	change. Consider this as the base for your own interactive profiles.
+	change. Consider this as the base for your own interactive profile.
 
-	The script imports the Mdbc module, connects to the server and database,
-	and installs aliases, functions, and variables for interactive use.
+	The script imports the module, sets aliases, functions, and variables for
+	interactive use and optionally connects to a specified server and database.
 
 	Aliases:
 		amd - Add-MdbcData
@@ -34,14 +34,14 @@
 		$Database   - default database
 		$Collection - default collection
 		$m<name>    - collection <name> (for each collection)
-		$<operator> - operator shortcuts for JSON-like expressions
+		$<operator> - read only operator shortcuts for JSON-like expressions
 
 	With a large number of collections their names are not displayed. Command
 	Get-Variable m*..* is useful for finding a collection by its name pattern.
 
 .Parameter ConnectionString
-		Connection string (see the C# driver manual for details).
-		The default is "." which is used for the default C# driver connection.
+		Connection string, see Connect-Mdbc.
+		The default is empty, the script does not connect.
 
 .Parameter DatabaseName
 		Database name or wildcard pattern. If it is not resolved to an existing
@@ -49,14 +49,14 @@
 		default name is 'test'.
 
 .Parameter CollectionName
-		Name of the default collection which instance is refrenced by
+		Name of the default collection which instance is referenced by
 		$Collection. The default is 'test', not necessarily existing.
 #>
 
 param
 (
 	[Parameter()]
-	$ConnectionString = '.',
+	$ConnectionString,
 	$DatabaseName = 'test',
 	$CollectionName = 'test'
 )
@@ -120,40 +120,47 @@ Set-Alias -Scope global -Name rmd -Value Remove-MdbcData
 Set-Alias -Scope global -Name smf -Value Save-MdbcFile
 Set-Alias -Scope global -Name umd -Value Update-MdbcData
 
-### Query operators
-$global:all = '$all'
-$global:and = '$and'
-$global:elemMatch = '$elemMatch'
-$global:exists = '$exists'
-$global:gt = '$gt'
-$global:gte = '$gte'
-$global:in = '$in'
-$global:lt = '$lt'
-$global:lte = '$lte'
-$global:mod = '$mod'
-$global:ne = '$ne'
-$global:nin = '$nin'
-$global:nor = '$nor'
-$global:not = '$not'
-$global:options = '$options'
-$global:or = '$or'
-$global:regex = '$regex'
-$global:size = '$size'
-$global:type = '$type'
+### Operators
+@(
+	'addToSet'
+	'all'
+	'and'
+	'bit'
+	'each'
+	'elemMatch'
+	'exists'
+	'gt'
+	'gte'
+	'in'
+	'inc'
+	'lt'
+	'lte'
+	'mod'
+	'ne'
+	'nin'
+	'nor'
+	'not'
+	'options'
+	'or'
+	'pop'
+	'pull'
+	'pullAll'
+	'push'
+	'pushAll'
+	'regex'
+	'rename'
+	'set'
+	'setOnInsert'
+	'size'
+	'slice'
+	'sort'
+	'type'
+	'unset'
+	'where'
+) | .{process{ New-Variable -Name $_ -Value "`$$_" -Scope global -Option ReadOnly -Force }}
 
-### Update operators
-$global:addToSet = '$addToSet'
-$global:bit = '$bit'
-$global:each = '$each'
-$global:inc = '$inc'
-$global:pop = '$pop'
-$global:pull = '$pull'
-$global:pullAll = '$pullAll'
-$global:push = '$push'
-$global:pushAll = '$pushAll'
-$global:rename = '$rename'
-$global:set = '$set'
-$global:unset = '$unset'
+# Not connected
+if (!$ConnectionString) {return}
 
 # Server variable
 Connect-Mdbc $ConnectionString

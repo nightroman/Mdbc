@@ -9,8 +9,7 @@ Import-Module Mdbc
 Set-StrictMode -Version 2
 Connect-Mdbc
 
-# BsonValue errors
-task DocumentInput.BsonValueError {
+task BsonValueError {
 	# good data to be done regardless of errors
 	$good = @{_id = 1; Name = 'name1'}, @{_id = 2; Name = 'name2'}
 
@@ -35,8 +34,7 @@ task DocumentInput.BsonValueError {
 	Remove-Item z.bson
 }
 
-# Parameters Id and NewId
-task DocumentInput.-Id {
+task IdParameters {
 	# input object
 	$ps = New-Object PSObject -Property @{ id = 'id1'; name = 'name1' }
 
@@ -78,7 +76,7 @@ task DocumentInput.-Id {
 }
 
 #_131013_155413
-task DocumentInput.DocumentAsInput {
+task DocumentAsInput {
 	$mdbc = New-MdbcData @{x = 42; y = 0;}
 	$bson = $mdbc.Document()
 	assert ($mdbc.Count -eq 2)

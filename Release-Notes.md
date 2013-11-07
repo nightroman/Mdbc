@@ -1,6 +1,25 @@
 Mdbc Release Notes
 ==================
 
+## v4.3.0
+
+The new concept of bson file collections is stabilized.
+
+`Get-MdbcData`
+
+Removed the parameter `Cursor` as not adding much value. Cursors can be
+obtained from  a collection and then used exactly in the same way as before.
+
+`Add-MdbcData`, `Remove-MdbcData`, `Update-MdbcData`
+
+- Parameter `Result` supports file collections and gets similar information.
+- Reduced error processing differences between MongoDB and file collections.
+
+`Scripts\Mdbc.ps1`
+
+- Without parameters it just loads the helpers and does not connect.
+- Operator shortcut variables are read only.
+
 ## v4.2.0
 
 ### Bson file collections

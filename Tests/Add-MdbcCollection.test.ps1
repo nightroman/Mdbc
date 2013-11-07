@@ -3,7 +3,7 @@
 Import-Module Mdbc
 
 # How to create a capped collection by Add-MdbcCollection
-task Add-MdbcCollection.Capped {
+task Capped {
 	# add a capped collection (10 documents)
 	Connect-Mdbc -NewCollection
 	Add-MdbcCollection test -MaxSize 1mb -MaxDocuments 10
@@ -21,7 +21,7 @@ task Add-MdbcCollection.Capped {
 	Test-Error {Add-MdbcCollection test -MaxSize 1mb -MaxDocuments 10} "Command 'create' failed: collection already exists*"
 }
 
-task Add-MdbcCollection.-AutoIndexId {
+task AutoIndexId {
 	# AutoIndexId 0
 	Connect-Mdbc -NewCollection
 	Add-MdbcCollection test -AutoIndexId 0

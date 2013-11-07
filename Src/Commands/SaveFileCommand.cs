@@ -14,9 +14,7 @@
 * limitations under the License.
 */
 
-using System.IO;
 using System.Management.Automation;
-using MongoDB.Driver;
 
 namespace Mdbc.Commands
 {
@@ -28,8 +26,9 @@ namespace Mdbc.Commands
 		
 		protected override void BeginProcessing()
 		{
-			if (FileCollection != null)
-				FileCollection.Save(string.IsNullOrEmpty(Path) ? null : GetUnresolvedProviderPathFromPSPath(Path));
+			var fc = TargetCollection as FileCollection;
+			if (fc != null)
+				fc.Save(string.IsNullOrEmpty(Path) ? null : GetUnresolvedProviderPathFromPSPath(Path));
 		}
 	}
 }

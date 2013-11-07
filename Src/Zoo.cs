@@ -18,9 +18,22 @@ using System;
 using System.Collections.Generic;
 using System.Management.Automation;
 using MongoDB.Bson;
+using MongoDB.Driver;
 
 namespace Mdbc
 {
+	//_131102_084424 Unwraps PSObject's like Get-Date.
+	class PSObjectTypeMapper : ICustomBsonTypeMapper
+	{
+		public bool TryMapToBsonValue(object value, out BsonValue bsonValue)
+		{
+			var ps = value as PSObject;
+			if (ps != null)
+				return BsonTypeMapper.TryMapToBsonValue(ps.BaseObject, out bsonValue);
+			bsonValue = null;
+			return false;
+		}
+	}
 	class IntLong
 	{
 		public int? Int;
@@ -334,6 +347,45 @@ namespace Mdbc
 				}
 			}
 		}
+		// 2 arguments - skip, count
+		public static BsonArray Slice(this BsonArray array, params int[] args)
+		{
+			int s;
+			int n = args[1];
+
+			if (n == 0)
+				return new BsonArray();
+
+			if (n < 0)
+			{
+				s = array.Count + n;
+				n = -n;
+			}
+			else
+			{
+
+				s = args[0];
+				if (s < 0)
+				{
+					s = Math.Max(array.Count + s, 0);
+				}
+				else if (s >= array.Count)
+				{
+					return new BsonArray();
+				}
+			}
+
+			if (s == 0 && n >= array.Count)
+				return array;
+
+			int e = Math.Min(s + n, array.Count);
+
+			var r = new BsonArray();
+			for (int i = s; i < e; ++i)
+				r.Add(array[i]);
+
+			return r;
+		}
 	}
 	class ResolvedDocumentPath
 	{
@@ -442,7 +494,7 @@ namespace Mdbc
 					continue;
 				}
 
-				throw new InvalidOperationException(string.Format(null, "Field ({0}) in ({1}) is not a document.", key, path)); //TODO type of exceprtions to catch?
+				throw new InvalidOperationException(string.Format(null, "Field ({0}) in ({1}) is not a document.", key, path));
 			}
 
 			return null;

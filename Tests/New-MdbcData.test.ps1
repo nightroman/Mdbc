@@ -94,7 +94,7 @@ task DataTypes {
 	assert ($data.Count -eq 2)
 }
 
-task New-MdbcData.HashtableToDocument {
+task HashtableToDocument {
 	$HashToDocument = New-MdbcData @{ String = 'Hi'; Date = (Get-Date) }
 	Test-Type $HashToDocument Mdbc.Dictionary
 
@@ -107,7 +107,7 @@ task New-MdbcData.HashtableToDocument {
 	Test-Type $new.Document Mdbc.Dictionary
 }
 
-task New-MdbcData.-Value {
+task Value {
 	Test-Type (New-MdbcData -Value $null) MongoDB.Bson.BsonNull
 
 	Test-Type (New-MdbcData -Value $true) MongoDB.Bson.BsonBoolean
@@ -122,7 +122,7 @@ task New-MdbcData.-Value {
 	Test-Type (New-MdbcData -Value @{}) MongoDB.Bson.BsonDocument
 }
 
-task New-MdbcData.PSCustomObject {
+task PSCustomObject {
 	$property = @{n='_id'; e='Id'}, 'Name', 'StartTime', 'WorkingSet64'
 
 	### One custom object as an argument
@@ -136,7 +136,7 @@ task New-MdbcData.PSCustomObject {
 	}
 }
 
-task New-MdbcData.KeepNullValues {
+task KeepNullValues {
 	$d = 1 | Select-Object p1, p2 | New-MdbcData
 	assert ($d.Count -eq 2 -and $d.Contains('p1') -and $d.Contains('p2'))
 
@@ -144,18 +144,18 @@ task New-MdbcData.KeepNullValues {
 	assert ($d.Count -eq 2 -and $d.Contains('p1') -and $d.Contains('p2'))
 }
 
-task New-MdbcData.KeepProblemValues {
+task KeepProblemValues {
 	$d = (Get-Process -Id $Pid) | New-MdbcData -Property Name, ExitCode
 	assert ($d.Count -eq 2 -and $d.Name -and $d.Contains('ExitCode') -and $null -eq $d.ExitCode)
 }
 
-task New-MdbcData.KeysMustBeStrings {
+task KeysMustBeStrings {
 	$d = @{}
 	$d[1] = 1
 	Test-Error {$d | New-MdbcData} 'Dictionary keys must be strings.'
 }
 
-task New-MdbcData.MissingProperty {
+task MissingProperty {
 	$d = New-MdbcData $Host -Property Name, Missing
 	assert ($d.Count -eq 1 -and $d.Name)
 
@@ -164,7 +164,7 @@ task New-MdbcData.MissingProperty {
 }
 
 # This code is used as example
-task New-MdbcData.-Property {
+task Property {
 	$p = Get-Process -Id $Pid
 	$d = $p | New-MdbcData -Property `
 	    Name,                     # existing property name
@@ -183,7 +183,7 @@ task New-MdbcData.-Property {
 	assert ($d.Contains('Code') -and $null -eq $d.Code)
 }
 
-task New-MdbcData.-Convert {
+task Convert {
 	# error due to unknown data
 	Test-Error {New-MdbcData $Host} ".NET type * cannot be mapped to a BsonValue."
 
@@ -203,7 +203,7 @@ task New-MdbcData.-Convert {
 	Test-Type $r.Version System.String
 }
 
-task New-MdbcData.Cyclic {
+task Cyclic {
 	$message = 'Data exceed the default maximum serialization depth.'
 
 	# dictionary

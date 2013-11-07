@@ -15,9 +15,6 @@ task Basics {
 	assert (Test-Path $bson) # file still exists
 	assert ((Get-MdbcData -Count) -eq 0) # empty
 
-	# no leaked public members
-	assert (4 -eq ($Collection | Get-Member).Count)
-
 	# add data
 	@{x=1; y=1}, @{x=2; y=2} | Add-MdbcData
 	assert (2 -eq (Get-MdbcData -Count))
@@ -43,21 +40,43 @@ task Basics {
 	$r = @(Import-MdbcData $bson)
 	assert ($r.Count -eq 1)
 	assert ($r[0].x -eq 2)
+
+	# no leaked public members
+	$r = $Collection | Get-Member | Select-Object -ExpandProperty Name | Out-String
+	assert ($r -eq @'
+Count
+Distinct
+Equals
+FindAndModifyAs
+FindAndRemoveAs
+FindAs
+GetHashCode
+GetType
+Insert
+Remove
+Save
+ToString
+Update
+Collection
+
+'@) $r
 }
 
-# Test invalid names with Add-MdbcData and Add-MdbcData -Update for normal and simple data
-task ValidateElementNames {
+# Test invalid names with Add-MdbcData and Add-MdbcData -Update for normal and simple files
+task ValidateElementNamesAndSimpleData {
 	$errorLike = "Element name '*' is not valid because it * a '?'."
 	Invoke-Test {
+		# insert
 		Test-Error { @{'$it'=1} | Add-MdbcData } $errorLike
 		Test-Error { @{'it.name'=1} | Add-MdbcData } $errorLike
 
-		if ($Collection.GetType().Name -eq 'NormalDataFile') {
+		# upsert
+		if ($Collection.GetType().Name -eq 'NormalFileCollection') {
 			Test-Error { @{'$it'=1} | Add-MdbcData -Update } $errorLike
 			Test-Error { @{'it.name'=1} | Add-MdbcData -Update } $errorLike
 		}
 		else {
-			Test-Error { @{} | Add-MdbcData -Update } 'Add -Update is not supported for simple data files.'
+			Test-Error { @{} | Add-MdbcData -Update } 'Update-or-insert is not supported by simple collections.'
 		}
 	}{
 		Open-MdbcFile
@@ -67,7 +86,7 @@ task ValidateElementNames {
 }
 
 # What happens when Open-MdbcFile is used with a bson file with invalid names
-task InvalidElementNames {
+task OpenWithInvalidElementNames {
 	# bson file with bad names for a collection
 	@{'$it'=1}, @{'it.name'=1} | Export-MdbcData $bson
 
@@ -88,10 +107,10 @@ task InvalidElementNames {
 
 task NormalData {
 	@{_id=42}, @{x=1} | Export-MdbcData $bson
-	Test-Error { Open-MdbcFile $bson } 'The document at 1 has no _id.'
+	Test-Error { Open-MdbcFile $bson } 'The document (index 1) has no _id.'
 
 	@{_id=42}, @{_id=42} | Export-MdbcData $bson
-	Test-Error { Open-MdbcFile $bson } 'The document at 1 has not unique _id "42".'
+	Test-Error { Open-MdbcFile $bson } 'The document (index 1) has duplicate _id "42".'
 }
 
 task Distinct {

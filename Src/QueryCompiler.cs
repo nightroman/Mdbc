@@ -376,8 +376,7 @@ namespace Mdbc
 		{
 			return sortBy as BsonDocument ?? ((SortByBuilder)sortBy).ToBsonDocument();
 		}
-		//TODO is compiler compiled? if not then how?
-		internal static IEnumerable<BsonDocument> Query(IEnumerable<BsonDocument> documents, IMongoQuery query, IMongoSortBy sortBy, int first, int skip)
+		internal static IEnumerable<BsonDocument> Query(IEnumerable<BsonDocument> documents, IMongoQuery query, IMongoSortBy sortBy, int skip, int first)
 		{
 			var queryableData = documents.AsQueryable<BsonDocument>();
 			var predicateBody = GetExpression((BsonDocument)query);

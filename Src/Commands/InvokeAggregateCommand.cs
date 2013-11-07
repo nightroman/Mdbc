@@ -17,6 +17,7 @@
 using System.Collections.Generic;
 using System.Management.Automation;
 using MongoDB.Bson;
+using MongoDB.Driver;
 
 namespace Mdbc.Commands
 {
@@ -29,9 +30,10 @@ namespace Mdbc.Commands
 
 		protected override void BeginProcessing()
 		{
-			if (FileCollection != null) ThrowNotImplementedForFiles("Aggregate");
-			
-			var result = MongoCollection.Aggregate(_Operation);
+			var mc = TargetCollection.Collection as MongoCollection;
+			if (mc == null) ThrowNotImplementedForFiles("Aggregate");
+
+			var result = mc.Aggregate(_Operation);
 			foreach (var document in result.ResultDocuments)
 				WriteObject(new Dictionary(document));
 		}

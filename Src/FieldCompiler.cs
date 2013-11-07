@@ -162,7 +162,7 @@ namespace Mdbc
 				{
 					BsonValue a;
 					if (from.TryGetValue(e.Key, out a) && a.BsonType == BsonType.Array)
-						to.Add(e.Key, Slice(a.AsBsonArray, e.Value));
+						to.Add(e.Key, a.AsBsonArray.Slice(e.Value));
 				}
 				foreach (var e in _ElemMatch)
 				{
@@ -207,7 +207,7 @@ namespace Mdbc
 			Func<BsonDocument, bool> match;
 
 			if (_Slice.TryGetValue(from.Name, out slice))
-				to.Add(from.Name, Slice(from.Value.AsBsonArray, slice));
+				to.Add(from.Name, from.Value.AsBsonArray.Slice(slice));
 			else if (_ElemMatch.TryGetValue(from.Name, out match) && (value = ElemMatch(from.Value.AsBsonArray, match)) != null)
 				to.Add(from.Name, new BsonArray() { value });
 			else if (NeedsAlienField(from.Name))
@@ -219,44 +219,6 @@ namespace Mdbc
 				if (v.BsonType == BsonType.Document && predicate(v.AsBsonDocument))
 					return v;
 			return null;
-		}
-		static BsonArray Slice(BsonArray array, int[] args)
-		{
-			int s;
-			int n = args[1];
-
-			if (n == 0)
-				return new BsonArray();
-
-			if (n < 0)
-			{
-				s = array.Count + n;
-				n = -n;
-			}
-			else
-			{
-
-				s = args[0];
-				if (s < 0)
-				{
-					s = Math.Max(array.Count + s, 0);
-				}
-				else if (s >= array.Count)
-				{
-					return new BsonArray();
-				}
-			}
-
-			if (s == 0 && n >= array.Count)
-				return array;
-
-			int e = Math.Min(s + n, array.Count);
-
-			var r = new BsonArray();
-			for (int i = s; i < e; ++i)
-				r.Add(array[i]);
-
-			return r;
 		}
 		internal static Func<BsonDocument, BsonDocument> GetFunction(IMongoFields fields)
 		{

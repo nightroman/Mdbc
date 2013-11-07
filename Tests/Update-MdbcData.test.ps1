@@ -3,7 +3,7 @@
 Import-Module Mdbc
 Set-StrictMode -Version Latest
 
-task Update-MdbcData.-AddToSet {
+task AddToSet {
 	Invoke-Test {
 		# add data
 		@{_id = 1310110108; value = 1; array = @(1310110108)} | Add-MdbcData
@@ -27,7 +27,7 @@ task Update-MdbcData.-AddToSet {
 	}
 }
 
-task Update-MdbcData.-Set {
+task Set {
 	Invoke-Test {
 		# add data
 		$$ = New-MdbcData -Id 1
@@ -77,7 +77,7 @@ task Update-MdbcData.-Set {
 	}
 }
 
-task Update-MdbcData.-PopLast.-PopFirst {
+task Pop {
 	Invoke-Test {
 		# make a document
 		$$ = New-MdbcData -Id 1
@@ -107,7 +107,7 @@ task Update-MdbcData.-PopLast.-PopFirst {
 	}
 }
 
-task Update-MdbcData.-Pull {
+task Pull {
 	Invoke-Test {
 		# make a document with arrays
 		$$ = New-MdbcData
@@ -143,7 +143,7 @@ task Update-MdbcData.-Pull {
 	}
 }
 
-task Update-MdbcData.-Pull.Null {
+task Pull.Null {
 	Invoke-Test {
 		@{_id = 131011; array = 1, $null, 2, $null} | Add-MdbcData
 		Update-MdbcData (New-MdbcUpdate -Pull @{array = $null}) 131011
@@ -158,7 +158,7 @@ task Update-MdbcData.-Pull.Null {
 	}
 }
 
-task Update-MdbcData.-PullAll {
+task PullAll {
 	Invoke-Test {
 		# make and add a document
 		$$ = New-MdbcData -Id 1
@@ -191,7 +191,7 @@ task Update-MdbcData.-PullAll {
 	}
 }
 
-task Update-MdbcData.-Push {
+task Push {
 	Invoke-Test {
 		# add data
 		@{_id = 1310110138; value = 1; array = @(1310110138)} | Add-MdbcData
@@ -215,7 +215,7 @@ task Update-MdbcData.-Push {
 	}
 }
 
-task Update-MdbcData.-Rename {
+task Rename {
 	Invoke-Test {
 		# add a document with Name1
 		$$ = New-MdbcData -Id 1
@@ -235,7 +235,7 @@ task Update-MdbcData.-Rename {
 	}
 }
 
-task Update-MdbcData.JSON-like {
+task JSON-like {
 	Invoke-Test {
 		@{_id = 42 } | Add-MdbcData
 		Update-MdbcData @{'$set' = @{ p1 = 123; p2 = 456}} @{_id = 42}
@@ -370,6 +370,50 @@ task Multi {
 		$r1, $r2 = Get-MdbcData
 		assert ($r1._id -eq 1 -and $r1.x -eq 42) # changed
 		assert ($r2._id -eq 2 -and $r2.x -eq 42) # changed
+	}{
+		$$ = { Connect-Mdbc -NewCollection; . $data }
+	}{
+		$$ = { Open-MdbcFile; . $data }
+	}
+}
+
+task WriteConcernResult {
+	$data = {
+		@{_id=1; x=1}, @{_id=2; x=1} | Add-MdbcData
+	}
+	Invoke-Test {
+		# One changed
+		. $$
+		$r = Update-MdbcData (New-MdbcUpdate -Set @{x=42}) @{} -Result
+		assert ($r.DocumentsAffected -eq 1)
+		assert ($r.UpdatedExisting)
+		assert ($r.Ok)
+
+		# Two changed
+		. $$
+		$r = Update-MdbcData (New-MdbcUpdate -Set @{x=42}) @{} -Result -Modes Multi
+		assert ($r.DocumentsAffected -eq 2)
+		assert ($r.UpdatedExisting)
+		assert ($r.Ok)
+
+		# None changed, one added
+		. $$
+		$r = Update-MdbcData (New-MdbcUpdate -Set @{x=42}) @{miss=1} -Result -Modes Multi, Upsert
+		assert ($r.DocumentsAffected -eq 1)
+		assert (!$r.UpdatedExisting)
+		assert ($r.Ok)
+
+		# Error, data do not fit the update
+		. $$
+		$r = Update-MdbcData (New-MdbcUpdate -Push @{x=42}) @{_id=1} -Result -ErrorAction 0 -ErrorVariable e
+		assert ($r.DocumentsAffected -eq 0)
+		assert ($r.HasLastErrorMessage)
+		assert (!$r.UpdatedExisting)
+		assert ($null -eq $r.ErrorMessage)
+		assert ($r.Ok)
+		$m = if ('test.test' -eq $Collection) {'*Cannot apply $push/$pushAll modifier to non-array*'} else {'*Value "x" must be array.*'}
+		assert ($r.LastErrorMessage -like $m)
+		assert ($e -like $m)
 	}{
 		$$ = { Connect-Mdbc -NewCollection; . $data }
 	}{

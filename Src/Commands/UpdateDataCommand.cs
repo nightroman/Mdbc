@@ -44,15 +44,7 @@ namespace Mdbc.Commands
 		{
 			try
 			{
-				if (FileCollection == null)
-				{
-					WriteResult(MongoCollection.Update(_Query, _Update, Modes, WriteConcern));
-				}
-				else
-				{
-					if (Result) ThrowNotImplementedForFiles("Parameter Result"); //TODO
-					FileCollection.Update(_Query, _Update, Modes);
-				}
+				WriteResult(TargetCollection.Update(_Query, _Update, Modes, WriteConcern, Result));
 			}
 			catch (MongoException ex)
 			{

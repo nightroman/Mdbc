@@ -62,41 +62,51 @@ FILE COLLECTIONS
     They are opened and saved by Open-MdbcFile and Save-MdbcFile and support
     commands Get-MdbcData, Add-MdbcData, Remove-MdbcData, and Update-MdbcData.
 
-    File collections keep data in memory. Unique _id are maintained by default.
-    The above cmdlets should work with files as with usual MongoDB collections
-    with some known differences.
+    Not supported with file collections
 
-    KNOWN DIFFERENCES
-
-    Invalid element names *.*, $*
-
-        Documents obtained from MongoDB collections do not have elements with
-        invalid names.
-
-        File collections read documents from files as they are, element names
-        are not checked. This is not a problem for files created and maintained
-        by Open|Save-MdbcData and Add|Remove|Update-MdbcData, names are checked
-        on insertions. Other files, like created by Export-MdbcData, may have
-        issues if they contain invalid names.
-
-    Terminating errors
-
-        MongoException exceptions are caught by Mdbc cmdlets and converted into
-        not terminating errors.
-
-        Exceptions from file collections are not currently caught. Thus, all
-        exceptions result in terminating errors.
-
-    Not supported for file collections
-
-        * Parameter Result in Add-MdbcData, Remove-MdbcData, Update-MdbcData
-        * Parameter Cursor in Get-MdbcData
         * Command Invoke-MdbcAggregate
         * Command Invoke-MdbcMapReduce
 
-    Not supported for simple data (no _id)
+    Not supported with simple data (no _id)
 
         * Parameter Update in Add-MdbcData
+
+    About invalid element names *.*, $*
+
+        File collections read documents from files without name checks. This is
+        not an issue for files created and maintained by Open|Save-MdbcData and
+        Add|Remove|Update-MdbcData, all names should be valid. Files created
+        differently, e.g. by Export-MdbcData, may have invalid element names.
+
+    Error and write concern processing
+
+        Exceptions thrown on data updates are caught by cmdlets and converted
+        to not terminating errors. MongoDB and file collection error message
+        texts are different but they should normally explain the same causes.
+
+        For file collections write concern is always acknowledged, parameters
+        WriteConcern are ignored in all cmdlets. All issues result in errors.
+
+    Result of Add-MdbcData, Remove-MdbcData, Update-MdbcData
+
+        The switch Result tells to output a WriteConcernResult object.
+        Its properties with remarks for file collections are:
+
+            HasLastErrorMessage : used as usual
+            DocumentsAffected   : used as usual
+            UpdatedExisting     : used as usual
+            Ok                  : used as usual
+
+            LastErrorMessage    : text is different to MongoDB
+            ErrorMessage        : text is different to MongoDB
+            Response            : may be different to MongoDB response
+
+            Code                : not used
+            Command             : not used
+            CommandName         : not used
+
+        Used as usual values are normally the same as with MongoDB but
+        differences are still possible, especially on various errors.
 
 SEE ALSO
     MongoDB http://www.mongodb.org

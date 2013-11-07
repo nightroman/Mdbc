@@ -1,17 +1,15 @@
 
 . .\Zoo.ps1
 Import-Module Mdbc
+Set-StrictMode -Version Latest
 
 task Bad {
 	Test-Error { Get-MdbcData -Update bad } '*Exception setting "Update": "Invalid update object type:*'
 }
 
-task Get-MdbcData.-As {
-	$db = $true
-	Invoke-Test {
-		. $$
-		# strongly typed helpers
-		Add-Type @'
+task As {
+	# strongly typed helpers
+	Add-Type @'
 using System;
 public class TestGetMdbcDataAs1 {
 	public int _id;
@@ -28,15 +26,19 @@ public class TestGetMdbcDataAs3 {
 	public DateTime time;
 }
 '@
+	Invoke-Test {
+		. $$
 
 		# add data with custom _id
 		1..5 | %{@{_id = $_; data = $_ % 2; time = Get-Date}} | Add-MdbcData
 
 		# get full data
-		Get-MdbcData -As ([TestGetMdbcDataAs1]) -First 1
+		$r = Get-MdbcData -As ([TestGetMdbcDataAs1]) -First 1
+		assert ($r -is [TestGetMdbcDataAs1])
 
 		# get subset of fields
-		Get-MdbcData -Property data -As ([TestGetMdbcDataAs2]) -First 1
+		$r = Get-MdbcData -Property data -As ([TestGetMdbcDataAs2]) -First 1
+		assert ($r -is [TestGetMdbcDataAs2])
 
 		. $$
 
@@ -44,45 +46,39 @@ public class TestGetMdbcDataAs3 {
 		1..5 | %{@{data = $_}} | Add-MdbcData
 
 		# get data, the extra field `time` is not an issue
-		Get-MdbcData -As ([TestGetMdbcDataAs3]) -First 1
-
-		if ($db) {
-			# get strongly typed data using a cursor
-			Get-MdbcData -As ([TestGetMdbcDataAs3]) -Cursor -Skip 3
-		}
+		$r = Get-MdbcData -As ([TestGetMdbcDataAs3]) -First 1
+		assert ($r -is [TestGetMdbcDataAs3])
 	}{
 		$$ = {Connect-Mdbc -NewCollection}
 	}{
 		$$ = {Open-MdbcFile}
-		$db = $false
 	}
 }
 
-task Get-MdbcData.-Cursor {
+task Cursor {
 	Connect-Mdbc -NewCollection
 
-	# add 11 documents
-	20..1 | %{@{Value = $_}} | Add-MdbcData
+	# add documents
+	20..1 | %{@{_id = $_}} | Add-MdbcData
 
 	# get 5 skipping 5
-	$cursor = Get-MdbcData -Cursor -First 5 -Skip 5
+	$cursor = $Collection.FindAllAs([Mdbc.Dictionary]).SetSkip(5).SetLimit(5)
 	assert ($cursor.Count() -eq 20)
 	assert ($cursor.Size() -eq 5)
 
 	# get data as array
 	$set = @($cursor)
-	assert ($set[0].Value -eq 15)
-	assert ($set[-1].Value -eq 11)
+	assert ($set[0]._id -eq 15)
+	assert ($set[-1]._id -eq 11)
 
 	# get and test ordered data
-	# Set* methods returns the cursor, both handy and gotcha
-	$cursor = Get-MdbcData -Cursor -First 5 -Skip 5
-	$set = @($cursor.SetSortOrder('Value'))
-	assert ($set[0].Value -eq 6)
-	assert ($set[-1].Value -eq 10)
+	$cursor = $Collection.FindAllAs([Mdbc.Dictionary]).SetSkip(5).SetLimit(5)
+	$set = @($cursor.SetSortOrder('_id'))
+	assert ($set[0]._id -eq 6)
+	assert ($set[-1]._id -eq 10)
 }
 
-task Get-MdbcData.-Remove {
+task Remove {
 	Invoke-Test {
 		# add documents
 		1..9 | %{@{Value1 = $_; Value2 = $_ % 2}} | Add-MdbcData
@@ -118,7 +114,7 @@ task Get-MdbcData.-Remove {
 	}
 }
 
-task Get-MdbcData.-SortBy {
+task SortBy {
 	Invoke-Test {
 		# add documents (9,1), (8,0), (7,1), .. (0,0)
 		9..0 | %{@{Value1 = $_; Value2 = $_ % 2}} | Add-MdbcData
@@ -149,7 +145,7 @@ task Get-MdbcData.-SortBy {
 
 # Tests Get-MdbcData -Update -Add -New
 # https://github.com/mongodb/mongo/blob/master/jstests/find_and_modify4.js
-task Get-MdbcData.-Update {
+task Update {
 	Invoke-Test {
 		. $$
 
@@ -204,7 +200,7 @@ task Get-MdbcData.-Update {
 # -Skip, -First, -Last
 task Limits {
 	Invoke-Test {
-		1..5 | Add-MdbcData -Id {$_}
+		1..5 | .{process{@{_id=$_}}} | Add-MdbcData
 		assert ((Get-MdbcData -Count -First 3) -eq 3)
 		assert ((Get-MdbcData -Count -Last 3) -eq 3)
 		assert ((Get-MdbcData -Count -Skip 3) -eq 2)

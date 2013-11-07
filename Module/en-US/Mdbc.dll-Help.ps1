@@ -809,10 +809,6 @@ outputs result documents or other data according to the parameters.
 Tells to return the number of all documents or matching the Query.
 The First and Skip values are taken into account.
 '@
-		Cursor = @'
-Tells to return a cursor to be used for further operations.
-See the driver manual.
-'@
 		Distinct = @'
 Specifies the field name and tells to return its distinct values for all
 documents or documents matching the Query.
@@ -871,10 +867,6 @@ Non positive values are ignored.
 		@{
 			type = 'Mdbc.Dictionary or custom objects'
 			description = 'Documents, see New-MdbcData about Mdbc.Dictionary.'
-		}
-		@{
-			type = 'MongoDB.Driver.MongoCursor'
-			description = 'If Cursor is requested.'
 		}
 	)
 	links = @(
@@ -1170,6 +1162,10 @@ The output file has the same format as .bson files produced by mongodump.exe.
 Cmdlets Export-MdbcData and Import-MdbcData do not need any database connection
 or even MongoDB installed. They are used for file based object persistence on
 their own.
+
+Files created by Export-MdbcData may be opened as collections by Open-MdbcFile
+with some caveats. Documents should not contain invalid names *.* and $*. If
+documents do not have unique _id's then the switch Simple should be used.
 '@
 	parameters = @{
 		Path = @'

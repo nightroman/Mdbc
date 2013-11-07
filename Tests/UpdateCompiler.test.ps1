@@ -376,8 +376,8 @@ task Push {
 
 	# bad argument (but not for New-MdbcUpdate)
 	update (New-MdbcUpdate -PushAll @{a=42}) @{a=1,2} @{a=1,2,42} '.PushAll(data, "a", [42])'
-	update @{'$pushAll'=@{a=42}} @{} -UpError '* 10153,*' -ExError '*Push all value must be array.*'
-	update @{'$push'=@{a=@{'$each'=42}}} @{} -UpError '* 16565,*' -ExError '*Push all value must be array.*'
+	update @{'$pushAll'=@{a=42}} @{} -UpError '* 10153,*' -ExError '*Push all/each value must be array.*'
+	update @{'$push'=@{a=@{'$each'=42}}} @{} -UpError '* 16565,*' -ExError '*Push all/each value must be array.*'
 
 	# a.1
 	update (New-MdbcUpdate -Push @{'a.1'=41,42}) @{a=1,@(1,2)} @{a=1,@(1,2,@(41,42))} '.Push(data, "a.1", [41, 42])'
@@ -391,4 +391,51 @@ task Push {
 	update (New-MdbcUpdate -Push @{'a.-2'=42}) @{a=1,2} @{a=@(42),1,2} '.Push(data, "a.-2", 42)' #!
 	update (New-MdbcUpdate -Push @{'a.3'=42}) @{a=1,2} @{a=1,2,$null,@(42)} '.Push(data, "a.3", 42)' #!
 	update (New-MdbcUpdate -Push @{'a.3.x'=42}) @{a=1,2} @{a=1,2,$null,@{x=@(42)}} '.Push(data, "a.3.x", 42)' #!
+
+	function doc {
+		$$ = New-MdbcData
+		while($args) {
+			$n, $v, $args = $args
+			$$.Add($n, $v)
+		}
+		$$
+	}
+
+	#! Mongo adds documents with bad names
+	update @{'$push'=@{a=@{'$bad'=42}}} @{a=@()} @{a=@(@{'$bad'=42})} '.Push(data, "a", { "$bad" : 42 })'
+	$$=doc '$bad' 42 '$each' 1,2; update @{'$push'=@{a=$$}} @{a=@()} @{a=@($$)} '.Push(data, "a", { "$bad" : 42, "$each" : [1, 2] })'
+
+	$m = '*$each term takes only $slice (and optionally $sort) as complements*'
+	$$=doc '$each' 1,2 'bad' 42; update @{'$push'=@{a=$$}} @{a=@()} -UpError $m -ExError $m
+
+	# slice
+
+	$m = '*$slice value must be a numeric integer*'
+	$$=doc '$each' 1,2 '$slice' bad; update @{'$push'=@{a=$$}} @{a=@()} @{a=@(2)} -UpError $m -ExError $m
+
+	$m = '*$slice value must be negative or zero*'
+	$$=doc '$each' 1,2 '$slice' 1; update @{'$push'=@{a=$$}} @{a=@()} @{a=@(2)} -UpError $m -ExError $m
+
+	$$=doc '$each' 1,2 '$slice' (-1)
+	update @{'$push'=@{a=$$}} @{a=@()} @{a=@(2)} '.PushAll(data, "a", [2])'
+
+	# sort
+
+	$m = '*$sort component of $push must be an object*'
+	$$=doc '$each' @{x=2},bad '$sort' bad; update @{'$push'=@{a=$$}} @{a=@()} -UpError $m -ExError $m
+
+	$m = '*$sort requires $each to be an array of objects*'
+	$$=doc '$each' @{x=2},bad '$sort' @{x=1}; update @{'$push'=@{a=$$}} @{a=@()} -UpError $m -ExError $m
+
+	$m = '*cannot have a $sort without a $slice*'
+	$$=doc '$each' @{x=2},@{x=1} '$sort' @{x=1}; update @{'$push'=@{a=$$}} @{a=@()} -UpError $m -ExError $m
+
+	$m = '*$slice value must be a numeric integer*'
+	$$=doc '$each' @{x=2},@{x=1} '$sort' @{x=1} '$slice' bad; update @{'$push'=@{a=$$}} @{a=@()} -UpError $m -ExError $m
+
+	$m = '*$slice value must be negative or zero*'
+	$$=doc '$each' @{x=2},@{x=1} '$sort' @{x=1} '$slice' 1; update @{'$push'=@{a=$$}} @{a=@()} -UpError $m -ExError $m
+
+	$$=doc '$each' @{x=2},@{x=1} '$sort' @{x=1} '$slice' (-1)
+	update @{'$push'=@{a=$$}} @{a=@()} @{a=@(@{x=2})} '.PushAll(data, "a", [{ "x" : 2 }])'
 }
