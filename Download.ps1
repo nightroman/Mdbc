@@ -38,4 +38,4 @@ function DownloadModule([Parameter()]$PackageId) {
 	$shell.Namespace($dir).CopyHere($from.items())
 }
 
-DownloadPackage Mdbc
+DownloadModule Mdbc
