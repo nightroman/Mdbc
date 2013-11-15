@@ -9,7 +9,7 @@
 	use another location.
 #>
 
-function DownloadPackage([Parameter()]$PackageId) {
+function DownloadModule([Parameter()]$PackageId) {
 	$ErrorActionPreference = 'Stop'
 
 	$here = $PSCmdlet.GetUnresolvedProviderPathFromPSPath('')
@@ -29,9 +29,9 @@ function DownloadPackage([Parameter()]$PackageId) {
 	}
 
 	$shell = New-Object -ComObject Shell.Application
-	$from = $shell.Namespace("$zip\tools\Mdbc")
+	$from = $shell.Namespace("$zip\tools\$PackageId")
 	if (!$from) {
-		Write-Error "Missing package item '$zip\tools\Mdbc'."
+		Write-Error "Missing package item '$zip\tools\$PackageId'."
 	}
 
 	$null = mkdir $dir
