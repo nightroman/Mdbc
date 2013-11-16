@@ -9,8 +9,8 @@ function update (
 	[Parameter(Position=2)]$Sample, # updated document sample
 	[Parameter(Position=3)]$ExpressionText, # update expression sample
 	$Query, # query used on upsert update
-	$UpError, # update error wildcard
-	$ExError # expression error wildcard
+	$UError, # update error wildcard
+	$EError # expression error wildcard
 )
 {
 	Connect-Mdbc -NewCollection
@@ -35,14 +35,14 @@ function update (
 		$r.ToString()
 	}
 	catch {
-		if (!$UpError) {Write-Error $_}
-		if ($_ -notlike $UpError) {Write-Error "`n Update error sample : $UpError`n Update error result : $_"}
+		if (!$UError) {Write-Error $_}
+		if ($_ -notlike $UError) {Write-Error "`n Update error sample : $UError`n Update error result : $_"}
 		$err = $_
 	}
-	if ($UpError -and !$err) {Write-Error "Expected error on update."}
+	if ($UError -and !$err) {Write-Error "Expected error on update."}
 
 	# test base result
-	if (!$UpError) {
+	if (!$UError) {
 		try { Test-Table $Sample $r -Force }
 		catch { Write-Error "Update sample vs. result : $_" }
 	}
@@ -57,14 +57,14 @@ function update (
 		$Document.ToString()
 	}
 	catch {
-		if (!$ExError) {Write-Error $_}
-		if ($_ -notlike $ExError) {Write-Error "`n Expression error sample : $ExError`n Expression error result : $_"}
+		if (!$EError) {Write-Error $_}
+		if ($_ -notlike $EError) {Write-Error "`n Expression error sample : $EError`n Expression error result : $_"}
 		$err = $_
 	}
-	if ($ExError -and !$err) {Write-Error "Expected error on expression."}
+	if ($EError -and !$err) {Write-Error "Expected error on expression."}
 
 	# test linq result
-	if (!$ExError) {
+	if (!$EError) {
 		try { Test-Table $Sample $Document -Force }
 		catch { Write-Error "Expression sample vs. result : $_" }
 
@@ -78,8 +78,8 @@ function update (
 }
 
 task Conflict {
-	update (New-MdbcUpdate -Unset a.1 -Pull @{a=1}) -UpError '*conflicting mods in update*' -ExError '*Conflicting fields "a.1" and "a".*'
-	update (New-MdbcUpdate -Unset a -Pull @{'a.1'=1}) -UpError '*conflicting mods in update*' -ExError '*Conflicting fields "a" and "a.1".*'
+	update (New-MdbcUpdate -Unset a.1 -Pull @{a=1}) -UError '*conflicting mods in update*' -EError '*Conflicting fields "a.1" and "a".*'
+	update (New-MdbcUpdate -Unset a -Pull @{'a.1'=1}) -UError '*conflicting mods in update*' -EError '*Conflicting fields "a" and "a.1".*'
 }
 
 task Unset {
@@ -128,14 +128,14 @@ task Rename {
 
 	# rename a.1.x, _131028_234439
 	update (New-MdbcUpdate -Rename @{'a.1.x'='a.1.z'}) @{a=1,@{x=1;y=1},3} `
-	-UpError '*$rename source field invalid*' -ExError '*"Array indexes are not supported."'
+	-UError '*$rename source field invalid*' -EError '*"Array indexes are not supported."'
 }
 
 task Set {
 	# errors
-	update (New-MdbcUpdate -Set @{'x.y.z'=1}) @{x=@{y=1}} -UpError '* 10145,*' -ExError '*"Field (y) in (x.y.z) is not a document."'
-	update (New-MdbcUpdate -Set @{'a.x'=1}) @{a=@{x=1},@{x=1}} -UpError '* 13048,*' -ExError '*"Field (a) in (a.x) is not a document."'
-	update @{x=1; '$inc'=@{y=2}} @{} -UpError '* 10147,*' -ExError '*Update cannot mix operators and fields.*' #_131103_204607
+	update (New-MdbcUpdate -Set @{'x.y.z'=1}) @{x=@{y=1}} -UError '* 10145,*' -EError '*"Field (y) in (x.y.z) is not a document."'
+	update (New-MdbcUpdate -Set @{'a.x'=1}) @{a=@{x=1},@{x=1}} -UError '* 13048,*' -EError '*"Field (a) in (a.x) is not a document."'
+	update @{x=1; '$inc'=@{y=2}} @{} -UError '* 10147,*' -EError '*Update cannot mix operators and fields.*' #_131103_204607
 
 	#_131103_204607 simple form
 	update @{x=1; y=2} @{} @{x=1; y=2} '.Set(data, "y", 2).Set(data, "x", 1)'
@@ -162,7 +162,7 @@ task Set {
 	update (New-MdbcUpdate -Set @{'a.1.x'=42}) @{a=0,@{x=1;y=1}} @{a=0,@{x=42;y=1}} '.Set(data, "a.1.x", 42)'
 
 	# set a.1.x, error [1] is not document
-	update (New-MdbcUpdate -Set @{'a.1.x'=42}) @{a=0,1} -UpError '* 10145,*' -ExError '*"Array item at (1) in (a.1.x) is not a document."'
+	update (New-MdbcUpdate -Set @{'a.1.x'=42}) @{a=0,1} -UError '* 10145,*' -EError '*"Array item at (1) in (a.1.x) is not a document."'
 
 	# set a.<less>.x
 	update (New-MdbcUpdate -Set @{'a.-2.x'=42}) @{a=0,@{x=1}} @{a=@{x=42},0,@{x=1}} '.Set(data, "a.-2.x", 42)'
@@ -219,14 +219,14 @@ task Inc {
 	update (New-MdbcUpdate -Inc @{x=1.0}) @{x=1.0} @{x=2.0} '.Inc(data, "x", 1)'
 
 	# source is not numeric
-	update (New-MdbcUpdate -Inc @{x=1}) @{x=$null} -UpError '* 10140,*' -ExError '*Field "x" must be numeric.*'
-	update (New-MdbcUpdate -Inc @{x=1}) @{x='bad'} -UpError '* 10140,*' -ExError '*Field "x" must be numeric.*'
-	update (New-MdbcUpdate -Inc @{'a.1'=1}) @{a=1,'2'} -UpError '* 10140,*' -ExError '*Item "a.1" must be numeric.*'
+	update (New-MdbcUpdate -Inc @{x=1}) @{x=$null} -UError '* 10140,*' -EError '*Field "x" must be numeric.*'
+	update (New-MdbcUpdate -Inc @{x=1}) @{x='bad'} -UError '* 10140,*' -EError '*Field "x" must be numeric.*'
+	update (New-MdbcUpdate -Inc @{'a.1'=1}) @{a=1,'2'} -UError '* 10140,*' -EError '*Item "a.1" must be numeric.*'
 
 	# value is not numeric
 	Test-Error {New-MdbcUpdate -Inc @{x=$null}} '*Exception setting "Inc": "Invalid type. Expected types: int, long, double."'
-	update @{'$inc'=@{x=$null}} -UpError '* 10152,*' -ExError '*"Increment value must be numeric."'
-	update @{'$inc'=@{x='bad'}} -UpError '* 10152,*' -ExError '*"Increment value must be numeric."'
+	update @{'$inc'=@{x=$null}} -UError '* 10152,*' -EError '*"Increment value must be numeric."'
+	update @{'$inc'=@{x='bad'}} -UError '* 10152,*' -EError '*"Increment value must be numeric."'
 
 	# nested
 	update (New-MdbcUpdate -Inc @{'x.deep'=-1}, @{'x.miss'=-1}) @{x=@{deep=-1}} @{x=@{deep=-2; miss=-1}} '.Inc(data, "x.deep", -1).Inc(data, "x.miss", -1)'
@@ -269,8 +269,8 @@ task Bitwise {
 	#update (New-MdbcUpdate -BitwiseOr @{n=5gb+1}) @{n=1} @{n=1073741825} '.BitwiseAnd(data, "n", 5368709121)'
 
 	# bad
-	update (New-MdbcUpdate -BitwiseAnd @{'x'=2}) @{x='3'} -UpError '* 10137,*' -ExError '*Field "x" must be Int32 or Int64.*'
-	update (New-MdbcUpdate -BitwiseAnd @{'a.1'=2}) @{a=3,'3'} -UpError '* 10137,*' -ExError '*Item "a.1" must be Int32 or Int64.*'
+	update (New-MdbcUpdate -BitwiseAnd @{'x'=2}) @{x='3'} -UError '* 10137,*' -EError '*Field "x" must be Int32 or Int64.*'
+	update (New-MdbcUpdate -BitwiseAnd @{'a.1'=2}) @{a=3,'3'} -UError '* 10137,*' -EError '*Item "a.1" must be Int32 or Int64.*'
 
 	# array item
 	update (New-MdbcUpdate -BitwiseAnd @{'a.-1'=2}) @{a=3,3} @{a=3,3} '.BitwiseAnd(data, "a.-1", 2)'
@@ -305,8 +305,8 @@ task AddToSet {
 	update (New-MdbcUpdate -AddToSet @{'a.1.m'=42}) @{a=@()} @{a=$null,@{m=@(42)}} '.AddToSet(data, "a.1.m", 42, False)'
 
 	# not array
-	update (New-MdbcUpdate -AddToSet @{a=1}) @{a=1} -UpError '* 12591,*' -ExError '*Value "a" must be array.*'
-	update (New-MdbcUpdate -AddToSet @{'a.1'=1}) @{a=1,2} -UpError '* 12591,*' -ExError '*Value "a.1" must be array.*'
+	update (New-MdbcUpdate -AddToSet @{a=1}) @{a=1} -UError '* 12591,*' -EError '*Value "a" must be array.*'
+	update (New-MdbcUpdate -AddToSet @{'a.1'=1}) @{a=1,2} -UError '* 12591,*' -EError '*Value "a.1" must be array.*'
 }
 
 task Pop {
@@ -324,13 +324,13 @@ task Pop {
 
 	# miss, bad
 	update (New-MdbcUpdate -PopFirst miss) @{a=1,2,3} @{a=1,2,3} '.Pop(data, "miss", -1)'
-	update (New-MdbcUpdate -PopFirst bad) @{bad=1} -UpError '* 10143,*' -ExError '*Value "bad" must be array.*'
+	update (New-MdbcUpdate -PopFirst bad) @{bad=1} -UError '* 10143,*' -EError '*Value "bad" must be array.*'
 
 	# a.index
 	update (New-MdbcUpdate -PopLast a.1) @{a=1,@(1,2)} @{a=1,@(1)} '.Pop(data, "a.1", 1)'
 	update (New-MdbcUpdate -PopLast a.-2) @{a=1,2} @{a=1,2} '.Pop(data, "a.-2", 1)'
 	update (New-MdbcUpdate -PopLast a.3) @{a=1,2} @{a=1,2} '.Pop(data, "a.3", 1)'
-	update (New-MdbcUpdate -PopLast a.1) @{a=1,'bad'} -UpError '* 10143,*' -ExError '*Value "a.1" must be array.*'
+	update (New-MdbcUpdate -PopLast a.1) @{a=1,'bad'} -UError '* 10143,*' -EError '*Value "a.1" must be array.*'
 }
 
 task Pull {
@@ -347,7 +347,7 @@ task Pull {
 	update (New-MdbcUpdate -Pull @{a=New-MdbcQuery x 1}) @{a=1,@{x=1;y=1},3} @{a=1,3} '.Pull(data, "a", { "x" : 1 })' #!
 
 	# PullAll document
-	update @{'$pullAll'=@{a=@{x=1}}} @{} -UpError '* 10153,*' -ExError '*Pull all value must be array.*'
+	update @{'$pullAll'=@{a=@{x=1}}} @{} -UError '* 10153,*' -EError '*Pull all value must be array.*'
 	update (New-MdbcUpdate -PullAll @{a=@{x=1}}) @{a=1,@{x=1;y=1},3} @{a=1,@{x=1;y=1},3} '.PullAll(data, "a", [{ "x" : 1 }])'
 
 	# d.a.1.a
@@ -359,8 +359,8 @@ task Pull {
 	update (New-MdbcUpdate -Pull @{'a.3'=1}) @{a=1,2} @{a=1,2} '.Pull(data, "a.3", 1)'
 
 	# bad
-	update (New-MdbcUpdate -Pull @{b=1}) @{b=1} -UpError '* 10142,*' -ExError '*Value "b" must be array.*'
-	update (New-MdbcUpdate -Pull @{'a.1'=1}) @{a=1,'bad'} -UpError '* 10142,*' -ExError '*Value "a.1" must be array.*'
+	update (New-MdbcUpdate -Pull @{b=1}) @{b=1} -UError '* 10142,*' -EError '*Value "b" must be array.*'
+	update (New-MdbcUpdate -Pull @{'a.1'=1}) @{a=1,'bad'} -UError '* 10142,*' -EError '*Value "a.1" must be array.*'
 
 	# miss
 	update (New-MdbcUpdate -Pull @{m=1}) @{x=1} @{x=1} '.Pull(data, "m", 1)'
@@ -370,14 +370,14 @@ task Pull {
 
 task Push {
 	# bad field
-	update (New-MdbcUpdate -Push @{b=1}) @{b=1} -UpError '*10141,*' -ExError '*Value "b" must be array.*'
-	update (New-MdbcUpdate -PushAll @{b=1}) @{b=1} -UpError '*10141,*' -ExError '*Value "b" must be array.*'
-	update @{'$push'=@{b=@{'$each'=@(42)}}} @{b=1} -UpError '*10141,*' -ExError '*Value "b" must be array.*'
+	update (New-MdbcUpdate -Push @{b=1}) @{b=1} -UError '*10141,*' -EError '*Value "b" must be array.*'
+	update (New-MdbcUpdate -PushAll @{b=1}) @{b=1} -UError '*10141,*' -EError '*Value "b" must be array.*'
+	update @{'$push'=@{b=@{'$each'=@(42)}}} @{b=1} -UError '*10141,*' -EError '*Value "b" must be array.*'
 
 	# bad argument (but not for New-MdbcUpdate)
 	update (New-MdbcUpdate -PushAll @{a=42}) @{a=1,2} @{a=1,2,42} '.PushAll(data, "a", [42])'
-	update @{'$pushAll'=@{a=42}} @{} -UpError '* 10153,*' -ExError '*Push all/each value must be array.*'
-	update @{'$push'=@{a=@{'$each'=42}}} @{} -UpError '* 16565,*' -ExError '*Push all/each value must be array.*'
+	update @{'$pushAll'=@{a=42}} @{} -UError '* 10153,*' -EError '*Push all/each value must be array.*'
+	update @{'$push'=@{a=@{'$each'=42}}} @{} -UError '* 16565,*' -EError '*Push all/each value must be array.*'
 
 	# a.1
 	update (New-MdbcUpdate -Push @{'a.1'=41,42}) @{a=1,@(1,2)} @{a=1,@(1,2,@(41,42))} '.Push(data, "a.1", [41, 42])'
@@ -406,15 +406,15 @@ task Push {
 	$$=doc '$bad' 42 '$each' 1,2; update @{'$push'=@{a=$$}} @{a=@()} @{a=@($$)} '.Push(data, "a", { "$bad" : 42, "$each" : [1, 2] })'
 
 	$m = '*$each term takes only $slice (and optionally $sort) as complements*'
-	$$=doc '$each' 1,2 'bad' 42; update @{'$push'=@{a=$$}} @{a=@()} -UpError $m -ExError $m
+	$$=doc '$each' 1,2 'bad' 42; update @{'$push'=@{a=$$}} @{a=@()} -UError $m -EError $m
 
 	# slice
 
 	$m = '*$slice value must be a numeric integer*'
-	$$=doc '$each' 1,2 '$slice' bad; update @{'$push'=@{a=$$}} @{a=@()} @{a=@(2)} -UpError $m -ExError $m
+	$$=doc '$each' 1,2 '$slice' bad; update @{'$push'=@{a=$$}} @{a=@()} @{a=@(2)} -UError $m -EError $m
 
 	$m = '*$slice value must be negative or zero*'
-	$$=doc '$each' 1,2 '$slice' 1; update @{'$push'=@{a=$$}} @{a=@()} @{a=@(2)} -UpError $m -ExError $m
+	$$=doc '$each' 1,2 '$slice' 1; update @{'$push'=@{a=$$}} @{a=@()} @{a=@(2)} -UError $m -EError $m
 
 	$$=doc '$each' 1,2 '$slice' (-1)
 	update @{'$push'=@{a=$$}} @{a=@()} @{a=@(2)} '.PushAll(data, "a", [2])'
@@ -422,19 +422,19 @@ task Push {
 	# sort
 
 	$m = '*$sort component of $push must be an object*'
-	$$=doc '$each' @{x=2},bad '$sort' bad; update @{'$push'=@{a=$$}} @{a=@()} -UpError $m -ExError $m
+	$$=doc '$each' @{x=2},bad '$sort' bad; update @{'$push'=@{a=$$}} @{a=@()} -UError $m -EError $m
 
 	$m = '*$sort requires $each to be an array of objects*'
-	$$=doc '$each' @{x=2},bad '$sort' @{x=1}; update @{'$push'=@{a=$$}} @{a=@()} -UpError $m -ExError $m
+	$$=doc '$each' @{x=2},bad '$sort' @{x=1}; update @{'$push'=@{a=$$}} @{a=@()} -UError $m -EError $m
 
 	$m = '*cannot have a $sort without a $slice*'
-	$$=doc '$each' @{x=2},@{x=1} '$sort' @{x=1}; update @{'$push'=@{a=$$}} @{a=@()} -UpError $m -ExError $m
+	$$=doc '$each' @{x=2},@{x=1} '$sort' @{x=1}; update @{'$push'=@{a=$$}} @{a=@()} -UError $m -EError $m
 
 	$m = '*$slice value must be a numeric integer*'
-	$$=doc '$each' @{x=2},@{x=1} '$sort' @{x=1} '$slice' bad; update @{'$push'=@{a=$$}} @{a=@()} -UpError $m -ExError $m
+	$$=doc '$each' @{x=2},@{x=1} '$sort' @{x=1} '$slice' bad; update @{'$push'=@{a=$$}} @{a=@()} -UError $m -EError $m
 
 	$m = '*$slice value must be negative or zero*'
-	$$=doc '$each' @{x=2},@{x=1} '$sort' @{x=1} '$slice' 1; update @{'$push'=@{a=$$}} @{a=@()} -UpError $m -ExError $m
+	$$=doc '$each' @{x=2},@{x=1} '$sort' @{x=1} '$slice' 1; update @{'$push'=@{a=$$}} @{a=@()} -UError $m -EError $m
 
 	$$=doc '$each' @{x=2},@{x=1} '$sort' @{x=1} '$slice' (-1)
 	update @{'$push'=@{a=$$}} @{a=@()} @{a=@(@{x=2})} '.PushAll(data, "a", [{ "x" : 2 }])'

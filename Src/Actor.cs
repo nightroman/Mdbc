@@ -223,7 +223,7 @@ namespace Mdbc
 
 			var type = value.BaseObject.GetType();
 			if (type.IsPrimitive || type == typeof(string))
-				throw new InvalidCastException(string.Format("Cannot convert {0} to BsonDocument.", type));
+				throw new InvalidCastException(string.Format(null, "Cannot convert {0} to a document.", type));
 
 			// existing or new document
 			var document = source ?? new BsonDocument();

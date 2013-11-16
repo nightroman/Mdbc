@@ -151,6 +151,7 @@ task In {
 	test { New-MdbcQuery Name -In 1, more } '{ "Name" : { "$in" : [1, "more"] } }'
 	test { New-MdbcQuery Name -In 1L, more } '{ "Name" : { "$in" : [NumberLong(1), "more"] } }'
 	test { New-MdbcQuery Name -In text, more } '{ "Name" : { "$in" : ["text", "more"] } }'
+	test { New-MdbcQuery Name -In text, ([regex]'^more$') } '{ "Name" : { "$in" : ["text", /^more$/] } }'
 	test { New-MdbcQuery -Not (New-MdbcQuery Name -In text, more) } '{ "Name" : { "$nin" : ["text", "more"] } }'
 }
 
@@ -171,6 +172,7 @@ task NotIn {
 	test { New-MdbcQuery Name -NotIn 1, more } '{ "Name" : { "$nin" : [1, "more"] } }'
 	test { New-MdbcQuery Name -NotIn 1L, more } '{ "Name" : { "$nin" : [NumberLong(1), "more"] } }'
 	test { New-MdbcQuery Name -NotIn text, more } '{ "Name" : { "$nin" : ["text", "more"] } }'
+	test { New-MdbcQuery Name -NotIn text, ([regex]'^more$') } '{ "Name" : { "$nin" : ["text", /^more$/] } }'
 	test { New-MdbcQuery -Not (New-MdbcQuery Name -NotIn text, more) } '{ "Name" : { "$not" : { "$nin" : ["text", "more"] } } }'
 }
 

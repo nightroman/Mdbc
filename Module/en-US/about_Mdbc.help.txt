@@ -66,6 +66,7 @@ FILE COLLECTIONS
 
         * Command Invoke-MdbcAggregate
         * Command Invoke-MdbcMapReduce
+        * $where queries
 
     Not supported with simple data (no _id)
 

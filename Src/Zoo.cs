@@ -153,6 +153,27 @@ namespace Mdbc
 	static class MyValue
 	{
 		public const string Id = "_id";
+		public static bool EqualsOrMatches(this BsonValue value1, BsonValue value2)
+		{
+			if (value2.BsonType != BsonType.RegularExpression)
+				return value1.CompareTo(value2) == 0;
+
+			if (value1.BsonType != BsonType.String)
+				return false;
+
+			return value2.AsRegex.IsMatch(value1.AsString);
+		}
+		public static bool EqualsOrElemMatches(this BsonValue value1, object value2)
+		{
+			var v2 = value2 as BsonValue;
+			if (v2 != null)
+				return value1.EqualsOrMatches(v2);
+
+			if (value1.BsonType != BsonType.Document)
+				return false;
+
+			return ((Func<BsonDocument, bool>)value2)(value1.AsBsonDocument);
+		}
 		public static double ToDoubleOrZero(this BsonValue value)
 		{
 			switch (value.BsonType)

@@ -29,7 +29,7 @@ namespace Mdbc
 	public class UpdateCompiler
 	{
 		#region Operators
-		static Expression AddToSet(Expression that, string name, BsonValue value)
+		static Expression AddToSetExpression(Expression that, Expression field, BsonValue value)
 		{
 			bool addEach = false;
 			if (value.BsonType == BsonType.Document)
@@ -45,9 +45,7 @@ namespace Mdbc
 					}
 				}
 			}
-			return Expression.Call(that, GetMethod("AddToSet"), Data, Expression.Constant(name, typeof(string)),
-				Expression.Constant(value, typeof(BsonValue)),
-				Expression.Constant(addEach, typeof(bool)));
+			return Expression.Call(that, GetMethod("AddToSet"), Data, field, Expression.Constant(value, typeof(BsonValue)), Expression.Constant(addEach, typeof(bool)));
 		}
 		UpdateCompiler AddToSet(BsonDocument document, string name, BsonValue value, bool each)
 		{
@@ -77,7 +75,7 @@ namespace Mdbc
 
 			return this;
 		}
-		static Expression Bitwise(Expression that, string name, BsonValue value)
+		static Expression BitwiseExpression(Expression that, Expression field, BsonValue value)
 		{
 			if (value == null || value.BsonType != BsonType.Document)
 				throw new ArgumentException("Bitwise value must be document.");
@@ -91,7 +89,6 @@ namespace Mdbc
 			if (v.BsonType != BsonType.Int32 && v.BsonType != BsonType.Int64)
 				throw new ArgumentException("Bitwise value must be Int32 or Int64.");
 
-			var field = Expression.Constant(name, typeof(string));
 			switch (e.Name)
 			{
 				case "and":
@@ -135,12 +132,12 @@ namespace Mdbc
 			Bitwise(document, name, value, false);
 			return this;
 		}
-		static Expression Inc(Expression that, string name, BsonValue value)
+		static Expression IncExpression(Expression that, Expression field, BsonValue value)
 		{
 			if (value == null || !value.IsNumeric)
 				throw new ArgumentException("Increment value must be numeric.");
 
-			return Expression.Call(that, GetMethod("Inc"), Data, Expression.Constant(name, typeof(string)), Expression.Constant(value, typeof(BsonValue)));
+			return Expression.Call(that, GetMethod("Inc"), Data, field, Expression.Constant(value, typeof(BsonValue)));
 		}
 		UpdateCompiler Inc(BsonDocument document, string name, BsonValue value)
 		{
@@ -168,10 +165,10 @@ namespace Mdbc
 			}
 			return this;
 		}
-		static Expression Pop(Expression that, string name, BsonValue value)
+		static Expression PopExpression(Expression that, Expression field, BsonValue value)
 		{
 			int pop = value.IsNumeric ? value.ToInt32() : 0;
-			return Expression.Call(that, GetMethod("Pop"), Data, Expression.Constant(name, typeof(string)), Expression.Constant(pop, typeof(int)));
+			return Expression.Call(that, GetMethod("Pop"), Data, field, Expression.Constant(pop, typeof(int)));
 		}
 		UpdateCompiler Pop(BsonDocument document, string name, int value)
 		{
@@ -247,21 +244,21 @@ namespace Mdbc
 				}
 			}
 		}
-		static Expression Pull(Expression that, string name, BsonValue value)
+		static Expression PullExpression(Expression that, Expression field, BsonValue value)
 		{
-			return Expression.Call(that, GetMethod("Pull"), Data, Expression.Constant(name, typeof(string)), Expression.Constant(value, typeof(BsonValue)));
+			return Expression.Call(that, GetMethod("Pull"), Data, field, Expression.Constant(value, typeof(BsonValue)));
 		}
 		UpdateCompiler Pull(BsonDocument document, string name, BsonValue value)
 		{
 			Pull(document, name, value, false);
 			return this;
 		}
-		static Expression PullAll(Expression that, string name, BsonValue value)
+		static Expression PullAllExpression(Expression that, Expression field, BsonValue value)
 		{
 			if (value.BsonType != BsonType.Array)
 				throw new ArgumentException("Pull all value must be array.");
 
-			return Expression.Call(that, GetMethod("PullAll"), Data, Expression.Constant(name, typeof(string)), Expression.Constant(value, typeof(BsonValue)));
+			return Expression.Call(that, GetMethod("PullAll"), Data, field, Expression.Constant(value, typeof(BsonValue)));
 		}
 		UpdateCompiler PullAll(BsonDocument document, string name, BsonValue value)
 		{
@@ -293,10 +290,8 @@ namespace Mdbc
 			else
 				array.Add(value);
 		}
-		static Expression Push(Expression that, string name, BsonValue value)
+		static Expression PushExpression(Expression that, Expression field, BsonValue value)
 		{
-			var field = Expression.Constant(name, typeof(string));
-
 			BsonDocument d;
 			BsonElement e;
 			if (value.BsonType == BsonType.Document && (d = value.AsBsonDocument).ElementCount > 0 && (e = d.GetElement(0)).Name == "$each")
@@ -361,21 +356,21 @@ namespace Mdbc
 			Push(document, name, value, false);
 			return this;
 		}
-		static Expression PushAll(Expression that, string name, BsonValue value)
+		static Expression PushAllExpression(Expression that, Expression field, BsonValue value)
 		{
 			if (value.BsonType != BsonType.Array)
 				throw new ArgumentException("Push all/each value must be array.");
 
-			return Expression.Call(that, GetMethod("PushAll"), Data, Expression.Constant(name, typeof(string)), Expression.Constant(value, typeof(BsonValue)));
+			return Expression.Call(that, GetMethod("PushAll"), Data, field, Expression.Constant(value, typeof(BsonValue)));
 		}
 		UpdateCompiler PushAll(BsonDocument document, string name, BsonValue value)
 		{
 			Push(document, name, value, true);
 			return this;
 		}
-		static Expression Rename(Expression that, string name, BsonValue value)
+		static Expression RenameExpression(Expression that, Expression field, BsonValue value)
 		{
-			return Expression.Call(that, GetMethod("Rename"), Data, Expression.Constant(name, typeof(string)), Expression.Constant(value.AsString, typeof(string)));
+			return Expression.Call(that, GetMethod("Rename"), Data, field, Expression.Constant(value.AsString, typeof(string)));
 		}
 		UpdateCompiler Rename(BsonDocument document, string name, string newName)
 		{
@@ -392,9 +387,9 @@ namespace Mdbc
 			}
 			return this;
 		}
-		static Expression Set(Expression that, string name, BsonValue value)
+		static Expression SetExpression(Expression that, Expression field, BsonValue value)
 		{
-			return Expression.Call(that, GetMethod("Set"), Data, Expression.Constant(name, typeof(string)), Expression.Constant(value, typeof(BsonValue)));
+			return Expression.Call(that, GetMethod("Set"), Data, field, Expression.Constant(value, typeof(BsonValue)));
 		}
 		UpdateCompiler Set(BsonDocument document, string name, BsonValue value)
 		{
@@ -409,9 +404,9 @@ namespace Mdbc
 			}
 			return this;
 		}
-		static Expression Unset(Expression that, string name)
+		static Expression UnsetExpression(Expression that, Expression field)
 		{
-			return Expression.Call(that, GetMethod("Unset"), Data, Expression.Constant(name, typeof(string)));
+			return Expression.Call(that, GetMethod("Unset"), Data, field);
 		}
 		UpdateCompiler Unset(BsonDocument document, string name)
 		{
@@ -431,23 +426,24 @@ namespace Mdbc
 		{
 			return typeof(UpdateCompiler).GetMethod(name, BindingFlags.NonPublic | BindingFlags.Instance);
 		}
-		static Expression OperatorExpression(Expression that, string operatorName, string fieldName, BsonValue value, bool insert)
+		static Expression OperatorExpression(Expression that, string operatorName, Expression field, BsonValue value, bool insert)
 		{
 			switch (operatorName)
 			{
-				case "$addToSet": return AddToSet(that, fieldName, value);
-				case "$bit": return Bitwise(that, fieldName, value);
-				case "$inc": return Inc(that, fieldName, value);
-				case "$pop": return Pop(that, fieldName, value);
-				case "$pull": return Pull(that, fieldName, value);
-				case "$pullAll": return PullAll(that, fieldName, value);
-				case "$push": return Push(that, fieldName, value);
-				case "$pushAll": return PushAll(that, fieldName, value);
-				case "$rename": return Rename(that, fieldName, value);
-				case "$set": return Set(that, fieldName, value);
-				case "$setOnInsert": return insert ? Set(that, fieldName, value) : that;
-				case "$unset": return Unset(that, fieldName);
-				default: throw new NotImplementedException("Not implemented operator " + operatorName);
+				case "$addToSet": return AddToSetExpression(that, field, value);
+				case "$bit": return BitwiseExpression(that, field, value);
+				case "$inc": return IncExpression(that, field, value);
+				case "$pop": return PopExpression(that, field, value);
+				case "$pull": return PullExpression(that, field, value);
+				case "$pullAll": return PullAllExpression(that, field, value);
+				case "$push": return PushExpression(that, field, value);
+				case "$pushAll": return PushAllExpression(that, field, value);
+				case "$rename": return RenameExpression(that, field, value);
+				case "$set": return SetExpression(that, field, value);
+				case "$setOnInsert": return insert ? SetExpression(that, field, value) : that;
+				case "$unset": return UnsetExpression(that, field);
+				default:
+					throw new NotImplementedException("Not implemented operator " + operatorName);
 			}
 		}
 		static Expression UpdateFromQueryExpression(Expression that, object query)
@@ -472,7 +468,7 @@ namespace Mdbc
 						continue;
 				}
 
-				that = UpdateCompiler.Set(that, element.Name, selector);
+				that = UpdateCompiler.SetExpression(that, Expression.Constant(element.Name, typeof(string)), selector);
 			}
 
 			return that;
@@ -526,7 +522,7 @@ namespace Mdbc
 					{
 						var fieldName = fieldElement.Name;
 						ValidateFieldName(fieldName, names);
-						expression = OperatorExpression(expression, name, fieldName, fieldElement.Value, insert);
+						expression = OperatorExpression(expression, name, Expression.Constant(fieldName, typeof(string)), fieldElement.Value, insert);
 					}
 				}
 				else //_131103_204607
@@ -535,7 +531,7 @@ namespace Mdbc
 					isName = true;
 
 					ValidateFieldName(name, names);
-					expression = Set(expression, name, element.Value);
+					expression = SetExpression(expression, Expression.Constant(name, typeof(string)), element.Value);
 				}
 			}
 

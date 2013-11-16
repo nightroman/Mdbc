@@ -1,6 +1,15 @@
 Mdbc Release Notes
 ==================
 
+## v4.3.1
+
+File collection queries:
+
+- Support `$in` and `$nin` with regular expressions and `$all` with
+  `$elemMatch` and regular expressions.
+- `$mod` arguments are processed like in MongoDB.
+- Improved input validation and error messages.
+
 ## v4.3.0
 
 The new concept of bson file collections is stabilized.

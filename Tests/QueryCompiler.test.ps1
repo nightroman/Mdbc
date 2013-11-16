@@ -1,7 +1,7 @@
 
 . .\Zoo.ps1
 Import-Module Mdbc
-Set-StrictMode -Version 2
+Set-StrictMode -Version Latest
 
 $date = [DateTime]'2000-01-01'
 $guid = [Guid]'94a30dd6-6451-49fb-9c48-18e3f1509877'
@@ -9,6 +9,7 @@ $document = New-MdbcData -NewId @{
 	null = $null
 	text = 'text'
 	int = 42
+	intn = -42
 	pi = 3.14
 	date = $date
 	guid = $guid
@@ -26,7 +27,9 @@ function query(
 	$query, # query to be tested
 	$count, # sample query result count
 	$queryText, # sample native query text
-	$expressionText # sample expression query text
+	$expressionText, # sample expression query text
+	$QError, # query error sample
+	$EError # expression error sample
 )
 {
 	# get and show query text
@@ -34,34 +37,62 @@ function query(
 	$queryText2 = $query.ToString()
 	$queryText2
 
-	# 1. test query count
-	$count2 = Get-MdbcData -Count $query
-	if ($count -ne $count2) {
-		Write-Error "`n Query count sample : $count`n Query count result : $count2"
+	# run query
+	$err = $null
+	try {
+		$count2 = Get-MdbcData -Count $query
+	}
+	catch {
+		if (!$QError) {Write-Error $_}
+		if ($_ -notlike $QError) {Write-Error "`n Query error sample : $QError`n Query error result : $_"}
+		$err = $_
+	}
+	if ($QError -and !$err) {Write-Error "Expected error on query."}
+
+	# test query
+	if (!$QError) {
+		# 1. test query count
+		if ($count -ne $count2) {
+			Write-Error "`n Query count sample : $count`n Query count result : $count2"
+		}
+
+		# 2. test query text
+		if ($queryText -cne $queryText2) {
+			Write-Error "`n Query text sample : $queryText`n Query text result : $queryText2"
+		}
 	}
 
-	# 2. test query text
-	if ($queryText -cne $queryText2) {
-		Write-Error "`n Query text sample : $queryText`n Query text result : $queryText2"
+	# run expression
+	$err = $null
+	try {
+		# get and show expression
+		$expression = [Mdbc.QueryCompiler]::GetExpression($query)
+		$expressionText2 = $expression.ToString()
+		if ($CLRVersion3) {$expressionText2 = $expressionText2.Replace(' = ', ' == ')}
+		$expressionText2
+
+		# run expression
+		$count2 = [int][Mdbc.QueryCompiler]::GetFunction($expression).Invoke($document)
 	}
-
-	# get and show expression
-	try { $expression = [Mdbc.QueryCompiler]::GetExpression($query) }
-	catch { Write-Error $_ }
-	$expressionText2 = $expression.ToString()
-	if ($CLRVersion3) {$expressionText2 = $expressionText2.Replace(' = ', ' == ')}
-	$expressionText2
-
-	# 1. test expression count
-	try { $count2 = [int][Mdbc.QueryCompiler]::GetFunction($expression).Invoke($document) }
-	catch { Write-Error $_ }
-	if ($count -ne $count2) {
-		Write-Error "`n Expression count sample : $count`n Expression count result : $count2"
+	catch {
+		if (!$EError) {Write-Error $_}
+		if ($_ -notlike $EError) {Write-Error "`n Expression error sample : $EError`n Expression error result : $_"}
+		$err = $_
 	}
+	if ($EError -and !$err) {Write-Error "Expected error on expression."}
 
-	# 2. test expression text
-	if ($expressionText -cne $expressionText2) {
-		Write-Error "`n Expression sample : $expressionText`n Expression result : $expressionText2"
+	# test expression
+	if (!$EError) {
+		# 1. test expression count
+		if ($count -ne $count2) {
+			Write-Error "`n Expression count sample : $count`n Expression count result : $count2"
+		}
+
+		# 2. test expression text
+		if ($expressionText -cne $expressionText2) {
+			if ($expressionText -ceq ($expressionText2 -replace '\bvalue\(.+?\)', '...')) {}
+			else { Write-Error "`n Expression sample : $expressionText`n Expression result : $expressionText2" }
+		}
 	}
 }
 
@@ -225,17 +256,41 @@ task Type {
 	query @{int=@{'$type'=16.0}} 1 '{ "int" : { "$type" : 16.0 } }' 'Type(data, "int", Int32)'
 	query @{int=@{'$type'=16L}} 1 '{ "int" : { "$type" : NumberLong(16) } }' 'Type(data, "int", Int32)'
 
-	Test-Error { Get-MdbcData @{int=@{'$type'=$null}} } '*type not supported*'
-	Test-Error { Get-MdbcData @{int=@{'$type'='16'}} } '*type not supported*'
+	query @{int=@{'$type'=$null}} -QError '*type not supported*' -EError '*$type argument must be number.*'
+	query @{int=@{'$type'='16'}} -QError '*type not supported*' -EError '*$type argument must be number.*'
 }
 
 task Mod {
+	# KO: argument is not array #bug assert https://jira.mongodb.org/browse/SERVER-11744
+	#query @{int=@{'$mod'=1}} -QError '*failed: exception: assertion d:\*' -EError '*$mod argument must be array.*'
+
+	# KO: divisor is 0
+	$mm = @{QError = "*exception: mod can't be 0*"; EError = '*$mod divisor cannot be 0.*'}
+	query @{int=@{'$mod'=@()}} @mm
+	query @{int=@{'$mod'=@(0,1)}} @mm
+	query @{int=@{'$mod'=@('bad',1)}} @mm
+
+	# 1 argument
+	query @{int=@{'$mod'=@(2)}} 1 '{ "int" : { "$mod" : [2] } }' 'Mod(data, "int", 2, 0)'
+
+	# 3 arguments
+	query @{int=@{'$mod'=@(2,0,1)}} 1 '{ "int" : { "$mod" : [2, 0, 1] } }' 'Mod(data, "int", 2, 0)'
+
+	# not numbers are treated as 0
+	query @{int=@{'$mod'=@(2,'bad')}} 1 '{ "int" : { "$mod" : [2, "bad"] } }' 'Mod(data, "int", 2, 0)'
+
+	# null, miss, text
 	query (New-MdbcQuery null -Mod 2, 0) 0 '{ "null" : { "$mod" : [2, 0] } }' 'Mod(data, "null", 2, 0)'
 	query (New-MdbcQuery miss -Mod 2, 0) 0 '{ "miss" : { "$mod" : [2, 0] } }' 'Mod(data, "miss", 2, 0)'
 	query (New-MdbcQuery text -Mod 2, 0) 0 '{ "text" : { "$mod" : [2, 0] } }' 'Mod(data, "text", 2, 0)'
 
+	# simple
 	query (New-MdbcQuery int -Mod 2, 0) 1 '{ "int" : { "$mod" : [2, 0] } }' 'Mod(data, "int", 2, 0)'
 	query (New-MdbcQuery int -Mod 2, 1) 0 '{ "int" : { "$mod" : [2, 1] } }' 'Mod(data, "int", 2, 1)'
+
+	# negative
+	query (New-MdbcQuery int -Mod -5, 2) 1 '{ "int" : { "$mod" : [-5, 2] } }' 'Mod(data, "int", -5, 2)'
+	query (New-MdbcQuery intn -Mod -5, -2) 1 '{ "intn" : { "$mod" : [-5, -2] } }' 'Mod(data, "intn", -5, -2)'
 
 	# long and double
 	query @{int=@{'$mod'=2L, 0}} 1 '{ "int" : { "$mod" : [NumberLong(2), 0] } }' 'Mod(data, "int", 2, 0)'
@@ -257,7 +312,7 @@ task Size {
 	query @{three=@{'$size'=3.0}} 1 '{ "three" : { "$size" : 3.0 } }' 'Size(data, "three", 3)'
 	query @{three=@{'$size'=3.14}} 0 '{ "three" : { "$size" : 3.14 } }' 'Size(data, "three", 3.14)'
 
-	# weird: Mongo treats non numbers as 0
+	# Mongo treats non numbers as 0
 	query @{empty=@{'$size'='text'}} 1 '{ "empty" : { "$size" : "text" } }' 'Size(data, "empty", 0)'
 	query @{three=@{'$size'='text'}} 0 '{ "three" : { "$size" : "text" } }' 'Size(data, "three", 0)'
 	query @{empty=@{'$size'=$date}} 1 '{ "empty" : { "$size" : ISODate("2000-01-01T00:00:00Z") } }' 'Size(data, "empty", 0)'
@@ -265,9 +320,9 @@ task Size {
 }
 
 task In {
-	# $in and $nin need arrays, so does Mdbc
-	Test-Error { Get-MdbcData @{int=@{'$in'=42}} } '*"invalid query"*'
-	Test-Error { Get-MdbcData @{int=@{'$nin'=42}} } '*"$nin needs an array"*'
+	# $in/$nin needs array
+	query @{int=@{'$in'=42}} -QError '*invalid query*' -EError '*$in/$nin argument must be array.*'
+	query @{int=@{'$nin'=42}} -QError '*$nin needs an array*' -EError '*$in/$nin argument must be array.*'
 
 	# $nin is just a negation of $in, so does Mdbc
 	assert ((New-MdbcQuery -Not (New-MdbcQuery x -In 1)).ToString() -eq '{ "x" : { "$nin" : [1] } }')
@@ -292,42 +347,80 @@ task In {
 
 	query (New-MdbcQuery int -In 33, 42.0) 1 '{ "int" : { "$in" : [33, 42.0] } }' 'In(data, "int", [33, 42])'
 	query (New-MdbcQuery int -NotIn 33, 42.0) 0 '{ "int" : { "$nin" : [33, 42.0] } }' 'Not(In(data, "int", [33, 42]))'
+
+	# regex for text
+	query (New-MdbcQuery text -In ([regex]'text')) 1 '{ "text" : { "$in" : [/text/] } }' 'In(data, "text", [/text/])'
+	query (New-MdbcQuery text -NotIn ([regex]'text')) 0 '{ "text" : { "$nin" : [/text/] } }' 'Not(In(data, "text", [/text/]))'
+
+	# regex for int
+	query (New-MdbcQuery int -In ([regex]'42')) 0 '{ "int" : { "$in" : [/42/] } }' 'In(data, "int", [/42/])'
+	query (New-MdbcQuery int -NotIn ([regex]'42')) 1 '{ "int" : { "$nin" : [/42/] } }' 'Not(In(data, "int", [/42/]))'
 }
 
 task All {
-	# $all needs arrays, so does Mdbc
-	Test-Error { Get-MdbcData @{three=@{'$all'=42}} } '*"$all requires array"*'
+	# $all needs array
+	query @{three=@{'$all'=42}} -QError '*$all requires array*' -EError '*$all argument must be array.*'
+
+	# $elemMatch needs document
+	query (New-MdbcQuery doc2 -All @(@{'$elemMatch'=1})) -QError '*expected an object ($elemMatch)*' -EError '*$all $elemMatch argument must be document.*'
 
 	# false if array is empty
-	query (New-MdbcQuery int -All @()) 0 '{ "int" : { "$all" : [] } }' 'All(data, "int", [])'
-	query (New-MdbcQuery miss -All @()) 0 '{ "miss" : { "$all" : [] } }' 'All(data, "miss", [])'
-	query (New-MdbcQuery empty -All @()) 0 '{ "empty" : { "$all" : [] } }' 'All(data, "empty", [])'
+	query (New-MdbcQuery int -All @()) 0 '{ "int" : { "$all" : [] } }' 'All(data, "int", ...)'
+	query (New-MdbcQuery miss -All @()) 0 '{ "miss" : { "$all" : [] } }' 'All(data, "miss", ...)'
+	query (New-MdbcQuery empty -All @()) 0 '{ "empty" : { "$all" : [] } }' 'All(data, "empty", ...)'
 
-	query (New-MdbcQuery int -All @(42.0, 42.0)) 1 '{ "int" : { "$all" : [42.0, 42.0] } }' 'All(data, "int", [42, 42])'
-	query (New-MdbcQuery int -All @(42.0, 42.0, 1)) 0 '{ "int" : { "$all" : [42.0, 42.0, 1] } }' 'All(data, "int", [42, 42, 1])'
+	query (New-MdbcQuery int -All @(42.0, 42.0)) 1 '{ "int" : { "$all" : [42.0, 42.0] } }' 'All(data, "int", ...)'
+	query (New-MdbcQuery int -All @(42.0, 42.0, 1)) 0 '{ "int" : { "$all" : [42.0, 42.0, 1] } }' 'All(data, "int", ...)'
 
-	query (New-MdbcQuery three -All @(1, 2)) 1 '{ "three" : { "$all" : [1, 2] } }' 'All(data, "three", [1, 2])'
-	query (New-MdbcQuery three -All @(1, 2, 4)) 0 '{ "three" : { "$all" : [1, 2, 4] } }' 'All(data, "three", [1, 2, 4])'
+	query (New-MdbcQuery three -All @(1, 2)) 1 '{ "three" : { "$all" : [1, 2] } }' 'All(data, "three", ...)'
+	query (New-MdbcQuery three -All @(1, 2, 4)) 0 '{ "three" : { "$all" : [1, 2, 4] } }' 'All(data, "three", ...)'
+
+	# regex
+	query (New-MdbcQuery text -All @(([regex]'text'))) 1 '{ "text" : { "$all" : [/text/] } }' 'All(data, "text", ...)'
+	query (New-MdbcQuery text -All @(([regex]'miss'))) 0 '{ "text" : { "$all" : [/miss/] } }' 'All(data, "text", ...)'
+
+	# objects
+	query (New-MdbcQuery doc2 -All @(@{x=1;y=2})) 1 '{ "doc2" : { "$all" : [{ "y" : 2, "x" : 1 }] } }' 'All(data, "doc2", ...)'
+	query (New-MdbcQuery doc2 -All @(@{x=2;y=1})) 0 '{ "doc2" : { "$all" : [{ "y" : 1, "x" : 2 }] } }' 'All(data, "doc2", ...)'
+
+	# $elemMatch
+
+	query (New-MdbcQuery doc2 -All @(@{'$elemMatch'=@{y=@{'$gt'=2}}})) 1 `
+	'{ "doc2" : { "$all" : [{ "$elemMatch" : { "y" : { "$gt" : 2 } } }] } }' 'All(data, "doc2", ...)'
+
+	#_131116_140311
+	$d = New-MdbcData; $d['$elemMatch'] = @{y=@{'$gt'=2}}; $d.bad = 1
+	query (New-MdbcQuery doc2 -All @($d)) 1 '{ "doc2" : { "$all" : [{ "$elemMatch" : { "y" : { "$gt" : 2 } }, "bad" : 1 }] } }' 'All(data, "doc2", ...)'
 }
 
 task ElemMatch {
+	query @{doc1=@{'$elemMatch'=1}} -QError '*expected an object ($elemMatch)*' -EError '*$elemMatch argument must be document.*'
+
 	query (New-MdbcQuery doc1 -ElemMatch (New-MdbcQuery -And @{x=1}, @{y=2})) 0 `
-	'{ "doc1" : { "$elemMatch" : { "x" : 1, "y" : 2 } } }' 'ElemMatch(data, "doc1", value(System.Func`2[MongoDB.Bson.BsonDocument,System.Boolean]))'
+	'{ "doc1" : { "$elemMatch" : { "x" : 1, "y" : 2 } } }' 'ElemMatch(data, "doc1", ...)'
 
 	query (New-MdbcQuery doc2 -ElemMatch (New-MdbcQuery -And @{x=1}, @{y=2})) 1 `
-	'{ "doc2" : { "$elemMatch" : { "x" : 1, "y" : 2 } } }' 'ElemMatch(data, "doc2", value(System.Func`2[MongoDB.Bson.BsonDocument,System.Boolean]))'
+	'{ "doc2" : { "$elemMatch" : { "x" : 1, "y" : 2 } } }' 'ElemMatch(data, "doc2", ...)'
 
 	query (New-MdbcQuery doc2 -ElemMatch (New-MdbcQuery -And @{x=1}, @{y=3})) 0 `
-	'{ "doc2" : { "$elemMatch" : { "x" : 1, "y" : 3 } } }' 'ElemMatch(data, "doc2", value(System.Func`2[MongoDB.Bson.BsonDocument,System.Boolean]))'
+	'{ "doc2" : { "$elemMatch" : { "x" : 1, "y" : 3 } } }' 'ElemMatch(data, "doc2", ...)'
 }
 
 task Not {
+	query @{int=@{'$not'=1}} -QError '*invalid use of $not*' -EError '*Invalid form of $not.*'
+
+	query @{text=@{'$not'=[regex]'miss'}} 1 '{ "text" : { "$not" : /miss/ } }' 'Not(Matches(data, "text", miss))'
+	query @{text=@{'$not'=[regex]'text'}} 0 '{ "text" : { "$not" : /text/ } }' 'Not(Matches(data, "text", text))'
+
 	query @{int=@{'$not'=@{'$gt'=99}}} 1 '{ "int" : { "$not" : { "$gt" : 99 } } }' 'Not(GT(data, "int", 99))'
 	query @{int=@{'$not'=@{'$lt'=99}}} 0 '{ "int" : { "$not" : { "$lt" : 99 } } }' 'Not(LT(data, "int", 99))'
 
 	query @{miss=@{'$not'=@{'$gt'=99}}} 1 '{ "miss" : { "$not" : { "$gt" : 99 } } }' 'Not(GT(data, "miss", 99))'
 	query @{miss=@{'$not'=@{'$exists'=1}}} 1 '{ "miss" : { "$not" : { "$exists" : 1 } } }' 'Not((data.Contains("miss") == True))'
 	query @{miss=@{'$not'=@{'$exists'=0}}} 0 '{ "miss" : { "$not" : { "$exists" : 0 } } }' 'Not((data.Contains("miss") == False))'
+
+	$$ = New-MdbcData; $$['$gt'] = 99; $$['$gte'] = 99
+	query @{int=@{'$not'=$$}} 1 '{ "int" : { "$not" : { "$gt" : 99, "$gte" : 99 } } }' 'Not((GT(data, "int", 99) And GTE(data, "int", 99)))'
 }
 
 task Empty {

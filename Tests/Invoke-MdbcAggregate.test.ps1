@@ -4,7 +4,7 @@ Import-Module Mdbc
 
 task Invalid {
 	Test-Error { Invoke-MdbcAggregate $null } "*'Operation' because it is null.*"
-	Test-Error { Invoke-MdbcAggregate -Operation bad } '*Cannot convert System.String to BsonDocument.*'
+	Test-Error { Invoke-MdbcAggregate -Operation bad } '*Cannot convert System.String to a document.*'
 }
 
 #_131016_142302 see help example

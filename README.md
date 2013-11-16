@@ -8,7 +8,7 @@ features like bson file collections which do not require MongoDB installed.
 
 ## Quick Start
 
-**Step 1:** Get and install Mdbc.
+**Step 1:** Get and install.
 Mdbc is distributed as the NuGet package [Mdbc](https://www.nuget.org/packages/Mdbc).
 Download it to the current location as the directory *"Mdbc"* by this PowerShell command:
 
