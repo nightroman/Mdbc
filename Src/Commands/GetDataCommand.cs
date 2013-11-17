@@ -27,7 +27,6 @@ namespace Mdbc.Commands
 		const string nsAll = "All";
 		const string nsDistinct = "Distinct";
 		const string nsCount = "Count";
-		const string nsCursor = "Cursor";
 		const string nsRemove = "Remove";
 		const string nsUpdate = "Update";
 
@@ -56,41 +55,34 @@ namespace Mdbc.Commands
 
 		[Parameter(ParameterSetName = nsAll)]
 		[Parameter(ParameterSetName = nsCount)]
-		[Parameter(ParameterSetName = nsCursor)]
 		[Parameter(ParameterSetName = nsRemove)]
 		[Parameter(ParameterSetName = nsUpdate)]
 		public QueryFlags Modes { get; set; }
 
 		[Parameter(ParameterSetName = nsAll)]
 		[Parameter(ParameterSetName = nsCount)]
-		[Parameter(ParameterSetName = nsCursor)]
 		public int First { get; set; }
 
 		[Parameter(ParameterSetName = nsAll)]
 		[Parameter(ParameterSetName = nsCount)]
-		[Parameter(ParameterSetName = nsCursor)]
 		public int Last { get; set; }
 
 		[Parameter(ParameterSetName = nsAll)]
 		[Parameter(ParameterSetName = nsCount)]
-		[Parameter(ParameterSetName = nsCursor)]
 		public int Skip { get; set; }
 
 		[Parameter(ParameterSetName = nsAll)]
-		[Parameter(ParameterSetName = nsCursor)]
 		[Parameter(ParameterSetName = nsUpdate)]
 		public object[] Property { get { return null; } set { _Fields = Actor.ObjectsToFields(value); } }
 		IMongoFields _Fields;
 
 		[Parameter(ParameterSetName = nsAll)]
-		[Parameter(ParameterSetName = nsCursor)]
 		[Parameter(ParameterSetName = nsRemove)]
 		[Parameter(ParameterSetName = nsUpdate)]
 		public object[] SortBy { get { return null; } set { _SortBy = Actor.ObjectsToSortBy(value); } }
 		IMongoSortBy _SortBy;
 
 		[Parameter(ParameterSetName = nsAll)]
-		[Parameter(ParameterSetName = nsCursor)]
 		[Parameter(ParameterSetName = nsRemove)]
 		[Parameter(ParameterSetName = nsUpdate)]
 		public PSObject As { get { return null; } set { _ParameterAs_ = new ParameterAs(value); } }
