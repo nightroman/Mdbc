@@ -89,6 +89,9 @@ namespace Mdbc.Commands
 		Type DocumentType { get { return _ParameterAs_ == null ? typeof(Dictionary) : _ParameterAs_.Type; } }
 		ParameterAs _ParameterAs_;
 
+		[Parameter(ParameterSetName = nsUpdate)]
+		public string ResultVariable { get; set; }
+
 		void DoDistinct()
 		{
 			foreach (var it in TargetCollection.Distinct(Distinct, _Query))
@@ -102,9 +105,12 @@ namespace Mdbc.Commands
 		}
 		void DoUpdate()
 		{
-			var document = TargetCollection.FindAndModifyAs(DocumentType, _Query, _SortBy, _Update, _Fields, New, Add);
+			UpdateResult result;
+			var document = TargetCollection.FindAndModifyAs(DocumentType, _Query, _SortBy, _Update, _Fields, New, Add, out result);
 			if (document != null)
 				WriteObject(document);
+			if (ResultVariable != null)
+				SessionState.PSVariable.Set(ResultVariable, result);
 		}
 		bool DoLast()
 		{

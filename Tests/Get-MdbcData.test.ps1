@@ -237,17 +237,73 @@ task Upsert {
 		$r = Get-MdbcData $query -Update $update -Add
 		assert (!$r)
 		$r = Get-MdbcData
-		assert ($r.x = 42)
-		assert ($r._id = 'miss')
+		assert ($r.x -eq 42)
+		assert ($r._id -eq 'miss')
 
 		# -Update -Add -New
 		. $$
 		$r = Get-MdbcData $query -Update $update -Add -New
 		assert ($r.x = 42)
-		assert ($r._id = 'miss')
+		assert ($r._id -eq 'miss')
 		$r = Get-MdbcData
 		assert ($r.x = 42)
-		assert ($r._id = 'miss')
+		assert ($r._id -eq 'miss')
+	}{
+		$$ = { Connect-Mdbc -NewCollection }
+	}{
+		$$ = { Open-MdbcFile }
+	}
+}
+
+task UpdateResult {
+	$query = New-MdbcQuery _id 1
+	$update = New-MdbcUpdate -Set @{x=42}
+	Invoke-Test {
+		# update missing
+		. $$
+		$d = Get-MdbcData $query -Update $update -ResultVariable r
+		assert (!$d)
+		assert ((Get-MdbcData -Count) -eq 0)
+		assert ($r.DocumentsAffected -eq 0)
+		assert ($r.UpdatedExisting -eq 0)
+
+		# update existing, get old
+		. $$
+		@{_id = 1; x = 1} | Add-MdbcData
+		$d = Get-MdbcData $query -Update $update -ResultVariable r
+		assert ("$d" -ceq '{ "_id" : 1, "x" : 1 }')
+		$d = Get-MdbcData
+		assert ("$d" -ceq '{ "_id" : 1, "x" : 42 }')
+		assert ($r.DocumentsAffected -eq 1)
+		assert ($r.UpdatedExisting -eq 1)
+
+		# update existing, get new
+		. $$
+		@{_id = 1; x = 1} | Add-MdbcData
+		$d = Get-MdbcData $query -Update $update -New -ResultVariable r
+		assert ("$d" -ceq '{ "_id" : 1, "x" : 42 }')
+		$d = Get-MdbcData
+		assert ("$d" -ceq '{ "_id" : 1, "x" : 42 }')
+		assert ($r.DocumentsAffected -eq 1)
+		assert ($r.UpdatedExisting -eq 1)
+
+		# upsert missing, get old
+		. $$
+		$d = Get-MdbcData $query -Update $update -Add -ResultVariable r
+		assert (!$d)
+		$d = Get-MdbcData
+		assert ("$d" -eq '{ "_id" : 1, "x" : 42 }')
+		assert ($r.DocumentsAffected -eq 1)
+		assert ($r.UpdatedExisting -eq 0)
+
+		# upsert missing, get new
+		. $$
+		$d = Get-MdbcData $query -Update $update -Add -New -ResultVariable r
+		assert ("$d" -eq '{ "_id" : 1, "x" : 42 }')
+		$d = Get-MdbcData
+		assert ("$d" -eq '{ "_id" : 1, "x" : 42 }')
+		assert ($r.DocumentsAffected -eq 1)
+		assert ($r.UpdatedExisting -eq 0)
 	}{
 		$$ = { Connect-Mdbc -NewCollection }
 	}{

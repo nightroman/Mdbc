@@ -853,6 +853,10 @@ Specifies the number of documents to skip from the beginning or from the end if
 Last is specified. Skipping is applied to results before taking First or Last.
 Non positive values are ignored.
 '@
+		ResultVariable = @'
+Tells to store the update result as a variable with the specified name. The
+result object properties: DocumentsAffected (long), UpdatedExisting (bool).
+'@
 	}
 	inputs = @()
 	outputs = @(

@@ -29,7 +29,7 @@ namespace Mdbc
 		long Count(IMongoQuery query, int skip, int first);
 		IEnumerable<BsonValue> Distinct(string key, IMongoQuery query);
 		IEnumerable<object> FindAs(Type documentType, IMongoQuery query, QueryFlags modes, IMongoSortBy sortBy, int skip, int first, IMongoFields fields);
-		object FindAndModifyAs(Type documentType, IMongoQuery query, IMongoSortBy sortBy, IMongoUpdate update, IMongoFields fields, bool returnNew, bool upsert);
+		object FindAndModifyAs(Type documentType, IMongoQuery query, IMongoSortBy sortBy, IMongoUpdate update, IMongoFields fields, bool returnNew, bool upsert, out UpdateResult result);
 		object FindAndRemoveAs(Type documentType, IMongoQuery query, IMongoSortBy sortBy);
 		WriteConcernResult Insert(BsonDocument document, WriteConcern writeConcern, bool needResult);
 		WriteConcernResult Save(BsonDocument document, WriteConcern writeConcern, bool needResult);
@@ -93,9 +93,11 @@ namespace Mdbc
 			foreach (var it in cursor)
 				yield return it;
 		}
-		public object FindAndModifyAs(Type documentType, IMongoQuery query, IMongoSortBy sortBy, IMongoUpdate update, IMongoFields fields, bool returnNew, bool upsert)
+		public object FindAndModifyAs(Type documentType, IMongoQuery query, IMongoSortBy sortBy, IMongoUpdate update, IMongoFields fields, bool returnNew, bool upsert, out UpdateResult result)
 		{
-			return _this.FindAndModify(query, sortBy, update, fields, returnNew, upsert).GetModifiedDocumentAs(documentType);
+			var r = _this.FindAndModify(query, sortBy, update, fields, returnNew, upsert);
+			result = new FindAndModifyUpdateResult(r);
+			return r.GetModifiedDocumentAs(documentType);
 		}
 		public object FindAndRemoveAs(Type documentType, IMongoQuery query, IMongoSortBy sortBy)
 		{
@@ -116,6 +118,61 @@ namespace Mdbc
 		public WriteConcernResult Update(IMongoQuery query, IMongoUpdate update, UpdateFlags flags, WriteConcern writeConcern, bool needResult)
 		{
 			return _this.Update(query, update, flags, writeConcern);
+		}
+	}
+	abstract class UpdateResult
+	{
+		public abstract long DocumentsAffected { get; }
+		public abstract bool UpdatedExisting { get; }
+	}
+	class SimpleUpdateResult : UpdateResult
+	{
+		readonly long _DocumentsAffected;
+		readonly bool _UpdatedExisting;
+		public SimpleUpdateResult(long documentsAffected, bool updatedExisting)
+		{
+			_DocumentsAffected = documentsAffected;
+			_UpdatedExisting = updatedExisting;
+		}
+		public override long DocumentsAffected
+		{
+			get { return _DocumentsAffected; }
+		}
+		public override bool UpdatedExisting
+		{
+			get { return _UpdatedExisting; }
+		}
+	}
+	class FindAndModifyUpdateResult : UpdateResult
+	{
+		readonly FindAndModifyResult Result;
+		public FindAndModifyUpdateResult(FindAndModifyResult result)
+		{
+			Result = result;
+		}
+		public override long DocumentsAffected
+		{
+			get
+			{
+				BsonValue v;
+				if (!Result.Response.TryGetValue("lastErrorObject", out v))
+					return 0;
+				if (!v.AsBsonDocument.TryGetValue("n", out v))
+					return 0;
+				return v.ToInt64();
+			}
+		}
+		public override bool UpdatedExisting
+		{
+			get
+			{
+				BsonValue v;
+				if (!Result.Response.TryGetValue("lastErrorObject", out v))
+					return false;
+				if (!v.AsBsonDocument.TryGetValue("updatedExisting", out v))
+					return false;
+				return v.ToBoolean();
+			}
 		}
 	}
 }

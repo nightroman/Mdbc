@@ -1,6 +1,12 @@
 Mdbc Release Notes
 ==================
 
+## v4.4.0
+
+`Get-MdbcData`
+
+New parameter `ResultVariable`.
+
 ## v4.3.1
 
 File collection queries:

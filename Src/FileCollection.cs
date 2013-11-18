@@ -41,8 +41,8 @@ namespace Mdbc
 			if (!document.TryGetValue(MyValue.Id, out id))
 				id = document.EnsureId();
 			else if (id.BsonType == BsonType.Array)
-				throw new InvalidOperationException("_id cannot be an array."); 
-			
+				throw new InvalidOperationException("_id cannot be an array.");
+
 			// try to add
 			try
 			{
@@ -198,43 +198,46 @@ namespace Mdbc
 			var project = FieldCompiler.GetFunction(fields);
 			return iter.Select(project).Select(x => BsonSerializer.Deserialize(x, documentType));
 		}
-		public object FindAndModifyAs(Type documentType, IMongoQuery query, IMongoSortBy sortBy, IMongoUpdate update, IMongoFields fields, bool returnNew, bool upsert)
+		public object FindAndModifyAs(Type documentType, IMongoQuery query, IMongoSortBy sortBy, IMongoUpdate update, IMongoFields fields, bool returnNew, bool upsert, out UpdateResult result)
 		{
 			foreach (var document in QueryCompiler.Query(Documents, query, sortBy, 0, 0))
 			{
 				// if old is needed then deep(!) clone before update //_131103_185751
-				BsonDocument result = null;
+				BsonDocument output = null;
 				if (!returnNew)
-					result = document.DeepClone().AsBsonDocument;
+					output = document.DeepClone().AsBsonDocument;
 
 				UpdateDocument(document, UpdateCompiler.GetFunction(update, null, false));
 
 				if (returnNew)
-					result = document;
+					output = document;
 
 				// project
 				if (fields != null)
 				{
 					var project = FieldCompiler.GetFunction(fields);
-					result = project(result);
+					output = project(output);
 				}
 
 				// if old is needed then return it as already deep cloned
+				result = new SimpleUpdateResult(1, true);
 				if (!returnNew && documentType == typeof(Dictionary))
-					return new Dictionary(result);
-				
-				// deserialize to required type
-				return BsonSerializer.Deserialize(result, documentType);
+					return new Dictionary(output);
+				else
+					// deserialize to required type
+					return BsonSerializer.Deserialize(output, documentType);
 			}
 
 			// not found, insert
 			if (upsert)
 			{
 				var document = InsertNewDocument(query, update);
-				if (returnNew)
-					return BsonSerializer.Deserialize(document, documentType);
+				
+				result = new SimpleUpdateResult(1, false);
+				return returnNew ? BsonSerializer.Deserialize(document, documentType) : null;
 			}
-
+			
+			result = new SimpleUpdateResult(0, false);
 			return null;
 		}
 		public object FindAndRemoveAs(Type documentType, IMongoQuery query, IMongoSortBy sortBy)
