@@ -61,7 +61,7 @@ task Basics {
 	Connect-Mdbc -NewCollection
 	assert ($collection.Count() -eq 0)
 	Set-Alias mongorestore ([IO.Path]::GetDirectoryName((Get-Process mongod).Path) + '\mongorestore.exe')
-	exec {mongorestore -d test -c test test2.bson}
+	exec { $ErrorActionPreference = 0; mongorestore -d test -c test test2.bson }
 	$data2 = Get-MdbcData
 	Test-Dictionary3 $data1 $data2
 

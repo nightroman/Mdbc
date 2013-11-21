@@ -5,17 +5,88 @@
 #>
 
 Import-Module Mdbc
-Set-StrictMode -Version 2
+Set-StrictMode -Version Latest
 
 task Update-MongoFiles {
-	# add alien data
+	# init
 	Connect-Mdbc -NewCollection
-	@{Name = 'alien'} | Add-MdbcData
-	assert (1 -eq (Get-MdbcData (New-MdbcQuery Name alien) -Count))
+	$log = $Database.GetCollection('test_log')
+	$null = $log.Drop()
+	Remove-Item [z] -Force -Recurse
 
-	# update files
-	Update-MongoFiles .. -CollectionName test
-	assert (0 -eq (Get-MdbcData (New-MdbcQuery Name alien) -Count))
+	# add alien data
+	@{Name = 'alien'} | Add-MdbcData
+	assert ((Get-MdbcData -Count (New-MdbcQuery Name alien)) -eq 1)
+
+	# update files, no log
+	$r = Update-MongoFiles .. -CollectionName test
+	assert ($r.Path -like '*\Mdbc')
+	assert ($r.Created -gt 100)
+	assert ($r.Changed -eq 0)
+	assert ($r.Removed -eq 1)
+	assert ((Get-MdbcData -Count (New-MdbcQuery Name alien)) -eq 0)
+	assert ((Get-MdbcData -Count) -eq $r.Created)
+
+	# new directory and file
+	$null = mkdir z
+	1 > z\z.txt
+
+	# update
+	$r = Update-MongoFiles . -CollectionName test -Log
+	assert ($r.Created -eq 2)
+	assert ($r.Changed -eq 0)
+	assert ($r.Removed -eq 0)
+
+	assert ((Get-MdbcData -Count -Collection $log) -eq 2)
+	$1, $2 = Get-MdbcData -Collection $log
+
+	assert ($1._id -like '*\Tests\z')
+	assert ($1.Log.Count -eq 1)
+	assert ($1.Log[0].Op -eq 0)
+
+	assert ($2._id -like '*\Tests\z\z.txt')
+	assert ($2.Log.Count -eq 1)
+	assert ($2.Log[0].Op -eq 0)
+
+	# change file
+	1 >> z\z.txt
+
+	# update
+	$r = Update-MongoFiles . -CollectionName test -Log
+	assert ($r.Created -eq 0)
+	assert ($r.Changed -eq 1)
+	assert ($r.Removed -eq 0)
+
+	assert ((Get-MdbcData -Count -Collection $log) -eq 2)
+	$1, $2 = Get-MdbcData -Collection $log
+
+	assert ($1._id -like '*\Tests\z')
+	assert ($1.Log.Count -eq 1)
+	assert ($1.Log[0].Op -eq 0)
+
+	assert ($2._id -like '*\Tests\z\z.txt')
+	assert ($2.Log.Count -eq 2)
+	assert ($2.Log[1].Op -eq 1)
+
+	# remove directory and file
+	Remove-Item [z] -Force -Recurse
+
+	# update
+	$r = Update-MongoFiles . -CollectionName test -Log
+	assert ($r.Created -eq 0)
+	assert ($r.Changed -eq 0)
+	assert ($r.Removed -eq 2)
+
+	assert ((Get-MdbcData -Count -Collection $log) -eq 2)
+	$1, $2 = Get-MdbcData -Collection $log
+
+	assert ($1._id -like '*\Tests\z')
+	assert ($1.Log.Count -eq 2)
+	assert ($1.Log[1].Op -eq 2)
+
+	assert ($2._id -like '*\Tests\z\z.txt')
+	assert ($2.Log.Count -eq 3)
+	assert ($2.Log[2].Op -eq 2)
 }
 
 task Get-MongoFile Update-MongoFiles, {

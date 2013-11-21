@@ -6,7 +6,7 @@
 
 . .\Zoo.ps1
 Import-Module Mdbc
-Set-StrictMode -Version 2
+Set-StrictMode -Version Latest
 Connect-Mdbc
 
 task BsonValueError {

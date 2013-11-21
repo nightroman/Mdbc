@@ -2,6 +2,60 @@
 . .\Zoo.ps1
 Import-Module Mdbc
 
+task BadId {
+	$d = @{_id = 1,2}
+	Invoke-Test {
+		Test-Error { $d | Add-MdbcData } '*_id cannot be an array*'
+	}{
+		Connect-Mdbc -NewCollection
+	}{
+		Open-MdbcFile
+	}
+}
+
+#_131119_113717
+task Duplicate {
+	Invoke-Test {
+		# true is not 1
+		@{_id=1}, @{_id=$true} | Add-MdbcData
+
+		# same 2 and 2L
+		Test-Error { @{_id=2}, @{_id=2L} | Add-MdbcData } '*duplicate*'
+
+		# same 3 and 3.0
+		Test-Error { @{_id=3}, @{_id=3.0} | Add-MdbcData } '*duplicate*'
+
+		# same documents
+		Test-Error { @{_id=@{y=4}}, @{_id=@{y=4.0}} | Add-MdbcData } '*duplicate*'
+	}{
+		Connect-Mdbc -NewCollection
+	}{
+		Open-MdbcFile
+	}
+}
+
+task ErrorTargetObject {
+	Invoke-Test {
+		# add and get result
+		@{_id=1; x=1}, @{_id=1; x=2} | Add-MdbcData -ErrorAction 0 -ErrorVariable e
+		$r = Get-MdbcData
+		assert ("$r" -ceq '{ "_id" : 1, "x" : 1 }')
+		assert ($e -like $131111_121454) $e
+		if ($PSVersionTable.PSVersion.Major -le 2) {
+			assert ($null -eq $e.TargetObject)
+		}
+		else {
+			assert ($e.TargetObject.x -eq 2)
+		}
+	}{
+		Connect-Mdbc -NewCollection
+		$131111_121454 = '*E11000 duplicate key error index: test.test.$_id_  dup key: { : 1 }*'
+	}{
+		Open-MdbcFile
+		$131111_121454 = 'Duplicate _id 1.'
+	}
+}
+
 task WithSameIdAndWithUpdate {
 	Invoke-Test {
 		# New document
@@ -53,37 +107,6 @@ task WithSameIdAndWithUpdate {
 	}
 }
 
-task ErrorAddSameId {
-	# two objects with same _id
-	$d1 = @{_id = 1; Name = 'name1'}
-	$d2 = @{_id = 1; Name = 'name2'}
-	Invoke-Test {
-		# add and get result
-		$d1, $d2 | Add-MdbcData -ErrorAction 0 -ErrorVariable e
-		$r = Get-MdbcData
-		assert ($e -like $131111_121454) $e
-		assert ($PSVersionTable.PSVersion.Major -le 2 -or $e.TargetObject -eq $d2)
-		Test-Table $d1 $r
-	}{
-		Connect-Mdbc -NewCollection
-		$131111_121454 = '*E11000 duplicate key error index: test.test.$_id_  dup key: { : 1 }*'
-	}{
-		Open-MdbcFile
-		$131111_121454 = 'Document with _id 1 already exists.'
-	}
-}
-
-task ErrorIdCannotBeAnArray {
-	$d = @{_id = 1,2}
-	Invoke-Test {
-		Test-Error { $d | Add-MdbcData } '*_id cannot be an array*'
-	}{
-		Connect-Mdbc -NewCollection
-	}{
-		Open-MdbcFile
-	}
-}
-
 task WriteConcernResult {
 	Invoke-Test {
 		@{_id=1; x=1}, @{_id=2; x=2} | Add-MdbcData
@@ -95,9 +118,8 @@ task WriteConcernResult {
 		assert (!$r.UpdatedExisting)
 		assert ($null -eq $r.ErrorMessage)
 		assert ($r.Ok)
-		$m = if ('test.test' -eq "$Collection") {'*dup key*'} else {'*already exists*'}
-		assert ($r.LastErrorMessage -like $m)
-		assert ($e -like $m)
+		assert ($r.LastErrorMessage -like '*duplicate*')
+		assert ($e -like '*duplicate*')
 
 		# 1 added, 1 result
 		$r = @{_id=3; x=3} | Add-MdbcData -Result

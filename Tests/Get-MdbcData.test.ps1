@@ -78,6 +78,25 @@ task Cursor {
 	assert ($set[-1]._id -eq 10)
 }
 
+#_131119_113717
+task Distinct {
+	$data = @(
+		@{x=1}, @{x=1}, @{x=$true} # same 1, true is not 1
+		@{x=2}, @{x=2.0}, @{x=2L}  # different types of the same 2
+		@{x=@{y=3}}, @{x=@{y=3.0}} # same objects with some differences
+	)
+	Invoke-Test {
+		$data | Add-MdbcData
+		$r = Get-MdbcData -Distinct x
+		"$r"
+		assert ("$r" -ceq '1 True 2 { "y" : 3 }')
+	}{
+		Connect-Mdbc -NewCollection
+	}{
+		Open-MdbcFile
+	}
+}
+
 task Remove {
 	Invoke-Test {
 		# add documents

@@ -57,6 +57,16 @@ task Clean RemoveMarkdownHtml, {
 	Remove-Item z, Src\bin, Src\obj, Module\Mdbc.dll, *.nupkg -Force -Recurse -ErrorAction 0
 }
 
+# Remove test.test* collections
+task CleanTest {
+	Import-Module Mdbc
+	foreach($Collection in Connect-Mdbc . test *) {
+		if ($Collection.Name -like 'test*') {
+			$null = $Collection.Drop()
+		}
+	}
+}
+
 # Copy files to the module directory.
 # It is called as the post-build event of Mdbc.csproj.
 task PostBuild {
@@ -197,9 +207,10 @@ task CheckFiles {
 # Call tests.
 task Test {
 	Invoke-Build ** Tests -Result result
-	$testCount = 136
+	$testCount = 138
 	if ($testCount -ne $result.Tasks.Count) {Write-Warning "Unexpected test count:`n Sample : $testCount`n Result : $($result.Tasks.Count)"}
-}
+},
+CleanTest
 
 # Build, test and clean all.
 task . Rebuild, TestHelp, Test, Clean, CheckFiles

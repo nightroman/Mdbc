@@ -132,18 +132,12 @@ namespace Mdbc
 			}
 		}
 	}
-	class BsonValueEqualityComparer : IEqualityComparer<BsonValue>
+	//! Forces CompareTo because GetHashCode is not consistens with CompareTo
+	class BsonValueCompareToEqualityComparer : IEqualityComparer<BsonValue>
 	{
 		public int GetHashCode(BsonValue obj)
 		{
-			if (obj == null) return 0;
-			switch (obj.BsonType)
-			{
-				case BsonType.Int32: return ((double)obj.AsInt32).GetHashCode();
-				case BsonType.Int64: return ((double)obj.AsInt64).GetHashCode();
-				case BsonType.Double: return obj.AsDouble.GetHashCode();
-				default: return obj.GetHashCode();
-			}
+			return 0;
 		}
 		public bool Equals(BsonValue x, BsonValue y)
 		{

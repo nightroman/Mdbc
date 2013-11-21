@@ -443,10 +443,45 @@ namespace Mdbc
 		{
 			return sortBy as BsonDocument ?? ((SortByBuilder)sortBy).ToBsonDocument();
 		}
-		internal static IEnumerable<BsonDocument> Query(IEnumerable<BsonDocument> documents, IMongoQuery query, IMongoSortBy sortBy, int skip, int first)
+		static IEnumerable<BsonDocument> OptimisedDocuments(IDictionary<BsonValue, BsonDocument> dictionary, BsonValue idSelector)
 		{
+			BsonDocument document;
+
+			switch (idSelector.BsonType)
+			{
+				case BsonType.RegularExpression:
+					var regex = idSelector.AsRegex;
+					return dictionary.Keys.Where(x => x.BsonType == BsonType.String && regex.IsMatch(x.AsString)).Select(x => dictionary[x]);
+				case BsonType.Document:
+					document = idSelector.AsBsonDocument;
+					if (document.ElementCount > 0)
+					{
+						var name = document.GetElement(0).Name;
+						if (name[0] == '$' && name != "$ref")
+							return dictionary.Values;
+					}
+					break;
+			}
+
+			if (dictionary.TryGetValue(idSelector, out document))
+				return new BsonDocument[] { document };
+
+			return null;
+		}
+		internal static IEnumerable<BsonDocument> Query(IEnumerable<BsonDocument> documents, IDictionary<BsonValue, BsonDocument> dictionary, IMongoQuery query, IMongoSortBy sortBy, int skip, int first)
+		{
+			var queryDocument = (BsonDocument)query;
+
+			BsonValue idSelector;
+			if (dictionary != null && queryDocument != null && queryDocument.TryGetValue(MyValue.Id, out idSelector))
+			{
+				documents = OptimisedDocuments(dictionary, idSelector);
+				if (documents == null)
+					return new BsonDocument[] { };
+			}
+
 			var queryableData = documents.AsQueryable<BsonDocument>();
-			var predicateBody = GetExpression((BsonDocument)query);
+			var predicateBody = GetExpression(queryDocument);
 
 			var expression = Expression.Call(
 				typeof(Queryable),

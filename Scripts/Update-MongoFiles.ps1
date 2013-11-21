@@ -4,38 +4,49 @@
 	Updates the file system snapshot database.
 
 .Description
-	Server: local, database: test, collection: files (by default)
-
-	Required modules:
-	* Mdbc: <https://github.com/nightroman/Mdbc>
-	* SplitPipeline: <https://github.com/nightroman/SplitPipeline> is needed
-	if the switch -Split is used
+	Server: local, database: test, collections: files, files_log
+	Module: Mdbc <https://github.com/nightroman/Mdbc>
 
 	The script scans the specified directory tree, updates file and directory
 	documents, and then removes orphan documents which have not been updated.
-	This is rather a toy for making a data collection for experiments.
+	Changes are optionally logged in another collection.
 
-	Fields reflect some [FileInfo] and [DirectoryInfo] properties:
-	* _id : String : FullName property
-	* Name : String
-	* Extension : String
-	* Updated : DateTime : document update time
-	* CreationTime : DateTime
-	* LastWriteTime : DateTime
-	* Attributes : Int32 : Attributes converted to Int32
-	* Length : Int64 : exists for files only
+	Collection "files"
+		* _id           : full item path
+		* Attributes    : file system flags
+		* Length        : file length
+		* LastWriteTime : last write time
+		* CreationTime  : creation time
+		* Name          : item name
+		* Extension     : file extension
+		* Updated       : last update time
+
+	Collection "files_log"
+		* _id           : full item path
+		* Updated       : last update time
+		* Log           : array of item snapshots
+		* Op            : 0: created, 1: changed, 2: removed
 
 .Parameter Path
-		The directory path which contents has to be updated in the test.test
-		collection. Note that for paths like C:\ it may take several minutes.
-
+		Specifies the directory to be processed.
 .Parameter CollectionName
-		Specifies the collection name. Default: files.
-
+		Specifies the collection name. Default: files (implies files_log).
+.Parameter Log
+		Tells to log created, changed, and removed items to files_log.
 .Parameter Split
-		Tells to perform parallel data processing using Split-Pipeline from the
-		SplitPipeline module. Processing of massive data is typical for tasks
-		related to databases and Split-Pipeline may improve performance.
+		Tells to perform parallel data processing using Split-Pipeline.
+		Module: SplitPipeline <https://github.com/nightroman/SplitPipeline>
+
+.Inputs
+	None. Use the parameters to specify input.
+
+.Outputs
+	The result object with statistics
+		* Path    : the input path
+		* Created : count of created
+		* Changed : count of changed
+		* Removed : count of removed
+		* Elapsed : elapsed time span
 
 .Link
 	Get-MongoFile.ps1
@@ -43,79 +54,135 @@
 
 param
 (
-	[Parameter(Position=0)]$Path = '.',
-	$CollectionName = 'files',
+	[Parameter(Position=0)][string]$Path = '.',
+	[string]$CollectionName = 'files',
+	[switch]$Log,
 	[switch]$Split
 )
 
+$ErrorActionPreference = 'Stop'
 Set-StrictMode -Version 2
-$Updated = [DateTime]::Now
+$Now = [DateTime]::Now
 
-# Resolves exact case sensitive paths
-function Resolve-ExactCasePath($Path) {
+# Resolves exact case paths.
+function Resolve($Path) {
 	$directory = [IO.DirectoryInfo]$Path
 	if ($directory.Parent) {
-		Join-Path (Resolve-ExactCasePath $directory.Parent.FullName) $directory.Parent.GetFileSystemInfos($directory.Name)[0].Name
+		Join-Path (Resolve $directory.Parent.FullName) $directory.Parent.GetFileSystemInfos($directory.Name)[0].Name
 	}
 	else {
 		$directory.Name.ToUpper()
 	}
 }
-$Path = Resolve-ExactCasePath ($PSCmdlet.GetUnresolvedProviderPathFromPSPath($Path))
-if (!$Path.EndsWith('\')) {
-	$Path += '\'
+$Path = Resolve ($PSCmdlet.GetUnresolvedProviderPathFromPSPath($Path))
+Write-Host "Updating data for $Path ..."
+
+# Connects collections and initializes data.
+function Connect {
+	Import-Module Mdbc
+	Connect-Mdbc . test $CollectionName
+	$CollectionLog = $Database.GetCollection(($CollectionName + '_log'))
+
+	$info = 1 | Select-Object Path, Created, Changed, Removed, Elapsed
+	$info.Created = $info.Changed = $info.Removed = 0
+	$Update = New-MdbcUpdate -Set @{Updated = $Now}
 }
 
-Import-Module Mdbc
-Connect-Mdbc . test $CollectionName
-
-### Gets input items.
-function Get-Input {
+# Gets input items from the path.
+function Input {
 	Get-ChildItem -LiteralPath $Path -Force -Recurse -ErrorAction Continue
 }
 
-### New documents from input items.
-function New-Document {process{
-	$document = New-MdbcData -Id $_.FullName
-	$document.Name = $_.Name
-	$document.Extension = $_.Extension
-	$document.Updated = $Updated
-	$document.CreationTime = $_.CreationTime
-	$document.LastWriteTime = $_.LastWriteTime
-	$document.Attributes = [int]$_.Attributes
-	if (!$_.PSIsContainer) {
-		$document.Length = $_.Length
+# Updates documents from input items.
+function Update {process{
+	$file = !$_.PSIsContainer
+
+	# main data
+	$data = New-MdbcData
+	$data._id = $_.FullName
+	$data.Attributes = [int]$_.Attributes
+	if ($file) {
+		$data.Length = $_.Length
+		$data.LastWriteTime = $_.LastWriteTime
 	}
-	$document
+
+	# query by main data and update Updated
+	$r = Update-MdbcData $Update $data -Result
+
+	# updated means not changed, done
+	if ($r.DocumentsAffected) {return}
+
+	# more data
+	if (!$file) {
+		$data.LastWriteTime = $_.LastWriteTime
+	}
+	$data.CreationTime = $_.CreationTime
+	$data.Name = $_.Name
+	if ($file) {
+		$data.Extension = $_.Extension
+	}
+	$data.Updated = $Now
+
+	# add or update data
+	$r = Add-MdbcData $data -Update -Result
+	$op = [int]$r.UpdatedExisting
+	if ($op) {
+		++$info.Changed
+	}
+	else {
+		++$info.Created
+	}
+	if (!$Log) {return}
+
+	# log created or changed
+	$data.Remove('_id')
+	$data.Remove('Name')
+	$data.Remove('Extension')
+	$data.Op = $op
+	Update-MdbcData -Collection $CollectionLog -Query $_.FullName -Modes Upsert -Update (
+		New-MdbcUpdate -Set @{Updated = $Now; Op = $op} -Push @{Log = $data}
+	)
 }}
 
-### Update data for existing files.
+### Update existing
+. Connect
+$info.Path = $Path
 $time = [Diagnostics.Stopwatch]::StartNew()
-Write-Host "Updating data for existing files in $Path ..."
 if ($Split) {
 	Import-Module SplitPipeline
-	Get-Input |
-	Split-Pipeline -Auto -Load 100, 5000 -Verbose -Module Mdbc -Function New-Document -Variable Updated, CollectionName `
-	-Begin {
-		Connect-Mdbc . test $CollectionName
-	} `
-	-Script {
-		$input | New-Document | Add-MdbcData -Update -ErrorAction Continue
-	}
+	Input | Split-Pipeline -Auto -Verbose -Load 100, 5000 -Function Connect, Update -Variable CollectionName, Log, Now `
+	-Begin { . Connect } -Script { $input | Update } -End { $info } | .{process{
+		$info.Created += $_.Created
+		$info.Changed += $_.Changed
+	}}
 }
 else {
-	Get-Input | New-Document | Add-MdbcData -Update -ErrorAction Continue
+	Input | Update
 }
 
-### Remove "unknown" data
-Write-Host "Removing unknown data..."
-$result = Remove-MdbcData (New-MdbcQuery Updated -NotExists) -Result
-Write-Host $result.Response
+### Remove missing
+if (!$Path.EndsWith('\')) { $Path += '\' }
+$queryUnknown = New-MdbcQuery -Not (New-MdbcQuery Updated -Type 9)
+$queryMissing = New-MdbcQuery -And (New-MdbcQuery _id -Matches ('^' + [regex]::Escape($Path))), (New-MdbcQuery Updated -LT $Now)
+foreach($data in Get-MdbcData (New-MdbcQuery -Or $queryUnknown, $queryMissing)) {
+	++$info.Removed
 
-### Remove data of missing files
-$pattern = '^' + [regex]::Escape($Path)
-$query = New-MdbcQuery -And (New-MdbcQuery Updated -LT $Updated), (New-MdbcQuery _id -Matches $pattern)
-Write-Host "Removing data of missing files in $Path ..."
-$result = Remove-MdbcData $query -Result
-Write-Host $result.Response
-Write-Host $time.Elapsed
+	# remove data
+	$id = $data._id
+	Remove-MdbcData $id
+
+	# log removed
+	if ($Log) {
+		$data.Remove('_id')
+		$data.Remove('Name')
+		$data.Remove('Extension')
+		$data.Op = 2
+		Update-MdbcData -Collection $CollectionLog -Query $id -Modes Upsert -Update (
+			New-MdbcUpdate -Set @{Updated = $Now; Op = 2} -Push @{Log = $data}
+		)
+	}
+}
+
+# output info
+$info.Elapsed = $time.Elapsed
+$info

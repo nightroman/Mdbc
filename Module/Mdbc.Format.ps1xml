@@ -15,8 +15,6 @@
 				<TypeName>MongoDB.Bson.BsonInt64</TypeName>
 				<TypeName>MongoDB.Bson.BsonJavaScript</TypeName>
 				<TypeName>MongoDB.Bson.BsonJavaScriptWithScope</TypeName>
-				<TypeName>MongoDB.Bson.BsonMaxKey</TypeName>
-				<TypeName>MongoDB.Bson.BsonMinKey</TypeName>
 				<TypeName>MongoDB.Bson.BsonNull</TypeName>
 				<TypeName>MongoDB.Bson.BsonObjectId</TypeName>
 				<TypeName>MongoDB.Bson.BsonRegularExpression</TypeName>
@@ -54,8 +52,6 @@
 				<TypeName>MongoDB.Bson.BsonInt64</TypeName>
 				<TypeName>MongoDB.Bson.BsonJavaScript</TypeName>
 				<TypeName>MongoDB.Bson.BsonJavaScriptWithScope</TypeName>
-				<TypeName>MongoDB.Bson.BsonMaxKey</TypeName>
-				<TypeName>MongoDB.Bson.BsonMinKey</TypeName>
 				<TypeName>MongoDB.Bson.BsonNull</TypeName>
 				<TypeName>MongoDB.Bson.BsonRegularExpression</TypeName>
 				<TypeName>MongoDB.Bson.BsonString</TypeName>

@@ -336,7 +336,7 @@ namespace Mdbc
 						throw new ArgumentException("$push $each cannot have a $sort without a $slice.");
 
 					// sort
-					each = new BsonArray(QueryCompiler.Query(each.Cast<BsonDocument>(), null, new SortByDocument(sort.AsBsonDocument), 0, 0));
+					each = new BsonArray(QueryCompiler.Query(each.Cast<BsonDocument>(), null, null, new SortByDocument(sort.AsBsonDocument), 0, 0));
 				}
 
 				if (!slice.IsNumeric)
@@ -457,15 +457,19 @@ namespace Mdbc
 					continue;
 
 				var selector = element.Value;
-				if (selector.IsBsonRegularExpression)
-					continue;
-
-				var document = selector as BsonDocument;
-				if (document != null && document.ElementCount > 0)
+				switch(selector.BsonType)
 				{
-					var name = document.GetElement(0).Name;
-					if (name[0] == '$' && name != "$ref")
+					case BsonType.RegularExpression:
 						continue;
+					case BsonType.Document:
+						var document = selector.AsBsonDocument;
+						if (document.ElementCount > 0)
+						{
+							var name = document.GetElement(0).Name;
+							if (name[0] == '$' && name != "$ref")
+								continue;
+						}
+						break;
 				}
 
 				that = UpdateCompiler.SetExpression(that, Expression.Constant(element.Name, typeof(string)), selector);

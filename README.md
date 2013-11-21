@@ -39,30 +39,30 @@ Copy the directory *Mdbc* to a PowerShell module directory, see
     # Load the module
     Import-Module Mdbc
 
-    # Connect the database 'test' and the new collection 'test'
+    # Connect the new collection test.test
     Connect-Mdbc . test test -NewCollection
 
-    # Add some data (Id as _id, Name, and WorkingSet of current processes)
-    Get-Process | Add-MdbcData -Id {$_.Id} -Property Name, WorkingSet
+    # Add some test data
+    @{_id=1; value=42}, @{_id=2; value=3.14} | Add-MdbcData
 
-    # Query all data back as custom objects and print them formatted
+    # Get all data as custom objects and show them in a table
     Get-MdbcData -As PS | Format-Table -AutoSize | Out-String
 
-    # Get saved data of the process 'mongod' (expected at least one)
-    $data = Get-MdbcData (New-MdbcQuery Name -EQ mongod)
+    # Query a document by _id using a query expression
+    $data = Get-MdbcData (New-MdbcQuery _id -EQ 1)
     $data
 
-    # Update these data (let's just set the WorkingSet to 12345)
-    $data | Update-MdbcData (New-MdbcUpdate -Set @{WorkingSet = 12345})
+    # Update the document, set the 'value' to 100
+    $data._id | Update-MdbcData (New-MdbcUpdate -Set @{value = 100})
 
-    # Query again in order to take a look at the changed data
-    Get-MdbcData (New-MdbcQuery Name -EQ mongod)
+    # Query the document using a simple _id query
+    Get-MdbcData $data._id
 
-    # Remove these data
-    $data | Remove-MdbcData
+    # Remove the document
+    $data._id | Remove-MdbcData
 
-    # Query again, just get the count, 0 is expected
-    Get-MdbcData (New-MdbcQuery Name -EQ mongod) -Count
+    # Count remaining documents, 1 is expected
+    Get-MdbcData -Count
 
 If the code above works then the module is installed and ready to use.
 

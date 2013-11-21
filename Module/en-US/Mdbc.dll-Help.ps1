@@ -67,11 +67,9 @@ objects. If it is not specified then the current variable Collection is used.
 '@
 
 $QueryTypes = @'
-Supported types:
-1. MongoDB.Driver.IMongoQuery (see New-MdbcQuery);
-2. _id holders (Mdbc.Dictionary, BsonDocument, custom objects);
-3. hashtables representing JSON-like MongoDB query expressions;
-4. other values are treated as _id and converted to _id queries.
+The following types are used as or converted to queries: IMongoQuery (created
+by New-MdbcQuery), Mdbc.Dictionary, BsonDocument, JSON-like hashtables. Other
+values are treated as _id and converted to _id queries.
 '@
 
 $QueryParameter = "Specifies documents to be processed. $QueryTypes"

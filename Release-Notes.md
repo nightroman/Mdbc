@@ -3,9 +3,24 @@ Mdbc Release Notes
 
 ## v4.4.0
 
+Implicit conversion of `Mdbc.Dictionary` and `BsonDocument` objects to `_id`
+queries is not supported. These objects are converted to query documents with
+all their elements. Old such queries may work correctly or not but they should
+be redesigned in any case.
+
 `Get-MdbcData`
 
-New parameter `ResultVariable`.
+- New parameter `ResultVariable`.
+
+File collections
+
+- Fixed distinct queries with document values.
+- Optimized `_id` queries for normal file collections.
+
+`Scripts\Update-MongoFiles.ps1`
+
+- New switch `Log` tells to log changes to *files_log*.
+- The script outputs an object with some statistics.
 
 ## v4.3.1
 

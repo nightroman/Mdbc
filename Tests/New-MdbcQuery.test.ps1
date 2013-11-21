@@ -186,27 +186,28 @@ task Or {
 	test { New-MdbcQuery -Not (New-MdbcQuery -Or (New-MdbcQuery x 1), (New-MdbcQuery y 2)) } '{ "$nor" : [{ "x" : 1 }, { "y" : 2 }] }'
 }
 
-# Mdbc cmdlets use ObjectToQuery to create IMongoQuery from objects.
-# Let's test ObjectToQuery using New-MdbcQuery -Or.
+# Various query parameters use ObjectToQuery to create IMongoQuery from
+# arguments. Let's test this process using New-MdbcQuery -Or <argument>.
 task ObjectToQuery {
-	# PSCustomObject - _id
-	test { New-MdbcQuery -Or (New-Object PSObject -Property @{_id = 'PSCustomObject'}) } '{ "_id" : "PSCustomObject" }'
-
 	# IMongoQuery - as it is
 	test { New-MdbcQuery -Or (New-MdbcQuery Name -EQ 'One') } '{ "Name" : "One" }'
 
-	# Mdbc.Dictionary - _id
-	$md = New-MdbcData @{_id = 'Two'}
-	test { New-MdbcQuery -Or $md } '{ "_id" : "Two" }'
+	# Mdbc.Dictionary - Document() -> QueryDocument
+	$d = New-MdbcData; $d._id = 1; $d.name = 'name1'
+	test { New-MdbcQuery -Or $d } '{ "_id" : 1, "name" : "name1" }'
 
-	# BsonDocument - _id
-	test { New-MdbcQuery -Or $md.Document() } '{ "_id" : "Two" }'
+	# BsonDocument -> QueryDocument
+	test { New-MdbcQuery -Or $d.Document() } '{ "_id" : 1, "name" : "name1" }'
 
-	# IDictionary - any JSON-like query
-	test { New-MdbcQuery -Or @{'$set' = @{Name = 'Three'}} } '{ "$set" : { "Name" : "Three" } }'
+	# IDictionary -> QueryDocument
+	$d = New-Object Collections.Specialized.OrderedDictionary; $d._id = 1; $d.name = 'name1'
+	test { New-MdbcQuery -Or $d } '{ "_id" : 1, "name" : "name1" }'
 
-	# Others are primitive for BsonValue.Create() - _id
-	test { New-MdbcQuery -Or 'Four' } '{ "_id" : "Four" }'
+	# Others are used as _id
+	test { New-MdbcQuery -Or 42 } '{ "_id" : 42 }'
+
+	# KO PSCustomObject
+	Test-Error { New-MdbcQuery -Or (New-Object PSObject -Property @{_id = 1}) } '*PSCustomObject cannot be mapped to a BsonValue.*'
 }
 
 # fixes

@@ -113,18 +113,20 @@ task NormalData {
 	Test-Error { Open-MdbcFile $bson } 'The document (index 1) has duplicate _id "42".'
 }
 
-task Distinct {
-	$data = @{x=1}, @{x=2}, @{x=2}, @{x=1.0}, @{x=1L}, @{x=$true}
-
-	Connect-Mdbc -NewCollection
-	$data | Add-MdbcData
-	$r1 = Get-MdbcData -Distinct x
-	"$r1"
-
+#_131119_113717
+task _idQuery {
 	Open-MdbcFile
-	$data | Add-MdbcData
-	$r2 = Get-MdbcData -Distinct x
-	"$r2"
+	@{_id=1}, @{_id='apple'}, @{_id='banana'}, @{_id='orange'}, @{_id=@{x=2}} | Add-MdbcData
 
-	Test-List $r1 $r2
+	$r = Get-MdbcData miss
+	assert (!$r)
+
+	$r = Get-MdbcData 1.0 #! double
+	assert ("$r" -ceq '{ "_id" : 1 }')
+
+	$r = Get-MdbcData @{_id=@{x=2.0}} #! double
+	assert ("$r" -ceq '{ "_id" : { "x" : 2 } }')
+
+	$r = Get-MdbcData ([regex]'e')
+	assert ("$r" -ceq '{ "_id" : "apple" } { "_id" : "orange" }')
 }

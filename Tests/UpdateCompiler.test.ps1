@@ -1,7 +1,7 @@
 
 . .\Zoo.ps1
 Import-Module Mdbc
-Set-StrictMode -Version 2
+Set-StrictMode -Version Latest
 
 function update (
 	[Parameter(Position=0)]$Update, # update for the document

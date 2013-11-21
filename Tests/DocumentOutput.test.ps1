@@ -6,8 +6,8 @@
 
 . .\Zoo.ps1
 Import-Module Mdbc
-Set-StrictMode -Version 2
 Connect-Mdbc -NewCollection
+Set-StrictMode -Version Latest
 
 # To be sure the enum values are fine, e.g. PSObject was a bad name for enum
 # value. Also, if this fails update the manuals.

@@ -38,7 +38,7 @@ namespace Mdbc
 				return;
 
 			_registered = true;
-			
+
 			BsonSerializer.RegisterSerializer(typeof(Dictionary), new DictionarySerializer());
 			BsonSerializer.RegisterSerializer(typeof(LazyDictionary), new LazyDictionarySerializer());
 			BsonSerializer.RegisterSerializer(typeof(RawDictionary), new RawDictionarySerializer());
@@ -313,14 +313,6 @@ namespace Mdbc
 			else
 				return ba;
 		}
-		public static IMongoQuery DocumentIdToQuery(BsonDocument document)
-		{
-			BsonValue id;
-			if (!document.TryGetValue(MyValue.Id, out id))
-				throw new ArgumentException("Document used as _id query must have _id."); //_131110_084858
-
-			return Query.EQ(MyValue.Id, id);
-		}
 		// for compilers
 		public static BsonDocument ObjectToQueryDocument(object query)
 		{
@@ -348,10 +340,10 @@ namespace Mdbc
 		{
 			Register();
 			var value = BsonValue.Create(id);
-			
+
 			if (value.BsonType == BsonType.Array)
 				throw new ArgumentException("_id cannot be an array."); //_131110_085122
-			
+
 			return Query.EQ(MyValue.Id, value);
 		}
 		public static IMongoQuery ObjectToQuery(object value)
@@ -359,20 +351,7 @@ namespace Mdbc
 			if (value == null)
 				return Query.Null;
 
-			var ps = value as PSObject;
-			if (ps != null)
-			{
-				value = ps.BaseObject;
-
-				if (value is PSCustomObject)
-				{
-					var id = ps.Properties[MyValue.Id];
-					if (id == null)
-						throw new ArgumentException("Object used as _id query must have _id."); //_131110_084858
-
-					return IdToQuery(id.Value);
-				}
-			}
+			value = BaseObject(value);
 
 			var query = value as IMongoQuery;
 			if (query != null)
@@ -380,11 +359,11 @@ namespace Mdbc
 
 			var mdbc = value as Dictionary;
 			if (mdbc != null)
-				return DocumentIdToQuery(mdbc.Document());
+				return new QueryDocument(mdbc.Document());
 
 			var bson = value as BsonDocument;
 			if (bson != null)
-				return DocumentIdToQuery(bson);
+				return new QueryDocument(bson);
 
 			var dictionary = value as IDictionary;
 			if (dictionary != null)
@@ -477,7 +456,7 @@ namespace Mdbc
 			var r = new List<BsonDocument>();
 			if (value == null)
 				return r;
-			
+
 			var enumerable = AsEnumerable(value);
 			if (enumerable == null)
 				r.Add(ToBsonDocument(null, value, null, null, 0));

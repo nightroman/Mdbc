@@ -9,7 +9,6 @@
 function Invoke-Test($Test)
 {
 	foreach(${+} in $args) {&{
-		Write-Build 8 "At $(${+}.File):$(${+}.StartPosition.StartLine)"
 		Write-Build 8 ${+}
 		. ${+}
 		. $Test

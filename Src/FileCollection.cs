@@ -29,10 +29,11 @@ namespace Mdbc
 	{
 		SortedList<BsonValue, BsonDocument> _data;
 		protected override IList<BsonDocument> Documents { get { return _data.Values; } }
+		protected override IDictionary<BsonValue, BsonDocument> Documents2 { get { return _data; } }
 		internal NormalFileCollection(string path) : base(path) { }
 		static void ThrowIdExists(BsonValue id)
 		{
-			throw new InvalidOperationException(string.Format(null, "Document with _id {0} already exists.", id));
+			throw new InvalidOperationException(string.Format(null, "Duplicate _id {0}.", id));
 		}
 		protected override void InsertInternal(BsonDocument document)
 		{
@@ -92,6 +93,7 @@ namespace Mdbc
 		}
 		internal override void Read(bool newCollection)
 		{
+			//_131119_113717 SortedList with the default comparer is OK, unlike Distinct. Watch/test cases like 1 and 1.0, @{x=1} and @{x=1.0}, etc.
 			_data = new SortedList<BsonValue, BsonDocument>();
 
 			if (newCollection || FilePath == null || !File.Exists(FilePath))
@@ -167,6 +169,7 @@ namespace Mdbc
 		protected abstract void RemoveDocument(BsonDocument document);
 		protected abstract void RemoveDocumentAt(int index);
 		protected abstract void UpdateDocument(BsonDocument document, Func<BsonDocument, UpdateCompiler> update);
+		protected virtual IDictionary<BsonValue, BsonDocument> Documents2 { get { return null; } }
 		protected FileCollection(string path)
 		{
 			FilePath = string.IsNullOrEmpty(path) ? null : path;
@@ -187,11 +190,12 @@ namespace Mdbc
 		}
 		public IEnumerable<BsonValue> Distinct(string key, IMongoQuery query)
 		{
-			return QueryDocuments(query).Select(x => x[key]).Distinct(new BsonValueEqualityComparer());
+			//_131119_113717 Use the custom comparer strictly based on CompareTo.
+			return QueryDocuments(query).Select(x => x[key]).Distinct(new BsonValueCompareToEqualityComparer());
 		}
 		public IEnumerable<object> FindAs(Type documentType, IMongoQuery query, QueryFlags modes, IMongoSortBy sortBy, int skip, int first, IMongoFields fields)
 		{
-			var iter = QueryCompiler.Query(Documents, query, sortBy, skip, first);
+			var iter = QueryCompiler.Query(Documents, Documents2, query, sortBy, skip, first);
 			if (fields == null)
 				return iter.Select(x => BsonSerializer.Deserialize(x, documentType));
 
@@ -200,7 +204,7 @@ namespace Mdbc
 		}
 		public object FindAndModifyAs(Type documentType, IMongoQuery query, IMongoSortBy sortBy, IMongoUpdate update, IMongoFields fields, bool returnNew, bool upsert, out UpdateResult result)
 		{
-			foreach (var document in QueryCompiler.Query(Documents, query, sortBy, 0, 0))
+			foreach (var document in QueryCompiler.Query(Documents, Documents2, query, sortBy, 0, 0))
 			{
 				// if old is needed then deep(!) clone before update //_131103_185751
 				BsonDocument output = null;
@@ -242,7 +246,7 @@ namespace Mdbc
 		}
 		public object FindAndRemoveAs(Type documentType, IMongoQuery query, IMongoSortBy sortBy)
 		{
-			foreach (var document in QueryCompiler.Query(Documents, query, sortBy, 0, 0))
+			foreach (var document in QueryCompiler.Query(Documents, Documents2, query, sortBy, 0, 0))
 			{
 				RemoveDocument(document);
 				return BsonSerializer.Deserialize(document, documentType);

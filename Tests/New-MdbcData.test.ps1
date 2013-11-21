@@ -1,7 +1,7 @@
 
 . .\Zoo.ps1
 Import-Module Mdbc
-Set-StrictMode -Version 2
+Set-StrictMode -Version Latest
 
 task DataTypes {
 	Connect-Mdbc -NewCollection
