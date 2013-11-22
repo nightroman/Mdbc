@@ -1,6 +1,18 @@
 Mdbc Release Notes
 ==================
 
+## v4.4.1
+
+`Remove-MdbcData`, `Update-MdbcData`
+
+- Removed obsolete parameter `Modes`, use switches `One` in `Remove-MdbcData`,
+  `Add` and `All` in `Update-MdbcData`. Note that defaults (all and one) are
+  different, Mdbc follows the driver API in this case.
+
+`Scripts\Update-MongoFiles.ps1`
+
+- Parameter `Path` accepts one or more paths.
+
 ## v4.4.0
 
 Implicit conversion of `Mdbc.Dictionary` and `BsonDocument` objects to `_id`

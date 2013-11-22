@@ -258,6 +258,15 @@ task JSON-like {
 		$r = Get-MdbcData
 		Test-Type $r.x 'System.DateTime'
 
+		#_131122_164305
+		$do = { Update-MdbcData @{x=Get-Date} -Query @{} -All }
+		if ('test.test' -eq $Collection) {
+			Test-Error $do '*multi update only works with $ operators*'
+		}
+		else {
+			. $do
+		}
+
 		#_131102_111738 Invalid type, weird error: A positional parameter cannot be found that accepts argument 'bad'.
 		Test-Error { Update-MdbcData bad @{} } '*Invalid update object type: System.String. Valid types: update(s), dictionary(s).*'
 

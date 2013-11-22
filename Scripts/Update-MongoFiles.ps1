@@ -28,7 +28,7 @@
 		* Op            : 0: created, 1: changed, 2: removed
 
 .Parameter Path
-		Specifies the directory to be processed.
+		Specifies one or more literal directory paths to be processed.
 .Parameter CollectionName
 		Specifies the collection name. Default: files (implies files_log).
 .Parameter Log
@@ -54,7 +54,7 @@
 
 param
 (
-	[Parameter(Position=0)][string]$Path = '.',
+	[Parameter(Position=0)][string[]]$Path = '.',
 	[string]$CollectionName = 'files',
 	[switch]$Log,
 	[switch]$Split
@@ -74,7 +74,7 @@ function Resolve($Path) {
 		$directory.Name.ToUpper()
 	}
 }
-$Path = Resolve ($PSCmdlet.GetUnresolvedProviderPathFromPSPath($Path))
+$Path = foreach($_ in $Path) { Resolve ($PSCmdlet.GetUnresolvedProviderPathFromPSPath($_)) }
 Write-Host "Updating data for $Path ..."
 
 # Connects collections and initializes data.
@@ -161,9 +161,12 @@ else {
 }
 
 ### Remove missing
-if (!$Path.EndsWith('\')) { $Path += '\' }
+$in = foreach($_ in $Path) {
+	if (!$_.EndsWith('\')) {$_ += '\'}
+	[regex]('^' + [regex]::Escape($_))
+}
 $queryUnknown = New-MdbcQuery -Not (New-MdbcQuery Updated -Type 9)
-$queryMissing = New-MdbcQuery -And (New-MdbcQuery _id -Matches ('^' + [regex]::Escape($Path))), (New-MdbcQuery Updated -LT $Now)
+$queryMissing = New-MdbcQuery -And (New-MdbcQuery _id -In $in), (New-MdbcQuery Updated -LT $Now)
 foreach($data in Get-MdbcData (New-MdbcQuery -Or $queryUnknown, $queryMissing)) {
 	++$info.Removed
 

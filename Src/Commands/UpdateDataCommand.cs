@@ -37,29 +37,32 @@ namespace Mdbc.Commands
 		[Parameter]
 		public SwitchParameter Add { get; set; }
 
+		//_131122_164305 Ideally Remove and Update should do just All or provide sorting for One to
+		// avoid unpredictable. But they do not. Also, they have different defaults. Mdbc follows
+		// the driver, partially due to simpler syntax allowed on default update (@{x=..}). Thus,
+		// if Mdbc makes All the only or default then simple syntax is either gone or not default.
 		[Parameter]
 		public SwitchParameter All { get; set; }
 
-		[Parameter]
-		public UpdateFlags Modes { get; set; }
+		UpdateFlags _Flags;
 
 		protected override void BeginProcessing()
 		{
 			if (_Update == null) throw new PSArgumentException(_UpdateError ?? TextParameterUpdate); //_131102_111738
 
 			if (Add)
-				Modes |= UpdateFlags.Upsert;
+				_Flags |= UpdateFlags.Upsert;
 
 			if (All)
-				Modes |= UpdateFlags.Multi;
+				_Flags |= UpdateFlags.Multi;
 		}
 		protected override void ProcessRecord()
 		{
 			if (_Query == null) throw new PSArgumentException(TextParameterQuery); //_131121_104038
-			
+
 			try
 			{
-				WriteResult(TargetCollection.Update(_Query, _Update, Modes, WriteConcern, Result));
+				WriteResult(TargetCollection.Update(_Query, _Update, _Flags, WriteConcern, Result));
 			}
 			catch (MongoException ex)
 			{

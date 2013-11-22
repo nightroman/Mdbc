@@ -28,16 +28,16 @@ namespace Mdbc.Commands
 		public object Query { get { return null; } set { _Query = Actor.ObjectToQuery(value); } }
 		IMongoQuery _Query;
 
+		//_131122_164305
 		[Parameter]
 		public SwitchParameter One { get; set; }
 
-		[Parameter]
-		public RemoveFlags Modes { get; set; }
+		RemoveFlags _Flags;
 
 		protected override void BeginProcessing()
 		{
 			if (One)
-				Modes |= RemoveFlags.Single;
+				_Flags |= RemoveFlags.Single;
 		}
 		protected override void ProcessRecord()
 		{
@@ -45,7 +45,7 @@ namespace Mdbc.Commands
 			
 			try
 			{
-				WriteResult(TargetCollection.Remove(_Query, Modes, WriteConcern, Result));
+				WriteResult(TargetCollection.Remove(_Query, _Flags, WriteConcern, Result));
 			}
 			catch (MongoException ex)
 			{

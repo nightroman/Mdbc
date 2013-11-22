@@ -889,8 +889,11 @@ Merge-Helps $AWrite @{
 	description = 'Removes specified documents from the collection.', $AboutResultAndErrors
 	parameters = @{
 		Query = $QueryParameter, $QueryParameterMandatory
-		One = 'Tells to remove one document. By default the command removes all matching documents.'
-		Modes = 'Obsolete, to be removed. Use One.'
+		One = @'
+Tells to remove one document. By default the command removes all matching
+documents. Note that this is different to default Update-MdbcData and the
+difference is kept in order to follow the driver API.
+'@
 	}
 	inputs = $QueryInputs
 	outputs = $TypeWriteConcernResult
@@ -916,9 +919,14 @@ internally.
 
 The parameter is mandatory and does not accept nulls.
 '@
-		Add = 'Tells to add a document based on the update and query if nothing was updated.'
-		All = 'Tells to update all matching documents. By default one is updated.'
-		Modes = 'Obsolete, to be removed. Use Add and All.'
+		Add = @'
+Tells to add a document based on the update and query if nothing was updated.
+'@
+		All = @'
+Tells to update all matching documents. By default one is updated. Note that
+this is different to default Remove-MdbcData and the difference is kept in
+order to follow the driver API.
+'@
 	}
 	inputs = $QueryInputs
 	outputs = $TypeWriteConcernResult
