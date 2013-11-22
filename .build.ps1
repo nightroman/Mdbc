@@ -142,7 +142,6 @@ task Package ConvertMarkdown, @{UpdateScript=1}, {
 	Copy-Item -Destination z\tools\Mdbc `
 	LICENSE.txt,
 	$ModuleRoot\Mdbc.dll,
-	$ModuleRoot\Mdbc.Format.ps1xml,
 	$ModuleRoot\Mdbc.psd1,
 	$ModuleRoot\MongoDB.Bson.dll,
 	$ModuleRoot\MongoDB.Driver.dll
@@ -207,7 +206,7 @@ task CheckFiles {
 # Call tests.
 task Test {
 	Invoke-Build ** Tests -Result result
-	$testCount = 138
+	$testCount = 139
 	if ($testCount -ne $result.Tasks.Count) {Write-Warning "Unexpected test count:`n Sample : $testCount`n Result : $($result.Tasks.Count)"}
 },
 CleanTest

@@ -73,6 +73,11 @@ values are treated as _id and converted to _id queries.
 '@
 
 $QueryParameter = "Specifies documents to be processed. $QueryTypes"
+$QueryParameterMandatory = @'
+The parameter is mandatory and does not accept nulls. In order to specify all
+documents use an empty query, e.g. @{}. Note that an empty string implies
+@{_id=''}, not @{}.
+'@
 
 $AsParameter = @'
 Specifies the representation of output documents. The argument is either a
@@ -748,8 +753,8 @@ commands are the same:
 Mongo: { $set: { <field1>: <value1>, ... } }
 '@
 		SetOnInsert = @'
-Sets a field value upon documents creation during an upsert. It has no effect
-on update operations that modify existing documents.
+Sets a field value on adding a new document during update. It has no effect on
+updates that modify existing documents.
 
 Mongo: { $setOnInsert: { <field1>: <value1>, ... } }
 '@
@@ -883,8 +888,9 @@ Merge-Helps $AWrite @{
 	synopsis = 'Removes specified documents from the collection.'
 	description = 'Removes specified documents from the collection.', $AboutResultAndErrors
 	parameters = @{
-		Query = $QueryParameter
-		Modes = 'Additional removal flags. See the driver manual.'
+		Query = $QueryParameter, $QueryParameterMandatory
+		One = 'Tells to remove one document. By default the command removes all matching documents.'
+		Modes = 'Obsolete, to be removed. Use One.'
 	}
 	inputs = $QueryInputs
 	outputs = $TypeWriteConcernResult
@@ -902,13 +908,17 @@ Merge-Helps $AWrite @{
 Applies the specified update to documents matching the specified query.
 '@, $AboutResultAndErrors
 	parameters = @{
-		Query = $QueryParameter
-		Modes = 'Additional update flags. See the driver manual.'
+		Query = $QueryParameter, $QueryParameterMandatory
 		Update = @'
 One or more update expressions either created by New-MdbcUpdate or hashtables
 representing JSON-like updates. Two and more expression are combined together
 internally.
+
+The parameter is mandatory and does not accept nulls.
 '@
+		Add = 'Tells to add a document based on the update and query if nothing was updated.'
+		All = 'Tells to update all matching documents. By default one is updated.'
+		Modes = 'Obsolete, to be removed. Use Add and All.'
 	}
 	inputs = $QueryInputs
 	outputs = $TypeWriteConcernResult

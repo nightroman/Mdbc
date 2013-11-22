@@ -3,6 +3,17 @@
 Import-Module Mdbc
 Set-StrictMode -Version Latest
 
+#_131121_104038
+task Bad {
+	# omitted update
+	Test-Error { Update-MdbcData } 'Parameter Update must be specified and cannot be null.'
+
+	# omitted query
+	$m = 'Parameter Query must be specified and cannot be null.'
+	Test-Error { Update-MdbcData @{} } $m
+	Test-Error { $null | Update-MdbcData @{} } $m
+}
+
 task AddToSet {
 	Invoke-Test {
 		# add data
@@ -318,7 +329,7 @@ task Errors {
 	"$update"
 
 	. $init 'Acknowledged, ErrorAction Continue'
-	$r = Update-MdbcData $update @{} -Modes Multi -Result -ErrorAction 0 -ErrorVariable e
+	$r = Update-MdbcData $update @{} -All -Result -ErrorAction 0 -ErrorVariable e
 	assert ($e.Count -eq 1) # error
 	$e[0].ToString()
 	assert ($r) # result
@@ -327,13 +338,13 @@ task Errors {
 	. $test
 
 	. $init 'Acknowledged, ErrorAction Stop'
-	$r = .{ try { Update-MdbcData $update @{} -Modes Multi -Result -ErrorAction Stop -ErrorVariable $e } catch {} }
+	$r = .{ try { Update-MdbcData $update @{} -All -Result -ErrorAction Stop -ErrorVariable $e } catch {} }
 	assert ($null -eq $e) # no error due to exception
 	assert ($null -eq $r) # no result
 	. $test
 
 	. $init 'Unacknowledged, ErrorAction Stop (irrelevant)'
-	$r = Update-MdbcData $update @{} -Modes Multi -Result -WriteConcern ([MongoDB.Driver.WriteConcern]::Unacknowledged) -ErrorAction Stop -ErrorVariable e
+	$r = Update-MdbcData $update @{} -All -Result -WriteConcern ([MongoDB.Driver.WriteConcern]::Unacknowledged) -ErrorAction Stop -ErrorVariable e
 	assert ($e.Count -eq 0) # no error
 	assert ($null -eq $r) # no result
 	. $test
@@ -341,7 +352,7 @@ task Errors {
 
 task Upsert {
 	Invoke-Test {
-		Update-MdbcData (New-MdbcUpdate -Set @{x=42}) (New-MdbcQuery _id miss) -Modes Upsert
+		Update-MdbcData (New-MdbcUpdate -Set @{x=42}) (New-MdbcQuery _id miss) -Add
 		$r = Get-MdbcData
 		assert ($r._id = 'miss')
 		assert ($r.x = 42)
@@ -352,7 +363,7 @@ task Upsert {
 	}
 }
 
-task Multi {
+task All {
 	$data = {
 		@{_id=1; x=1}, @{_id=2; x=1} | Add-MdbcData
 	}
@@ -364,9 +375,9 @@ task Multi {
 		assert ($r1._id -eq 1 -and $r1.x -eq 42) # changed
 		assert ($r2._id -eq 2 -and $r2.x -eq 1) # not changed
 
-		# Multi - two are changed
+		# All - two are changed
 		. $$
-		Update-MdbcData (New-MdbcUpdate -Set @{x=42}) @{} -Modes Multi
+		Update-MdbcData (New-MdbcUpdate -Set @{x=42}) @{} -All
 		$r1, $r2 = Get-MdbcData
 		assert ($r1._id -eq 1 -and $r1.x -eq 42) # changed
 		assert ($r2._id -eq 2 -and $r2.x -eq 42) # changed
@@ -391,14 +402,14 @@ task WriteConcernResult {
 
 		# Two changed
 		. $$
-		$r = Update-MdbcData (New-MdbcUpdate -Set @{x=42}) @{} -Result -Modes Multi
+		$r = Update-MdbcData (New-MdbcUpdate -Set @{x=42}) @{} -Result -All
 		assert ($r.DocumentsAffected -eq 2)
 		assert ($r.UpdatedExisting)
 		assert ($r.Ok)
 
 		# None changed, one added
 		. $$
-		$r = Update-MdbcData (New-MdbcUpdate -Set @{x=42}) @{miss=1} -Result -Modes Multi, Upsert
+		$r = Update-MdbcData (New-MdbcUpdate -Set @{x=42}) @{miss=1} -Result -Add -All
 		assert ($r.DocumentsAffected -eq 1)
 		assert (!$r.UpdatedExisting)
 		assert ($r.Ok)

@@ -4,9 +4,18 @@ Mdbc Release Notes
 ## v4.4.0
 
 Implicit conversion of `Mdbc.Dictionary` and `BsonDocument` objects to `_id`
-queries is not supported. These objects are converted to query documents with
-all their elements. Old such queries may work correctly or not but they should
-be redesigned in any case.
+queries is not supported. Objects are converted to queries with all elements.
+Old queries may be broken or not but they should be redesigned in any case.
+
+`Remove-MdbcData`
+
+- New switch `One` is used instead of `Modes`.
+- `Modes` will be removed in the next release.
+
+`Update-MdbcData`
+
+- New switches `Add` and `All` are used instead of `Modes`.
+- `Modes` will be removed in the next release.
 
 `Get-MdbcData`
 
@@ -21,6 +30,11 @@ File collections
 
 - New switch `Log` tells to log changes to *files_log*.
 - The script outputs an object with some statistics.
+
+*Mdbc.Format.ps1xml*
+
+- Removed `BsonValue` type formats from the module. Need in direct use of these
+  types is gradually reduced to minimum, scripts normally should not use them.
 
 ## v4.3.1
 

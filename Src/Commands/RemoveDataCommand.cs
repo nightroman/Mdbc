@@ -22,15 +22,27 @@ namespace Mdbc.Commands
 	[Cmdlet(VerbsCommon.Remove, "MdbcData")]
 	public sealed class RemoveDataCommand : AbstractWriteCommand
 	{
-		[Parameter(Position = 0, Mandatory = true, ValueFromPipeline = true)]
+		//_131121_104038 Not mandatory to avoid prompts. Manual null check is used instead for consistent messages.
+		// String values from prompts might imply unexpected results.
+		[Parameter(Position = 0, ValueFromPipeline = true)]
 		public object Query { get { return null; } set { _Query = Actor.ObjectToQuery(value); } }
 		IMongoQuery _Query;
 
 		[Parameter]
+		public SwitchParameter One { get; set; }
+
+		[Parameter]
 		public RemoveFlags Modes { get; set; }
 
+		protected override void BeginProcessing()
+		{
+			if (One)
+				Modes |= RemoveFlags.Single;
+		}
 		protected override void ProcessRecord()
 		{
+			if (_Query == null) throw new PSArgumentException(TextParameterQuery); //_131121_104038
+			
 			try
 			{
 				WriteResult(TargetCollection.Remove(_Query, Modes, WriteConcern, Result));

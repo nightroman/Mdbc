@@ -25,7 +25,7 @@ function update (
 	$err = $null
 	try {
 		if ($Query) {
-			Update-MdbcData -Update $Update -Query $Query -Modes Upsert
+			Update-MdbcData -Update $Update -Query $Query -Add
 		}
 		else {
 			Update-MdbcData -Update $Update -Query @{}

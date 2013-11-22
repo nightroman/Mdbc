@@ -22,26 +22,41 @@ namespace Mdbc.Commands
 	[Cmdlet(VerbsData.Update, "MdbcData")]
 	public sealed class UpdateDataCommand : AbstractWriteCommand
 	{
-		[Parameter(Position = 0, Mandatory = true)]
+		//_131121_104038
+		[Parameter(Position = 0)]
 		public object Update { get { return null; } set { _Update = Actor.ObjectToUpdate(value, x => _UpdateError = x); } } //_131102_111738
 		IMongoUpdate _Update;
 		string _UpdateError;
 
-		[Parameter(Position = 1, Mandatory = true, ValueFromPipeline = true)]
+		//_131121_104038
+		[Parameter(Position = 1, ValueFromPipeline = true)]
 		public object Query { get { return null; } set { _Input = value; _Query = Actor.ObjectToQuery(value); } }
 		IMongoQuery _Query;
 		object _Input;
+
+		[Parameter]
+		public SwitchParameter Add { get; set; }
+
+		[Parameter]
+		public SwitchParameter All { get; set; }
 
 		[Parameter]
 		public UpdateFlags Modes { get; set; }
 
 		protected override void BeginProcessing()
 		{
-			//_131102_111738
-			if (_Update == null) throw new PSArgumentException(_UpdateError);
+			if (_Update == null) throw new PSArgumentException(_UpdateError ?? TextParameterUpdate); //_131102_111738
+
+			if (Add)
+				Modes |= UpdateFlags.Upsert;
+
+			if (All)
+				Modes |= UpdateFlags.Multi;
 		}
 		protected override void ProcessRecord()
 		{
+			if (_Query == null) throw new PSArgumentException(TextParameterQuery); //_131121_104038
+			
 			try
 			{
 				WriteResult(TargetCollection.Update(_Query, _Update, Modes, WriteConcern, Result));

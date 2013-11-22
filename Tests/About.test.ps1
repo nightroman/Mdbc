@@ -38,14 +38,6 @@ task About {
 	Get-MdbcData -Count
 }
 
-# Test type names in Mdbc.Format.ps1xml
-task ModuleFormatFile {
-	Select-Xml -Path ..\Module\Mdbc.Format.ps1xml -XPath //TypeName | .{process{
-		# create a type, it fails on not valid types
-		Invoke-Expression "[$($_.Node.InnerText)]"
-	}}
-}
-
 # Test the function Test-Table
 task Test-Table {
 	Test-Error { Test-Table @{x=1} @{} } 'Different dictionary counts: 1 and 0.'

@@ -139,7 +139,7 @@ function Update {process{
 	$data.Remove('Name')
 	$data.Remove('Extension')
 	$data.Op = $op
-	Update-MdbcData -Collection $CollectionLog -Query $_.FullName -Modes Upsert -Update (
+	Update-MdbcData -Collection $CollectionLog -Add -Query $_.FullName -Update (
 		New-MdbcUpdate -Set @{Updated = $Now; Op = $op} -Push @{Log = $data}
 	)
 }}
@@ -177,7 +177,7 @@ foreach($data in Get-MdbcData (New-MdbcQuery -Or $queryUnknown, $queryMissing)) 
 		$data.Remove('Name')
 		$data.Remove('Extension')
 		$data.Op = 2
-		Update-MdbcData -Collection $CollectionLog -Query $id -Modes Upsert -Update (
+		Update-MdbcData -Collection $CollectionLog -Add -Query $id -Update (
 			New-MdbcUpdate -Set @{Updated = $Now; Op = 2} -Push @{Log = $data}
 		)
 	}
