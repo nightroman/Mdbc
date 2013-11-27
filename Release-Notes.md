@@ -1,6 +1,12 @@
 Mdbc Release Notes
 ==================
 
+## v4.4.2
+
+New `Script\TabExpansionProfile.Mdbc.ps1` adds TabExpansion2 completers for
+arguments of `Connect-Mdbc` parameters `DatabaseName` and `CollectionName`
+(requires PowerShell v3).
+
 ## v4.4.1
 
 `Remove-MdbcData`, `Update-MdbcData`

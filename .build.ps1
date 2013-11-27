@@ -99,10 +99,16 @@ task TestHelpSynopsis {
 # Update help then run help tests.
 task TestHelp Help, TestHelpExample, TestHelpSynopsis
 
+$UpdateScriptInputs = @(
+	'Get-MongoFile.ps1'
+	'Mdbc.ps1'
+	'TabExpansionProfile.Mdbc.ps1'
+	'Update-MongoFiles.ps1'
+)
 # Copy external scripts from their working location to the project.
 # It fails if the scripts are not available.
 task UpdateScript -Partial `
--Inputs {Get-Command Mdbc.ps1, Update-MongoFiles.ps1, Get-MongoFile.ps1 | %{ $_.Definition }} `
+-Inputs {Get-Command $UpdateScriptInputs | %{ $_.Definition }} `
 -Outputs {process{ "Scripts\$(Split-Path -Leaf $_)" }} `
 {process{ Copy-Item $_ $2 }}
 
