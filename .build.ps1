@@ -157,9 +157,10 @@ task Package ConvertMarkdown, @{UpdateScript=1}, {
 	$ModuleRoot\en-US\Mdbc.dll-Help.xml
 
 	Copy-Item -Destination z\tools\Mdbc\Scripts `
-	Scripts\Mdbc.ps1,
-	Scripts\Get-MongoFile.ps1,
-	Scripts\Update-MongoFiles.ps1
+	.\Scripts\Mdbc.ps1,
+	.\Scripts\Get-MongoFile.ps1,
+	.\Scripts\Update-MongoFiles.ps1,
+	.\Scripts\TabExpansionProfile.Mdbc.ps1
 
 	Move-Item -Destination z\tools\Mdbc `
 	README.htm,

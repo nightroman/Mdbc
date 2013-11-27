@@ -1,7 +1,7 @@
 Mdbc Release Notes
 ==================
 
-## v4.4.2
+## v4.4.3
 
 New `Script\TabExpansionProfile.Mdbc.ps1` adds TabExpansion2 completers for
 arguments of `Connect-Mdbc` parameters `DatabaseName` and `CollectionName`
