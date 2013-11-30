@@ -18,7 +18,6 @@ using System;
 using System.Collections.Generic;
 using MongoDB.Bson;
 using MongoDB.Driver;
-using MongoDB.Driver.Builders;
 
 namespace Mdbc
 {
@@ -34,14 +33,7 @@ namespace Mdbc
 		// Assume that keys are already unique, so we avoid many checks.
 		FieldCompiler(IMongoFields fields)
 		{
-			var document = fields as BsonDocument;
-			if (document == null)
-			{
-				var builder = fields as FieldsBuilder;
-				if (builder == null)
-					throw new InvalidCastException("Invalid field object type.");
-				document = builder.ToBsonDocument();
-			}
+			var document = ((IConvertibleToBsonDocument)fields).ToBsonDocument();
 
 			if (document.ElementCount == 0)
 			{
@@ -124,7 +116,7 @@ namespace Mdbc
 				if (arg.BsonType != BsonType.Document)
 					throw new InvalidOperationException("Invalid field match argument.");
 
-				_ElemMatch.Add(name, QueryCompiler.GetFunction(arg));
+				_ElemMatch.Add(name, QueryCompiler.GetFunction(arg.AsBsonDocument));
 			}
 		}
 		BsonDocument Select(BsonDocument from)

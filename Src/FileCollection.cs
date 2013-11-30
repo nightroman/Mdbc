@@ -211,7 +211,7 @@ namespace Mdbc
 				if (!returnNew)
 					output = document.DeepClone().AsBsonDocument;
 
-				UpdateDocument(document, UpdateCompiler.GetFunction(update, null, false));
+				UpdateDocument(document, UpdateCompiler.GetFunction((IConvertibleToBsonDocument)update, null, false));
 
 				if (returnNew)
 					output = document;
@@ -273,7 +273,7 @@ namespace Mdbc
 		}
 		public WriteConcernResult Remove(IMongoQuery query, RemoveFlags flags, WriteConcern writeConcern, bool needResult)
 		{
-			var predicate = QueryCompiler.GetFunction(query);
+			var predicate = QueryCompiler.GetFunction((IConvertibleToBsonDocument)query);
 
 			int documentsAffected = 0;
 
@@ -304,7 +304,7 @@ namespace Mdbc
 				foreach (var document in QueryDocuments(query))
 				{
 					if (function == null)
-						function = UpdateCompiler.GetFunction(update, null, false);
+						function = UpdateCompiler.GetFunction((IConvertibleToBsonDocument)update, null, false);
 
 					UpdateDocument(document, function);
 
@@ -352,7 +352,7 @@ namespace Mdbc
 		BsonDocument InsertNewDocument(IMongoQuery query, IMongoUpdate update)
 		{
 			var document = new BsonDocument();
-			UpdateCompiler.GetFunction(update, query, true)(document);
+			UpdateCompiler.GetFunction((IConvertibleToBsonDocument)update, (IConvertibleToBsonDocument)query, true)(document);
 			InsertInternal(document);
 			return document;
 		}
@@ -379,7 +379,7 @@ namespace Mdbc
 		}
 		IEnumerable<BsonDocument> QueryDocuments(IMongoQuery query)
 		{
-			return Documents.Where(QueryCompiler.GetFunction(query));
+			return Documents.Where(QueryCompiler.GetFunction((IConvertibleToBsonDocument)query));
 		}
 		internal void Save(string saveAs)
 		{

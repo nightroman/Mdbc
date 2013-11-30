@@ -129,6 +129,11 @@ namespace Mdbc
 			if (text != null)
 				return new BsonString(text);
 
+			// case: document
+			var cd = value as IConvertibleToBsonDocument;
+			if (cd != null)
+				return cd.ToBsonDocument();
+
 			// case: dictionary
 			var dictionary = value as IDictionary;
 			if (dictionary != null)
@@ -172,19 +177,17 @@ namespace Mdbc
 				return ToBsonValue(value, null, depth);
 			}
 		}
+		//! IConvertibleToBsonDocument (e.g. Mdbc.Dictionary) must be converted before if source and properties are null
 		static BsonDocument ToBsonDocumentFromDictionary(BsonDocument source, IDictionary dictionary, DocumentInput input, IEnumerable<Selector> properties, int depth)
 		{
 			IncSerializationDepth(ref depth);
 
-			//_131013_155413 reuse existing document as that is
-			if (source == null && properties == null)
-			{
-				var md = dictionary as Dictionary;
-				if (md != null)
-					return md.Document();
-			}
+#if DEBUG
+			if (source == null && properties == null && dictionary is IConvertibleToBsonDocument)
+				throw new InvalidOperationException("DEBUG: must be converted before.");
+#endif
 
-			// existing or new document
+			// use source or new document
 			var document = source ?? new BsonDocument();
 
 			if (properties == null)
@@ -286,16 +289,16 @@ namespace Mdbc
 			PSObject custom;
 			value = BaseObject(value, out custom);
 
-			//_131013_155413 reuse existing document as is or wrap
-			var document = value as BsonDocument;
-			if (document != null)
+			//_131013_155413 reuse existing document or wrap
+			var cd = value as IConvertibleToBsonDocument;
+			if (cd != null)
 			{
-				// reuse existing
+				// reuse
 				if (source == null && properties == null)
-					return document;
+					return cd.ToBsonDocument();
 
 				// wrap
-				value = new Dictionary(document);
+				return ToBsonDocumentFromDictionary(source, new Dictionary(cd), input, properties, depth);
 			}
 
 			var dictionary = value as IDictionary;
@@ -312,29 +315,6 @@ namespace Mdbc
 				return new[] { bv };
 			else
 				return ba;
-		}
-		// for compilers
-		public static BsonDocument ObjectToQueryDocument(object query)
-		{
-			if (query == null)
-				return new BsonDocument();
-
-			query = BaseObject(query);
-
-			// unwrap bson wrapper
-			var wrapper = query as BsonDocumentWrapper;
-			if (wrapper != null)
-				query = wrapper.WrappedObject;
-
-			var builder = query as IMongoQuery;
-			if (builder != null)
-				return (BsonDocument)builder;
-
-			BsonDocument document;
-			if ((document = query as BsonDocument) != null)
-				return document;
-
-			throw new ArgumentException(string.Format(null, "Invalid query object type {0}.", query.GetType()));
 		}
 		static IMongoQuery IdToQuery(object id)
 		{
@@ -357,13 +337,9 @@ namespace Mdbc
 			if (query != null)
 				return query;
 
-			var mdbc = value as Dictionary;
-			if (mdbc != null)
-				return new QueryDocument(mdbc.Document());
-
-			var bson = value as BsonDocument;
-			if (bson != null)
-				return new QueryDocument(bson);
+			var cd = value as IConvertibleToBsonDocument;
+			if (cd != null)
+				return new QueryDocument(cd.ToBsonDocument());
 
 			var dictionary = value as IDictionary;
 			if (dictionary != null)

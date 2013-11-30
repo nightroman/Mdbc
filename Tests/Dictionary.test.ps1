@@ -6,7 +6,7 @@ Set-StrictMode -Version Latest
 task Constructors {
 	# default
 	$r = New-Object Mdbc.Dictionary
-	assert ($r.Count -eq 0 -and $null -ne $r.Document())
+	assert ($r.Count -eq 0 -and $null -ne $r.ToBsonDocument())
 
 	# from an object as _id
 	$r = [Mdbc.Dictionary]42
@@ -40,13 +40,13 @@ task RawBson {
 	$md = New-MdbcData $raw
 	assert (!$md.IsFixedSize)
 	assert (!$md.IsReadOnly)
-	Test-Type $md.Document() MongoDB.Bson.BsonDocument
+	Test-Type $md.ToBsonDocument() MongoDB.Bson.BsonDocument
 
 	#
 	$md = [Mdbc.Dictionary]$raw
 	assert ($md.IsFixedSize)
 	assert ($md.IsReadOnly)
-	Test-Type $md.Document() MongoDB.Bson.RawBsonDocument
+	Test-Type $md.ToBsonDocument() MongoDB.Bson.RawBsonDocument
 
 	&{
 		$a = $md.array
@@ -61,8 +61,8 @@ task RawBson {
 		$d = $md.document
 		assert ($d.IsFixedSize)
 		assert ($d.IsReadOnly)
-		Test-Type $d.Document() MongoDB.Bson.RawBsonDocument
-		assert (![object]::ReferenceEquals($d.Document(), $md.document.Document()))
+		Test-Type $d.ToBsonDocument() MongoDB.Bson.RawBsonDocument
+		assert (![object]::ReferenceEquals($d.ToBsonDocument(), $md.document.ToBsonDocument()))
 	}
 
 	$md.Dispose(); $md.Dispose() #! twice is fine

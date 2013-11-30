@@ -50,10 +50,10 @@ function update (
 	# linq update
 	$err = $null
 	try {
-		if ($Update -is [Hashtable]) { $Update = (New-MdbcData $Update).Document() }
+		if ($Update -is [Hashtable]) { $Update = New-MdbcData $Update }
 		$expression = [Mdbc.UpdateCompiler]::GetExpression($Update, $Query, $Query)
 		$Document = New-MdbcData $Document
-		$null = [Mdbc.UpdateCompiler]::GetFunction($expression).Invoke($Document.Document())
+		$null = [Mdbc.UpdateCompiler]::GetFunction($expression).Invoke($Document.ToBsonDocument())
 		$Document.ToString()
 	}
 	catch {
@@ -344,7 +344,8 @@ task Pull {
 
 	# Pull query
 	update (New-MdbcUpdate -Pull @{a=@{x=1}}) @{a=1,@{x=1;y=1},3} @{a=1,3} '.Pull(data, "a", { "x" : 1 })'
-	update (New-MdbcUpdate -Pull @{a=New-MdbcQuery x 1}) @{a=1,@{x=1;y=1},3} @{a=1,3} '.Pull(data, "a", { "x" : 1 })' #!
+	#_131130_103226 BsonDocumentWrapper https://jira.mongodb.org/browse/CSHARP-864
+	update (New-MdbcUpdate -Pull @{a=New-MdbcQuery x 1}) @{a=1,@{x=1;y=1},3} @{a=1,3} '.Pull(data, "a", { "x" : 1 })'
 
 	# PullAll document
 	update @{'$pullAll'=@{a=@{x=1}}} @{} -UError '* 10153,*' -EError '*Pull all value must be array.*'

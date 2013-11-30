@@ -22,7 +22,7 @@ using MongoDB.Bson;
 
 namespace Mdbc
 {
-	public class Dictionary : IDictionary
+	public class Dictionary : IDictionary, IConvertibleToBsonDocument
 	{
 		readonly BsonDocument _document;
 		public Dictionary()
@@ -34,12 +34,12 @@ namespace Mdbc
 			_document = new BsonDocument();
 			_document.Add(MyValue.Id, BsonValue.Create(id));
 		}
-		public Dictionary(BsonDocument document)
+		public Dictionary(IConvertibleToBsonDocument document)
 		{
 			if (document == null) throw new ArgumentNullException("document");
-			_document = document;
+			_document = document.ToBsonDocument();
 		}
-		public BsonDocument Document()
+		public BsonDocument ToBsonDocument()
 		{
 			return _document;
 		}

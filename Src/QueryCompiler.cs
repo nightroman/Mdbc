@@ -23,7 +23,6 @@ using System.Reflection;
 using System.Text.RegularExpressions;
 using MongoDB.Bson;
 using MongoDB.Driver;
-using MongoDB.Driver.Builders;
 
 namespace Mdbc
 {
@@ -379,8 +378,8 @@ namespace Mdbc
 		}
 		static Expression FieldExpression(Expression field, BsonValue selector)
 		{
-			var document = selector as BsonDocument;
-			if (document != null && document.ElementCount > 0)
+			BsonDocument document;
+			if (selector.BsonType == BsonType.Document && (document = selector.AsBsonDocument).ElementCount > 0)
 			{
 				var element = document.GetElement(0);
 				var operatorName = element.Name;
@@ -414,12 +413,12 @@ namespace Mdbc
 			return r;
 		}
 		// public for tests
-		public static Expression GetExpression(object query)
+		public static Expression GetExpression(IConvertibleToBsonDocument query)
 		{
 			if (query == null)
 				return Expression.Constant(true, typeof(bool));
 
-			var document = Actor.ObjectToQueryDocument(query);
+			var document = query.ToBsonDocument();
 			switch (document.ElementCount)
 			{
 				case 1:
@@ -430,7 +429,7 @@ namespace Mdbc
 					return DocumentExpression(document);
 			}
 		}
-		internal static Func<BsonDocument, bool> GetFunction(object query)
+		internal static Func<BsonDocument, bool> GetFunction(IConvertibleToBsonDocument query)
 		{
 			return Expression.Lambda<Func<BsonDocument, bool>>(GetExpression(query), Data).Compile();
 		}
@@ -438,10 +437,6 @@ namespace Mdbc
 		public static Func<BsonDocument, bool> GetFunction(Expression expression)
 		{
 			return Expression.Lambda<Func<BsonDocument, bool>>(expression, Data).Compile();
-		}
-		static BsonDocument SortByToBsonDocument(IMongoSortBy sortBy)
-		{
-			return sortBy as BsonDocument ?? ((SortByBuilder)sortBy).ToBsonDocument();
 		}
 		static IEnumerable<BsonDocument> OptimisedDocuments(IDictionary<BsonValue, BsonDocument> dictionary, BsonValue idSelector)
 		{
@@ -494,7 +489,7 @@ namespace Mdbc
 
 			if (sortBy != null)
 			{
-				var sortDocument = SortByToBsonDocument(sortBy);
+				var sortDocument = ((IConvertibleToBsonDocument)sortBy).ToBsonDocument();
 				for (int i = 0; i < sortDocument.ElementCount; ++i)
 				{
 					var element = sortDocument.GetElement(i);

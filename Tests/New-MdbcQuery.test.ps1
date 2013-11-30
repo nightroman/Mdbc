@@ -192,12 +192,12 @@ task ObjectToQuery {
 	# IMongoQuery - as it is
 	test { New-MdbcQuery -Or (New-MdbcQuery Name -EQ 'One') } '{ "Name" : "One" }'
 
-	# Mdbc.Dictionary - Document() -> QueryDocument
+	# Mdbc.Dictionary - ToBsonDocument() -> QueryDocument
 	$d = New-MdbcData; $d._id = 1; $d.name = 'name1'
 	test { New-MdbcQuery -Or $d } '{ "_id" : 1, "name" : "name1" }'
 
 	# BsonDocument -> QueryDocument
-	test { New-MdbcQuery -Or $d.Document() } '{ "_id" : 1, "name" : "name1" }'
+	test { New-MdbcQuery -Or $d.ToBsonDocument() } '{ "_id" : 1, "name" : "name1" }'
 
 	# IDictionary -> QueryDocument
 	$d = New-Object Collections.Specialized.OrderedDictionary; $d._id = 1; $d.name = 'name1'

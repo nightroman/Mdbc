@@ -49,13 +49,13 @@ task As {
 		'Lazy'
 		$r = test -As Lazy
 		Test-Type $r Mdbc.LazyDictionary
-		Test-Type $r.Document() MongoDB.Bson.LazyBsonDocument
+		Test-Type $r.ToBsonDocument() MongoDB.Bson.LazyBsonDocument
 		Test-Memebers
 
 		'Raw'
 		$r = test -As Raw
 		Test-Type $r Mdbc.RawDictionary
-		Test-Type $r.Document() MongoDB.Bson.RawBsonDocument
+		Test-Type $r.ToBsonDocument() MongoDB.Bson.RawBsonDocument
 		Test-Memebers
 
 		'PS'

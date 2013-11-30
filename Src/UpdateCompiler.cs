@@ -18,11 +18,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Management.Automation;
 using System.Reflection;
 using MongoDB.Bson;
 using MongoDB.Driver;
-using MongoDB.Driver.Builders;
 
 namespace Mdbc
 {
@@ -218,7 +216,12 @@ namespace Mdbc
 			var array = vArray.AsBsonArray;
 			if (!all && value.BsonType == BsonType.Document)
 			{
-				var predicate = QueryCompiler.GetFunction(value);
+				//_131130_103226 Created in Update.Pull(query)
+				var wrapper = value as BsonDocumentWrapper;
+				if (wrapper != null)
+					value = (BsonValue)wrapper.WrappedObject;
+
+				var predicate = QueryCompiler.GetFunction(value.AsBsonDocument);
 				for (int i = array.Count; --i >= 0; )
 				{
 					var v = array[i];
@@ -446,12 +449,12 @@ namespace Mdbc
 					throw new NotImplementedException("Not implemented operator " + operatorName);
 			}
 		}
-		static Expression UpdateFromQueryExpression(Expression that, object query)
+		static Expression UpdateFromQueryExpression(Expression that, IConvertibleToBsonDocument query)
 		{
 			if (query == null)
 				return that;
 
-			foreach (var element in Actor.ObjectToQueryDocument(query))
+			foreach (var element in query.ToBsonDocument())
 			{
 				if (element.Name[0] == '$')
 					continue;
@@ -492,7 +495,7 @@ namespace Mdbc
 			throw new InvalidOperationException("Update cannot mix operators and fields.");
 		}
 		// public for tests
-		public static Expression GetExpression(object update, object query, bool insert)
+		public static Expression GetExpression(IConvertibleToBsonDocument update, IConvertibleToBsonDocument query, bool insert)
 		{
 			var compiler = new UpdateCompiler();
 			Expression expression = Expression.Constant(compiler, typeof(UpdateCompiler));
@@ -503,13 +506,7 @@ namespace Mdbc
 			if (insert)
 				expression = UpdateFromQueryExpression(expression, query);
 
-			update = PSObject.AsPSObject(update).BaseObject;
-			BsonDocument document;
-			var builder = update as UpdateBuilder;
-			if (builder != null)
-				document = builder.ToBsonDocument();
-			else if ((document = update as BsonDocument) == null)
-				throw new ArgumentException(string.Format(null, "Invalid update object type {0}.", update.GetType()));
+			var document = update.ToBsonDocument();
 
 			bool isName = false;
 			bool isOper = false;
@@ -541,7 +538,7 @@ namespace Mdbc
 
 			return expression;
 		}
-		internal static Func<BsonDocument, UpdateCompiler> GetFunction(object update, object query, bool insert)
+		internal static Func<BsonDocument, UpdateCompiler> GetFunction(IConvertibleToBsonDocument update, IConvertibleToBsonDocument query, bool insert)
 		{
 			return Expression.Lambda<Func<BsonDocument, UpdateCompiler>>(GetExpression(update, query, insert), Data).Compile();
 		}
