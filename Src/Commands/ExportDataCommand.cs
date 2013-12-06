@@ -29,8 +29,8 @@ namespace Mdbc.Commands
 	{
 		[Parameter(Position = 0, Mandatory = true)]
 		public string Path { get; set; }
-		
-		[Parameter(ValueFromPipeline = true)]
+
+		[Parameter(Position = 1, ValueFromPipeline = true)]
 		public PSObject InputObject { get; set; }
 		
 		[Parameter]

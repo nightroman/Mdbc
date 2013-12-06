@@ -44,7 +44,7 @@ task Basics {
 
 	# dump by mdbc
 	$1, $2 | Export-MdbcData test2.bson
-	Export-MdbcData test2.bson -InputObject $3 -Append
+	Export-MdbcData test2.bson $3 -Append #! positional InputObject
 	Import-MdbcData test2.bson -As PS | Format-Table -AutoSize | Out-String
 
 	# the same file size

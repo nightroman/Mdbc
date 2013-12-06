@@ -1,6 +1,19 @@
 Mdbc Release Notes
 ==================
 
+## v4.4.5
+
+`Export-MdbcData`
+
+- The parameter `InputObject` is positional, similar to `Add-MdbcData` and
+  `New-MdbcData`
+
+`Script\TabExpansionProfile.Mdbc.ps1`
+
+- Added completers for `Property` arguments of `Add-MdbcData`, `New-MdbcData`,
+  and `Export-MdbcData`. If you use the suggested `TabExpansion2.ps1` update
+  it, too.
+
 ## v4.4.4
 
 `IConvertibleToBsonDocument`
