@@ -24,7 +24,7 @@ using MongoDB.Driver.Builders;
 namespace Mdbc.Commands
 {
 	[Cmdlet(VerbsCommon.New, "MdbcQuery")]
-	public sealed class NewQueryCommand : PSCmdlet
+	public sealed class NewQueryCommand : Abstract
 	{
 		const string nsAll = "All";
 		const string nsAnd = "And";

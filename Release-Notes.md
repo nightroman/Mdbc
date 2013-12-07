@@ -1,6 +1,11 @@
 Mdbc Release Notes
 ==================
 
+## v4.4.6
+
+Fixed a case with Mdbc serialization registered too late.
+All cmdlets now ensure this registration first of all.
+
 ## v4.4.5
 
 `Export-MdbcData`

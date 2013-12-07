@@ -19,7 +19,7 @@ using System.Management.Automation;
 namespace Mdbc.Commands
 {
 	[Cmdlet(VerbsData.Import, "MdbcData")]
-	public sealed class ImportDataCommand : PSCmdlet
+	public sealed class ImportDataCommand : Abstract
 	{
 		[Parameter(Position = 0, Mandatory = true)]
 		public string Path { get; set; }

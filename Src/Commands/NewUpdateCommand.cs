@@ -25,7 +25,7 @@ using MongoDB.Driver.Builders;
 namespace Mdbc.Commands
 {
 	[Cmdlet(VerbsCommon.New, "MdbcUpdate")]
-	public sealed class NewUpdateCommand : PSCmdlet
+	public sealed class NewUpdateCommand : Abstract
 	{
 		[Parameter]
 		[ValidateNotNull]

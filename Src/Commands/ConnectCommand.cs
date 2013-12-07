@@ -20,7 +20,7 @@ using MongoDB.Driver;
 namespace Mdbc.Commands
 {
 	[Cmdlet(VerbsCommunications.Connect, "Mdbc")]
-	public sealed class ConnectCommand : PSCmdlet
+	public sealed class ConnectCommand : Abstract
 	{
 		[Parameter(Position = 0)]
 		public string ConnectionString { get; set; }
@@ -48,9 +48,6 @@ namespace Mdbc.Commands
 		
 		protected override void BeginProcessing()
 		{
-			// driver 1.8.1 needs this even before connection
-			Actor.Register();
-
 			if (ConnectionString == null)
 			{
 				if (DatabaseName != null || CollectionName != null) throw new PSArgumentException("ConnectionString parameter is null or missing.");

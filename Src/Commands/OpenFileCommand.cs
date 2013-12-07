@@ -19,7 +19,7 @@ using System.Management.Automation;
 namespace Mdbc.Commands
 {
 	[Cmdlet(VerbsCommon.Open, "MdbcFile")]
-	public sealed class OpenFileCommand : PSCmdlet
+	public sealed class OpenFileCommand : Abstract
 	{
 		[Parameter(Position = 0)]
 		public string Path { get; set; }

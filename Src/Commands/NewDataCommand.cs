@@ -22,7 +22,7 @@ using MongoDB.Bson;
 namespace Mdbc.Commands
 {
 	[Cmdlet(VerbsCommon.New, "MdbcData", DefaultParameterSetName = nsDocument)]
-	public sealed class NewDataCommand : PSCmdlet
+	public sealed class NewDataCommand : Abstract
 	{
 		const string nsDocument = "Document";
 		const string nsValue = "Value";

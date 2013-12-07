@@ -100,8 +100,6 @@ namespace Mdbc
 		internal readonly Type Type;
 		public ParameterAs(PSObject value)
 		{
-			Actor.Register();
-
 			if (value == null)
 			{
 				Type = typeof(Dictionary);
