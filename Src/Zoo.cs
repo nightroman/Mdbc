@@ -95,6 +95,12 @@ namespace Mdbc
 		Raw,
 		PS
 	}
+	public enum FileFormat
+	{
+		Auto,
+		Bson,
+		Json
+	}
 	class ParameterAs
 	{
 		internal readonly Type Type;

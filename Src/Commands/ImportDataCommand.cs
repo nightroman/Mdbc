@@ -28,12 +28,15 @@ namespace Mdbc.Commands
 		public PSObject As { get { return null; } set { _ParameterAs = new ParameterAs(value); } }
 		ParameterAs _ParameterAs;
 
+		[Parameter]
+		public FileFormat FileFormat { get; set; }
+
 		protected override void BeginProcessing()
 		{
 			var documentAs = _ParameterAs ?? new ParameterAs(null);
 			Path = GetUnresolvedProviderPathFromPSPath(Path);
 
-			foreach (var doc in FileCollection.GetDocumentsFromFileAs(documentAs.Type, Path))
+			foreach (var doc in FileCollection.GetDocumentsFromFileAs(documentAs.Type, Path, FileFormat))
 				WriteObject(doc);
 		}
 	}

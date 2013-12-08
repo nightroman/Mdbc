@@ -1,6 +1,15 @@
 Mdbc Release Notes
 ==================
 
+## v4.5.0
+
+**JSON file collections and data files**
+
+Cmdlets `Open-MdbcFile`, `Save-MdbcFile`, `Import-MdbcData`, `Export-MdbcData`
+support JSON format in addition to BSON. New parameter `FileFormat` specifies
+`Auto`, `Bson`, or `Json`. `Auto` is the default, format is defined by the file
+extension: *.json* is for JSON, others are for BSON.
+
 ## v4.4.6
 
 Fixed a case with Mdbc serialization registered too late.

@@ -178,7 +178,7 @@ task NuGet Package, Version, {
 	$text = @'
 Mdbc is the Windows PowerShell module based on the official MongoDB C# driver.
 It makes MongoDB scripting in PowerShell easier and provides some extra
-features like bson file collections which do not require MongoDB.
+features like bson/json file collections which do not require MongoDB.
 '@
 	# nuspec
 	Set-Content z\Package.nuspec @"
@@ -213,7 +213,7 @@ task CheckFiles {
 # Call tests.
 task Test {
 	Invoke-Build ** Tests -Result result
-	$testCount = 139
+	$testCount = 141
 	if ($testCount -ne $result.Tasks.Count) {Write-Warning "Unexpected test count:`n Sample : $testCount`n Result : $($result.Tasks.Count)"}
 },
 CleanTest

@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Management.Automation;
 using MongoDB.Bson.IO;
@@ -31,45 +32,66 @@ namespace Mdbc.Commands
 
 		[Parameter(Position = 1, ValueFromPipeline = true)]
 		public PSObject InputObject { get; set; }
-		
+
 		[Parameter]
 		public PSObject Id { get; set; }
-		
+
 		[Parameter]
 		public SwitchParameter NewId { get; set; }
-		
+
 		[Parameter]
 		public ScriptBlock Convert { get; set; }
-		
+
 		[Parameter]
 		public object[] Property { get { return null; } set { _Selectors = Selector.Create(value, this); } }
 		IList<Selector> _Selectors;
-		
+
+		[Parameter]
+		public FileFormat FileFormat { get; set; }
+
 		[Parameter]
 		public SwitchParameter Append { get; set; }
-		
-		FileStream _stream;
-		BsonWriter _writer;
-		
+
+		StreamWriter _streamWriter;
+		FileStream _fileStream;
+		BsonWriter _bsonWriter;
+
 		public void Dispose()
 		{
-			if (_writer != null)
+			if (_streamWriter != null)
 			{
-				_writer.Close();
-				_writer = null;
+				_streamWriter.Close();
+				_streamWriter = null;
 			}
-			
-			if (_stream != null)
+
+			if (_bsonWriter != null)
 			{
-				_stream.Close();
-				_stream = null;
+				_bsonWriter.Close();
+				_bsonWriter = null;
+			}
+
+			if (_fileStream != null)
+			{
+				_fileStream.Close();
+				_fileStream = null;
 			}
 		}
 		protected override void BeginProcessing()
 		{
 			Path = GetUnresolvedProviderPathFromPSPath(Path);
-			_stream = File.Open(Path, (Append ? FileMode.Append : FileMode.Create));
-			_writer = BsonWriter.Create(_stream);
+
+			if (FileFormat == FileFormat.Auto)
+				FileFormat = Path.EndsWith(".json", StringComparison.OrdinalIgnoreCase) ? FileFormat.Json : FileFormat.Bson;
+
+			if (FileFormat == FileFormat.Json)
+			{
+				_streamWriter = new StreamWriter(Path, Append);
+			}
+			else
+			{
+				_fileStream = File.Open(Path, (Append ? FileMode.Append : FileMode.Create));
+				_bsonWriter = BsonWriter.Create(_fileStream);
+			}
 		}
 		protected override void ProcessRecord()
 		{
@@ -80,10 +102,24 @@ namespace Mdbc.Commands
 			{
 				// new document or none yet
 				var document = DocumentInput.NewDocumentWithId(NewId, Id, InputObject, SessionState);
-				
+
+				// document from input
 				document = Actor.ToBsonDocument(document, InputObject, new DocumentInput(SessionState, Convert), _Selectors);
 
-				BsonSerializer.Serialize(_writer, document);
+				// write
+				if (FileFormat == FileFormat.Json)
+				{
+					using (var stringWriter = new StringWriter(CultureInfo.InvariantCulture))
+					using (var bsonWriter = BsonWriter.Create(stringWriter, Actor.DefaultJsonWriterSettings))
+					{
+						BsonSerializer.Serialize(bsonWriter, document);
+						_streamWriter.WriteLine(stringWriter.ToString());
+					}
+				}
+				else
+				{
+					BsonSerializer.Serialize(_bsonWriter, document);
+				}
 			}
 			catch (ArgumentException ex)
 			{

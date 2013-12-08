@@ -189,6 +189,20 @@ New-MdbcData or obtained by Get-MdbcData.
 	}
 )
 
+$FileFormatParameter = @'
+Specifies the data file format:
+
+ 	Bson
+ 		BSON format
+
+ 	Json
+ 		JSON format
+
+ 	Auto (default)
+ 		The format is defined by the file extension: ".json" is for JSON,
+ 		other extensions are for BSON.
+'@
+
 ### Connect-Mdbc
 @{
 	command = 'Connect-Mdbc'
@@ -1197,6 +1211,7 @@ Specifies the path to the file where BSON representation of objects will be stor
 		NewId = $NewIdParameter
 		Convert = $ConvertParameter
 		Property = $PropertyParameter
+		FileFormat = $FileFormatParameter
 	}
 	inputs = $DocumentInputs
 	outputs = @()
@@ -1236,6 +1251,7 @@ their own.
 Specifies the path to the BSON file where objects will be restored from.
 '@
 		As = $AsParameter
+		FileFormat = $FileFormatParameter
 	}
 	inputs = @()
 	outputs = @(
@@ -1319,6 +1335,7 @@ Tells to open an empty collection. If the source file path is specified then it
 is simply stored for saving, the source file is not touched at this moment.
 '@
 		CollectionVariable = $CollectionVariable
+		FileFormat = $FileFormatParameter
 	}
 	inputs = @()
 	outputs = @()
@@ -1351,6 +1368,9 @@ call is simply ignored.
 Specifies the bson file path for saving data. If it is omitted or empty then
 the path used on opening is assumed. If it was not provided as well then an
 error is thrown.
+'@
+		FileFormat = $FileFormatParameter, @'
+This parameter is ignored if the path is omitted or empty.
 '@
 	}
 	inputs = @()

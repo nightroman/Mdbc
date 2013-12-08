@@ -23,12 +23,15 @@ namespace Mdbc.Commands
 	{
 		[Parameter(Position = 0)]
 		public string Path { get; set; }
-		
+
+		[Parameter]
+		public FileFormat FileFormat { get; set; }
+
 		protected override void BeginProcessing()
 		{
 			var fc = TargetCollection as FileCollection;
 			if (fc != null)
-				fc.Save(string.IsNullOrEmpty(Path) ? null : GetUnresolvedProviderPathFromPSPath(Path));
+				fc.Save(string.IsNullOrEmpty(Path) ? null : GetUnresolvedProviderPathFromPSPath(Path), FileFormat);
 		}
 	}
 }

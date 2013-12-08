@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using MongoDB.Bson;
@@ -30,7 +31,7 @@ namespace Mdbc
 		SortedList<BsonValue, BsonDocument> _data;
 		protected override IList<BsonDocument> Documents { get { return _data.Values; } }
 		protected override IDictionary<BsonValue, BsonDocument> Documents2 { get { return _data; } }
-		internal NormalFileCollection(string path) : base(path) { }
+		internal NormalFileCollection(string path, FileFormat format) : base(path, format) { }
 		static void ThrowIdExists(BsonValue id)
 		{
 			throw new InvalidOperationException(string.Format(null, "Duplicate _id {0}.", id));
@@ -100,7 +101,7 @@ namespace Mdbc
 				return;
 
 			int index = -1;
-			foreach (BsonDocument doc in GetDocumentsFromFileAs(typeof(BsonDocument), FilePath))
+			foreach (BsonDocument doc in GetDocumentsFromFileAs(typeof(BsonDocument), FilePath, FileFormat))
 			{
 				++index;
 				BsonValue id;
@@ -122,7 +123,7 @@ namespace Mdbc
 	{
 		List<BsonDocument> _data;
 		protected override IList<BsonDocument> Documents { get { return _data; } }
-		internal SimpleFileCollection(string path) : base(path) { }
+		internal SimpleFileCollection(string path, FileFormat format) : base(path, format) { }
 		protected override void InsertInternal(BsonDocument document)
 		{
 			_data.Add(document);
@@ -156,13 +157,14 @@ namespace Mdbc
 			if (newCollection || FilePath == null || !File.Exists(FilePath))
 				return;
 
-			foreach (BsonDocument doc in GetDocumentsFromFileAs(typeof(BsonDocument), FilePath))
+			foreach (BsonDocument doc in GetDocumentsFromFileAs(typeof(BsonDocument), FilePath, FileFormat))
 				_data.Add(doc);
 		}
 	}
 	abstract class FileCollection : ICollectionHost
 	{
 		protected readonly string FilePath;
+		protected readonly FileFormat FileFormat;
 		internal abstract void Read(bool newCollection);
 		protected abstract IList<BsonDocument> Documents { get; }
 		protected abstract void InsertInternal(BsonDocument document);
@@ -170,9 +172,10 @@ namespace Mdbc
 		protected abstract void RemoveDocumentAt(int index);
 		protected abstract void UpdateDocument(BsonDocument document, Func<BsonDocument, UpdateCompiler> update);
 		protected virtual IDictionary<BsonValue, BsonDocument> Documents2 { get { return null; } }
-		protected FileCollection(string path)
+		protected FileCollection(string path, FileFormat format)
 		{
 			FilePath = string.IsNullOrEmpty(path) ? null : path;
+			FileFormat = format;
 		}
 		#region Collection
 		public object Collection { get { return this; } }
@@ -236,11 +239,11 @@ namespace Mdbc
 			if (upsert)
 			{
 				var document = InsertNewDocument(query, update);
-				
+
 				result = new SimpleUpdateResult(1, false);
 				return returnNew ? BsonSerializer.Deserialize(document, documentType) : null;
 			}
-			
+
 			result = new SimpleUpdateResult(0, false);
 			return null;
 		}
@@ -366,36 +369,79 @@ namespace Mdbc
 			}
 			return internalDocument;
 		}
-		internal static IEnumerable<object> GetDocumentsFromFileAs(Type documentType, string filePath)
+		internal static IEnumerable<object> GetDocumentsFromFileAs(Type documentType, string filePath, FileFormat format)
 		{
-			using (var stream = File.OpenRead(filePath))
+			if (format == FileFormat.Auto)
+				format = filePath.EndsWith(".json", StringComparison.OrdinalIgnoreCase) ? FileFormat.Json : FileFormat.Bson;
+			
+			if (format == FileFormat.Json)
 			{
-				long length = stream.Length;
+				using (var stream = File.OpenText(filePath))
+				{
+					string line;
+					while (null != (line = stream.ReadLine()))
+					{
+						using (var lineReader = new StringReader(line))
+						using (var bsonReader = BsonReader.Create(lineReader))
+							yield return BsonSerializer.Deserialize(bsonReader, documentType);
+					}
+				}
+			}
+			else
+			{
+				using (var stream = File.OpenRead(filePath))
+				{
+					long length = stream.Length;
 
-				while (stream.Position < length)
-					using (var _reader = BsonReader.Create(stream))
-						yield return BsonSerializer.Deserialize(_reader, documentType);
+					while (stream.Position < length)
+						using (var bsonReader = BsonReader.Create(stream))
+							yield return BsonSerializer.Deserialize(bsonReader, documentType);
+				}
 			}
 		}
 		IEnumerable<BsonDocument> QueryDocuments(IMongoQuery query)
 		{
 			return Documents.Where(QueryCompiler.GetFunction((IConvertibleToBsonDocument)query));
 		}
-		internal void Save(string saveAs)
+		internal void Save(string saveAs, FileFormat format)
 		{
 			if (string.IsNullOrEmpty(saveAs))
+			{
 				saveAs = FilePath;
+				format = FileFormat;
+			}
 
 			if (saveAs == null)
 				throw new InvalidOperationException("File path should be provided either on opening or saving.");
 
+			if (format == FileFormat.Auto)
+				format = saveAs.EndsWith(".json", StringComparison.OrdinalIgnoreCase) ? FileFormat.Json : FileFormat.Bson;
+
 			var tmp = File.Exists(saveAs) ? saveAs + ".tmp" : saveAs;
 
-			using (var stream = File.Open(tmp, FileMode.Create, FileAccess.Write, FileShare.None))
-			using (var writer = BsonWriter.Create(stream))
+			if (format == FileFormat.Json)
 			{
-				foreach (var doc in Documents)
-					BsonSerializer.Serialize(writer, doc);
+				using (var streamWriter = new StreamWriter(tmp))
+				{
+					foreach (var doc in Documents)
+					{
+						using (var stringWriter = new StringWriter(CultureInfo.InvariantCulture))
+						using (var bsonWriter = BsonWriter.Create(stringWriter, Actor.DefaultJsonWriterSettings))
+						{
+							BsonSerializer.Serialize(bsonWriter, doc);
+							streamWriter.WriteLine(stringWriter.ToString());
+						}
+					}
+				}
+			}
+			else
+			{
+				using (var fileStream = File.Open(tmp, FileMode.Create, FileAccess.Write, FileShare.None))
+				using (var bsonWriter = BsonWriter.Create(fileStream))
+				{
+					foreach (var doc in Documents)
+						BsonSerializer.Serialize(bsonWriter, doc);
+				}
 			}
 
 			if (!object.ReferenceEquals(tmp, saveAs))

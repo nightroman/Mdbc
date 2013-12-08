@@ -32,6 +32,9 @@ namespace Mdbc.Commands
 		public SwitchParameter NewCollection { get; set; }
 
 		[Parameter]
+		public FileFormat FileFormat { get; set; }
+
+		[Parameter]
 		public SwitchParameter Simple { get; set; }
 
 		protected override void BeginProcessing()
@@ -41,9 +44,9 @@ namespace Mdbc.Commands
 			
 			FileCollection collection;
 			if (Simple)
-				collection = new SimpleFileCollection(Path);
+				collection = new SimpleFileCollection(Path, FileFormat);
 			else
-				collection = new NormalFileCollection(Path);
+				collection = new NormalFileCollection(Path, FileFormat);
 
 			collection.Read(NewCollection);
 

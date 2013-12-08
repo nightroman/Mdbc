@@ -4,45 +4,11 @@ Import-Module Mdbc
 Set-StrictMode -Version Latest
 
 $bson = "$env:TEMP\test.bson"
+$json = "$env:TEMP\test.json"
 
-task Basics {
-	# fake old file
-	Set-Content $bson 1
-	assert (Test-Path $bson)
-
-	# open as new collection
-	Open-MdbcFile $bson -NewCollection
-	assert (Test-Path $bson) # file still exists
-	assert ((Get-MdbcData -Count) -eq 0) # empty
-
-	# add data
-	@{x=1; y=1}, @{x=2; y=2} | Add-MdbcData
-	assert (2 -eq (Get-MdbcData -Count))
-
-	# save
-	Save-MdbcFile
-	assert (Test-Path $bson)
-	assert (2 -eq (Get-MdbcData -Count))
-
-	# test
-	$r = @(Import-MdbcData $bson)
-	assert ($r.Count -eq 2)
-	assert ($r[0].x -eq 1)
-	assert ($r[1].x -eq 2)
-
-	# remove
-	Remove-MdbcData @{x=1}
-	assert (1 -eq (Get-MdbcData -Count))
-
-	# save, test
-	Save-MdbcFile
-	assert (1 -eq (Get-MdbcData -Count))
-	$r = @(Import-MdbcData $bson)
-	assert ($r.Count -eq 1)
-	assert ($r[0].x -eq 2)
-
-	# no leaked public members
-	$r = $Collection | Get-Member | Select-Object -ExpandProperty Name | Out-String
+task NoLeakedPublicMembers {
+	Open-MdbcFile
+	$r = $Collection | Get-Member | %{$_.Name} | Out-String
 	assert ($r -eq @'
 Count
 Distinct
@@ -59,7 +25,50 @@ ToString
 Update
 Collection
 
-'@) $r
+'@)
+}
+
+task Basics {
+	Invoke-Test {
+		# fake old file
+		Set-Content $file 1
+		assert (Test-Path $file)
+
+		# open as new collection
+		Open-MdbcFile $file -NewCollection
+		assert (Test-Path $file) # file still exists
+		assert ((Get-MdbcData -Count) -eq 0) # empty
+
+		# add data
+		@{x=1; y=1}, @{x=2; y=2} | Add-MdbcData
+		assert (2 -eq (Get-MdbcData -Count))
+
+		# save
+		Save-MdbcFile
+		assert (Test-Path $file)
+		assert (2 -eq (Get-MdbcData -Count))
+
+		# test
+		$r = @(Import-MdbcData $file)
+		assert ($r.Count -eq 2)
+		assert ($r[0].x -eq 1)
+		assert ($r[1].x -eq 2)
+
+		# remove
+		Remove-MdbcData @{x=1}
+		assert (1 -eq (Get-MdbcData -Count))
+
+		# save, test
+		Save-MdbcFile
+		assert (1 -eq (Get-MdbcData -Count))
+		$r = @(Import-MdbcData $file)
+		assert ($r.Count -eq 1)
+		assert ($r[0].x -eq 2)
+	}{
+		$file = $bson
+	}{
+		$file = $json
+	}
 }
 
 # Test invalid names with Add-MdbcData and Add-MdbcData -Update for normal and simple files

@@ -146,6 +146,7 @@ task PublicTypes {
 		'ConnectCommand'
 		'Dictionary'
 		'ExportDataCommand'
+		'FileFormat'
 		'GetDataCommand'
 		'ImportDataCommand'
 		'InvokeAggregateCommand'

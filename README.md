@@ -4,7 +4,7 @@ Mdbc module - MongoDB Cmdlets for PowerShell
 Mdbc is the Windows PowerShell module based on the official
 [MongoDB C# driver](https://github.com/mongodb/mongo-csharp-driver).
 Mdbc makes MongoDB scripting in PowerShell easier and provides some extra
-features like bson file collections which do not require MongoDB installed.
+features like bson/json file collections which do not even require MongoDB.
 
 ## Quick Start
 
