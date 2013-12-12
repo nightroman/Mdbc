@@ -3,7 +3,13 @@
 Import-Module Mdbc
 Set-StrictMode -Version Latest
 
+# Temp json file
 $json = "$env:TEMP\test.json"
+
+# Makes the temp json file
+function JsonFile($Text) {
+	[System.IO.File]::WriteAllText($json, $Text)
+}
 
 task PreserveTypes {
 	$1 = New-MdbcData -NewId
@@ -56,4 +62,65 @@ task PreserveTypes {
 	finally {
 		[MongoDB.Bson.IO.JsonWriterSettings]::Defaults.OutputMode = $old
 	}
+}
+
+#!
+task JsonAsPS {
+	JsonFile @'
+{ "_id" : 1, "x" : 1 }
+{ "_id" : 2, "x" : 2 }
+
+'@
+	$r1, $r2 = Import-MdbcData $json -As PS
+	assert ($r1._id -eq 1 -and $r2._id -eq 2)
+}
+
+task FlexibleJson {
+	JsonFile @'
+
+{
+    "x":  1
+}
+
+[
+	{
+	    "x":  2
+	}
+]
+
+{
+    "x":  3
+}
+
+[
+	{
+	    "x":  4
+	},
+	{
+	    "x":  5
+	}
+]
+
+
+'@
+
+	$r = Import-MdbcData $json
+	assert ("$r" -ceq '{ "x" : 1 } { "x" : 2 } { "x" : 3 } { "x" : 4 } { "x" : 5 }')
+}
+
+task BadJson {
+	JsonFile 'x'
+	Test-Error { Import-MdbcData $json } "Unexpected character 'x' at position 0."
+
+	JsonFile ','
+	Test-Error { Import-MdbcData $json } "Unexpected character ',' at position 0."
+
+	JsonFile ' ]'
+	Test-Error { Import-MdbcData $json } "Unexpected character ']' at position 1."
+
+	JsonFile ' [['
+	Test-Error { Import-MdbcData $json } "Unexpected character '``[' at position 2."
+
+	JsonFile '{x=1}'
+	Test-Error { Import-MdbcData $json } "Invalid JSON input '=1}'."
 }

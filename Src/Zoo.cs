@@ -18,7 +18,6 @@ using System;
 using System.Collections.Generic;
 using System.Management.Automation;
 using MongoDB.Bson;
-using MongoDB.Driver;
 
 namespace Mdbc
 {
@@ -87,19 +86,6 @@ namespace Mdbc
 			if (Variable != null)
 				Variable.Value = OldValue;
 		}
-	}
-	public enum OutputType
-	{
-		Default,
-		Lazy,
-		Raw,
-		PS
-	}
-	public enum FileFormat
-	{
-		Auto,
-		Bson,
-		Json
 	}
 	class ParameterAs
 	{

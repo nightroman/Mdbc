@@ -167,7 +167,7 @@ task Package ConvertMarkdown, @{UpdateScript=1}, {
 	Release-Notes.htm
 }
 
-# Set $script:Version = assembly version
+# Set $script:Version = assembly version as 'X.Y.Z'
 task Version {
 	assert ((Get-Item $ModuleRoot\Mdbc.dll).VersionInfo.FileVersion -match '^(\d+\.\d+\.\d+)')
 	$script:Version = $matches[1]
@@ -202,7 +202,19 @@ features like bson/json file collections which do not require MongoDB.
 	exec { NuGet pack z\Package.nuspec -NoPackageAnalysis }
 }
 
-# Check files.
+# Push to the repository with a version tag.
+task PushRelease Version, {
+     exec { git push }
+     exec { git tag -a "v$Version" -m "v$Version" }
+     exec { git push origin "v$Version" }
+}
+
+# Make and push the NuGet package.
+task PushNuGet NuGet, {
+     exec { NuGet push "Mdbc.$Version" }
+}
+
+# Check expected files.
 task CheckFiles {
 	$Pattern = '\.(cs|csproj|md|ps1|psd1|psm1|ps1xml|sln|txt|xml|gitignore)$'
 	foreach ($file in git status -s) { if ($file -notmatch $Pattern) {
@@ -213,7 +225,7 @@ task CheckFiles {
 # Call tests.
 task Test {
 	Invoke-Build ** Tests -Result result
-	$testCount = 141
+	$testCount = 144
 	if ($testCount -ne $result.Tasks.Count) {Write-Warning "Unexpected test count:`n Sample : $testCount`n Result : $($result.Tasks.Count)"}
 },
 CleanTest

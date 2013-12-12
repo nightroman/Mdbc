@@ -43,12 +43,12 @@ LONG DESCRIPTION
 
         Invoke-MdbcCommand
 
-    Bson file data persistence even without MongoDB:
+    bson/json data persistence without MongoDB:
 
         Export-MdbcData
         Import-MdbcData
 
-    Bson file collections even without MongoDB:
+    bson/json file collections without MongoDB:
 
         Open-MdbcFile
         Save-MdbcFile
@@ -58,7 +58,7 @@ LONG DESCRIPTION
         Mdbc.ps1
 
 FILE COLLECTIONS
-    Mdbc introduces bson data file collections which do not require MongoDB.
+    Mdbc introduces bson/json file collections which do not require MongoDB.
     They are opened and saved by Open-MdbcFile and Save-MdbcFile and support
     commands Get-MdbcData, Add-MdbcData, Remove-MdbcData, and Update-MdbcData.
 

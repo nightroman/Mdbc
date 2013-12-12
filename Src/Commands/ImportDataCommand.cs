@@ -36,7 +36,7 @@ namespace Mdbc.Commands
 			var documentAs = _ParameterAs ?? new ParameterAs(null);
 			Path = GetUnresolvedProviderPathFromPSPath(Path);
 
-			foreach (var doc in FileCollection.GetDocumentsFromFileAs(documentAs.Type, Path, FileFormat))
+			foreach (var doc in FileCollection.ReadDocumentsAs(documentAs.Type, Path, FileFormat))
 				WriteObject(doc);
 		}
 	}

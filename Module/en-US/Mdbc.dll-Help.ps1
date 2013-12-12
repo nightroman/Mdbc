@@ -201,6 +201,9 @@ Specifies the data file format:
  	Auto (default)
  		The format is defined by the file extension: ".json" is for JSON,
  		other extensions are for BSON.
+
+Input JSON is a sequence of objects and arrays of objects. Arrays are unrolled.
+Top objects and arrays are optionally separated by spaces, tabs, and new lines.
 '@
 
 ### Connect-Mdbc
@@ -1253,6 +1256,7 @@ Specifies the path to the BSON file where objects will be restored from.
 		As = $AsParameter
 		FileFormat = $FileFormatParameter
 	}
+
 	inputs = @()
 	outputs = @(
 		@{
@@ -1264,11 +1268,16 @@ Specifies the path to the BSON file where objects will be restored from.
 			description = 'Custom objects specified by the parameter As.'
 		}
 	)
+
 	examples = @(
-		@{
-			code = $ExampleIOCode
-		}
+		@{code=$ExampleIOCode}
+		@{code={
+	# Import data produced by ConvertTo-Json (PowerShell V3)
+	Get-Process | ConvertTo-Json | Set-Content process.json
+	Import-MdbcData process.json
+		}}
 	)
+
 	links = @(
 		@{ text = 'Export-MdbcData' }
 		@{ text = 'Open-MdbcFile' }
@@ -1337,9 +1346,17 @@ is simply stored for saving, the source file is not touched at this moment.
 		CollectionVariable = $CollectionVariable
 		FileFormat = $FileFormatParameter
 	}
+
 	inputs = @()
 	outputs = @()
-	examples = @($OpenSaveExample)
+
+	examples = $OpenSaveExample, @{code={
+	# Open and query data produced by ConvertTo-Json (PowerShell V3)
+	Get-Process | ConvertTo-Json -Depth 1 | Set-Content process.json
+	Open-MdbcFile process.json -Simple
+	Get-MdbcData @{Name='mongod'}
+	}}
+
 	links = @(
 		@{ text = 'Save-MdbcFile' }
 		@{ text = 'Get-MdbcData' }

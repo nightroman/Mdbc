@@ -97,12 +97,15 @@
     <Compile Include="Dictionary.cs" />
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="DocumentInput.cs" />
+    <Compile Include="Enum.cs" />
     <Compile Include="FieldCompiler.cs" />
     <Compile Include="FileCollection.cs" />
     <Compile Include="GlobalSuppressions.cs" />
+    <Compile Include="NormalFileCollection.cs" />
     <Compile Include="Selector.cs" />
     <Compile Include="Serializer.cs" />
     <Compile Include="QueryCompiler.cs" />
+    <Compile Include="SimpleFileCollection.cs" />
     <Compile Include="UpdateCompiler.cs" />
     <Compile Include="Zoo.cs" />
   </ItemGroup>

@@ -1,6 +1,19 @@
 Mdbc Release Notes
 ==================
 
+## v4.5.1
+
+Input JSON format. It does not have to be one object per line. It is a sequence
+of objects and arrays of objects. Arrays are unrolled. Top objects and arrays
+are optionally separated by spaces, tabs, and new lines.
+
+As a result, output of PowerShell `ConvertTo-Json` (V3) saved to a file can be
+read and processed by Mdbc cmdlets:
+
+    Get-Process | ConvertTo-Json -Depth 1 | Set-Content process.json
+    Open-MdbcFile process.json -Simple
+    Get-MdbcData @{Name='mongod'}
+
 ## v4.5.0
 
 **JSON file collections and data files**

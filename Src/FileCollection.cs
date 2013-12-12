@@ -22,145 +22,11 @@ using System.Linq;
 using MongoDB.Bson;
 using MongoDB.Bson.IO;
 using MongoDB.Bson.Serialization;
+using MongoDB.Bson.Serialization.Options;
 using MongoDB.Driver;
 
 namespace Mdbc
 {
-	sealed class NormalFileCollection : FileCollection
-	{
-		SortedList<BsonValue, BsonDocument> _data;
-		protected override IList<BsonDocument> Documents { get { return _data.Values; } }
-		protected override IDictionary<BsonValue, BsonDocument> Documents2 { get { return _data; } }
-		internal NormalFileCollection(string path, FileFormat format) : base(path, format) { }
-		static void ThrowIdExists(BsonValue id)
-		{
-			throw new InvalidOperationException(string.Format(null, "Duplicate _id {0}.", id));
-		}
-		protected override void InsertInternal(BsonDocument document)
-		{
-			// make id
-			BsonValue id;
-			if (!document.TryGetValue(MyValue.Id, out id))
-				id = document.EnsureId();
-			else if (id.BsonType == BsonType.Array)
-				throw new InvalidOperationException("_id cannot be an array.");
-
-			// try to add
-			try
-			{
-				_data.Add(id, document);
-			}
-			catch (ArgumentException)
-			{
-				ThrowIdExists(id);
-			}
-		}
-		public override WriteConcernResult Save(BsonDocument document, WriteConcern writeConcern, bool needResult)
-		{
-			// copy, make id, override
-			document = CloneExternalDocument(document);
-			var id = document.EnsureId();
-			bool updatedExisting = _data.ContainsKey(id);
-			_data[id] = document;
-
-			return needResult ? new WriteConcernResult(NewResponse(1, updatedExisting, null, null)) : null;
-		}
-		protected override void RemoveDocument(BsonDocument document)
-		{
-			_data.Remove(document[MyValue.Id]);
-		}
-		protected override void RemoveDocumentAt(int index)
-		{
-			_data.RemoveAt(index);
-		}
-		protected override void UpdateDocument(BsonDocument document, Func<BsonDocument, UpdateCompiler> update)
-		{
-			var oldId = document[MyValue.Id];
-			var copy = document.DeepClone();
-			try
-			{
-				update(document);
-
-				BsonValue newId;
-				if (!document.TryGetValue(MyValue.Id, out newId) || !oldId.Equals(newId))
-					throw new InvalidOperationException("Modification of _id is not allowed.");
-			}
-			catch
-			{
-				document.Clear();
-				document.AddRange(copy.AsBsonDocument);
-				throw;
-			}
-		}
-		internal override void Read(bool newCollection)
-		{
-			//_131119_113717 SortedList with the default comparer is OK, unlike Distinct. Watch/test cases like 1 and 1.0, @{x=1} and @{x=1.0}, etc.
-			_data = new SortedList<BsonValue, BsonDocument>();
-
-			if (newCollection || FilePath == null || !File.Exists(FilePath))
-				return;
-
-			int index = -1;
-			foreach (BsonDocument doc in GetDocumentsFromFileAs(typeof(BsonDocument), FilePath, FileFormat))
-			{
-				++index;
-				BsonValue id;
-				if (!doc.TryGetValue(MyValue.Id, out id))
-					throw new InvalidDataException(string.Format(null, "The document (index {0}) has no _id.", index));
-
-				try
-				{
-					_data.Add(id, doc);
-				}
-				catch (System.ArgumentException)
-				{
-					throw new InvalidDataException(string.Format(null, @"The document (index {0}) has duplicate _id ""{1}"".", index, id));
-				}
-			}
-		}
-	}
-	sealed class SimpleFileCollection : FileCollection
-	{
-		List<BsonDocument> _data;
-		protected override IList<BsonDocument> Documents { get { return _data; } }
-		internal SimpleFileCollection(string path, FileFormat format) : base(path, format) { }
-		protected override void InsertInternal(BsonDocument document)
-		{
-			_data.Add(document);
-		}
-		protected override void RemoveDocument(BsonDocument document)
-		{
-			_data.Remove(document);
-		}
-		protected override void RemoveDocumentAt(int index)
-		{
-			_data.RemoveAt(index);
-		}
-		protected override void UpdateDocument(BsonDocument document, Func<BsonDocument, UpdateCompiler> update)
-		{
-			var copy = document.DeepClone();
-			try
-			{
-				update(document);
-			}
-			catch
-			{
-				document.Clear();
-				document.AddRange(copy.AsBsonDocument);
-				throw;
-			}
-		}
-		internal override void Read(bool newCollection)
-		{
-			_data = new List<BsonDocument>();
-
-			if (newCollection || FilePath == null || !File.Exists(FilePath))
-				return;
-
-			foreach (BsonDocument doc in GetDocumentsFromFileAs(typeof(BsonDocument), FilePath, FileFormat))
-				_data.Add(doc);
-		}
-	}
 	abstract class FileCollection : ICollectionHost
 	{
 		protected readonly string FilePath;
@@ -369,23 +235,76 @@ namespace Mdbc
 			}
 			return internalDocument;
 		}
-		internal static IEnumerable<object> GetDocumentsFromFileAs(Type documentType, string filePath, FileFormat format)
+		IEnumerable<BsonDocument> QueryDocuments(IMongoQuery query)
+		{
+			return Documents.Where(QueryCompiler.GetFunction((IConvertibleToBsonDocument)query));
+		}
+		internal static IEnumerable<object> ReadDocumentsAs(Type documentType, string filePath, FileFormat format)
 		{
 			if (format == FileFormat.Auto)
 				format = filePath.EndsWith(".json", StringComparison.OrdinalIgnoreCase) ? FileFormat.Json : FileFormat.Bson;
+
+			var serializer = BsonSerializer.LookupSerializer(documentType);
+			var options = DocumentSerializationOptions.Defaults;
 			
 			if (format == FileFormat.Json)
 			{
-				using (var stream = File.OpenText(filePath))
+				var jb = new JsonBuffer(File.ReadAllText(filePath));
+				bool array = false;
+				for (; ; )
 				{
-					string line;
-					while (null != (line = stream.ReadLine()))
+					// skip white
+					int c;
+					for (; ; )
 					{
-						using (var lineReader = new StringReader(line))
-						using (var bsonReader = BsonReader.Create(lineReader))
-							yield return BsonSerializer.Deserialize(bsonReader, documentType);
+						// end or white?
+						if ((c = jb.Read()) <= 32)
+						{
+							// end?
+							if (c < 0)
+								goto end;
+
+							// white
+							continue;
+						}
+
+						// document
+						if (c == '{')
+						{
+							jb.UnRead(c);
+							break;
+						}
+
+						// array
+						if (c == ',')
+						{
+							if (array)
+								continue;
+						}
+						else if (c == ']')
+						{
+							if (array)
+							{
+								array = false;
+								continue;
+							}
+						}
+						else if (c == '[')
+						{
+							if (!array)
+							{
+								array = true;
+								continue;
+							}
+						}
+
+						throw new FormatException(string.Format(null, "Unexpected character '{0}' at position {1}.", (char)c, jb.Position - 1));
 					}
+
+					using (var bsonReader = BsonReader.Create(jb))
+						yield return serializer.Deserialize(bsonReader, documentType, options);
 				}
+			end: ;
 			}
 			else
 			{
@@ -395,13 +314,9 @@ namespace Mdbc
 
 					while (stream.Position < length)
 						using (var bsonReader = BsonReader.Create(stream))
-							yield return BsonSerializer.Deserialize(bsonReader, documentType);
+							yield return serializer.Deserialize(bsonReader, documentType, options);
 				}
 			}
-		}
-		IEnumerable<BsonDocument> QueryDocuments(IMongoQuery query)
-		{
-			return Documents.Where(QueryCompiler.GetFunction((IConvertibleToBsonDocument)query));
 		}
 		internal void Save(string saveAs, FileFormat format)
 		{
@@ -419,16 +334,19 @@ namespace Mdbc
 
 			var tmp = File.Exists(saveAs) ? saveAs + ".tmp" : saveAs;
 
+			var serializer = BsonSerializer.LookupSerializer(typeof(BsonDocument));
+			var options = DocumentSerializationOptions.Defaults;
+			
 			if (format == FileFormat.Json)
 			{
 				using (var streamWriter = new StreamWriter(tmp))
 				{
-					foreach (var doc in Documents)
+					foreach (var document in Documents)
 					{
 						using (var stringWriter = new StringWriter(CultureInfo.InvariantCulture))
 						using (var bsonWriter = BsonWriter.Create(stringWriter, Actor.DefaultJsonWriterSettings))
 						{
-							BsonSerializer.Serialize(bsonWriter, doc);
+							serializer.Serialize(bsonWriter, typeof(BsonDocument), document, options);
 							streamWriter.WriteLine(stringWriter.ToString());
 						}
 					}
@@ -439,8 +357,8 @@ namespace Mdbc
 				using (var fileStream = File.Open(tmp, FileMode.Create, FileAccess.Write, FileShare.None))
 				using (var bsonWriter = BsonWriter.Create(fileStream))
 				{
-					foreach (var doc in Documents)
-						BsonSerializer.Serialize(bsonWriter, doc);
+					foreach (var document in Documents)
+						serializer.Serialize(bsonWriter, typeof(BsonDocument), document, options);
 				}
 			}
 
