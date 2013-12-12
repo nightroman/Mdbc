@@ -211,8 +211,9 @@ task PushRelease Version, {
 
 # Make and push the NuGet package.
 task PushNuGet NuGet, {
-     exec { NuGet push "Mdbc.$Version" }
-}
+     exec { NuGet push "Mdbc.$Version.nupkg" }
+},
+Clean
 
 # Check expected files.
 task CheckFiles {
