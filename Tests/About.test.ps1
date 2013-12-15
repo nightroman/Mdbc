@@ -93,18 +93,6 @@ task Invoke-Test {
 	)
 }
 
-task Connect-Mdbc {
-	Test-Error {Connect-Mdbc -DatabaseName test} 'ConnectionString parameter is null or missing.'
-	Test-Error {Connect-Mdbc -CollectionName test} 'ConnectionString parameter is null or missing.'
-
-	Connect-Mdbc
-	Test-Type $Server MongoDB.Driver.MongoServer
-	Test-Type $Database MongoDB.Driver.MongoDatabase
-	Test-Type $Collection MongoDB.Driver.MongoCollection
-	assert ($Database.Name -ceq 'test')
-	assert ($Collection.Name -ceq 'test')
-}
-
 # Variable $_ is restored on invoking scripts
 task SetDollar {
 	$log = [Collections.ArrayList]@(); function log {$null = $log.AddRange($args)}
@@ -133,8 +121,9 @@ task SetDollar {
 	)
 }
 
+# Only these types are exposed
 task PublicTypes {
-	$types = [Reflection.Assembly]::GetAssembly(([Mdbc.Dictionary])).GetTypes() | ?{$_.IsPublic} | Sort-Object Name | Select-Object -ExpandProperty Name
+	$types = [Reflection.Assembly]::GetAssembly(([Mdbc.Dictionary])).GetTypes() | .{process{ if ($_.IsPublic) {$_.Name} }} | Sort-Object
 	Test-List $types @(
 		'Abstract'
 		'AbstractCollectionCommand'
