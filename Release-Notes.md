@@ -1,6 +1,15 @@
 Mdbc Release Notes
 ==================
 
+## v4.6.0
+
+New parameter `Retry` of `Export-MdbcData` tells to retry on failures to open
+the file and specifies one or two arguments. The first is the retry timeout.
+The second is the retry interval, the default is 50 milliseconds.
+
+For example, it can be used together with `Append` for adding data to the same
+file by several writers simultaneously.
+
 ## v4.5.1
 
 Input JSON format. It does not have to be one object per line. It is a sequence

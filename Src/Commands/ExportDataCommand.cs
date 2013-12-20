@@ -15,10 +15,12 @@
 */
 
 using System;
+using System.Diagnostics;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Management.Automation;
+using System.Threading;
 using MongoDB.Bson.IO;
 using MongoDB.Bson.Serialization;
 
@@ -48,6 +50,10 @@ namespace Mdbc.Commands
 
 		[Parameter]
 		public FileFormat FileFormat { get; set; }
+
+		[Parameter]
+		[ValidateCount(1, 2)]
+		public TimeSpan[] Retry { get; set; }
 
 		[Parameter]
 		public SwitchParameter Append { get; set; }
@@ -83,14 +89,34 @@ namespace Mdbc.Commands
 			if (FileFormat == FileFormat.Auto)
 				FileFormat = Path.EndsWith(".json", StringComparison.OrdinalIgnoreCase) ? FileFormat.Json : FileFormat.Bson;
 
-			if (FileFormat == FileFormat.Json)
+			var time = Stopwatch.StartNew();
+			for (; ; )
 			{
-				_streamWriter = new StreamWriter(Path, Append);
-			}
-			else
-			{
-				_fileStream = File.Open(Path, (Append ? FileMode.Append : FileMode.Create));
-				_bsonWriter = BsonWriter.Create(_fileStream);
+				try
+				{
+					if (FileFormat == FileFormat.Json)
+					{
+						_streamWriter = new StreamWriter(Path, Append);
+					}
+					else
+					{
+						_fileStream = File.Open(Path, (Append ? FileMode.Append : FileMode.Create));
+						_bsonWriter = BsonWriter.Create(_fileStream);
+					}
+					break;
+				}
+				catch (IOException)
+				{
+					if (Retry == null || time.Elapsed > Retry[0])
+						throw;
+
+					if (Retry.Length < 2)
+						Thread.Sleep(50);
+					else
+						Thread.Sleep(Retry[1]);
+
+					WriteVerbose("Retrying to write...");
+				}
 			}
 		}
 		protected override void ProcessRecord()

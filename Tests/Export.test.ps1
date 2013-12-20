@@ -68,3 +68,35 @@ task Basics {
 	# end
 	Remove-Item test2.bson, dump -Recurse -Force
 }
+
+task Retry {
+	Import-Module SplitPipeline
+	$dataCount = 2000
+	$pipeCount = 3
+
+	Invoke-Test {
+		Remove-Item -LiteralPath $file -ErrorAction 0
+
+		1..$dataCount | Split-Pipeline -Verbose -Count $pipeCount -Variable file -Module Mdbc `
+		-Begin {
+			$data = [guid]::NewGuid().ToString()
+		} `
+		-Script {process{
+			@{_id=$_; data=$data} | Export-MdbcData -Verbose -Append -Retry (New-TimeSpan -Seconds 5) $file
+		}}
+
+		# all data are there
+		$r = Import-MdbcData $file -As PS
+		assert ($r.Count -eq $dataCount)
+
+		# all writers are there
+		$r = $r | Group-Object data
+		assert($r.Count -eq $pipeCount)
+
+		Remove-Item -LiteralPath $file
+	}{
+		$file = "$env:TEMP\z.bson"
+	}{
+		$file = "$env:TEMP\z.json"
+	}
+}

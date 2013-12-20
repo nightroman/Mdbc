@@ -1215,6 +1215,11 @@ Specifies the path to the file where BSON representation of objects will be stor
 		Convert = $ConvertParameter
 		Property = $PropertyParameter
 		FileFormat = $FileFormatParameter
+		Retry = @'
+Tells to retry on failures to open the file and specifies one or two arguments.
+The first is the retry timeout. The second is the retry interval, the default
+is 50 milliseconds.
+'@
 	}
 	inputs = $DocumentInputs
 	outputs = @()
@@ -1229,6 +1234,10 @@ Specifies the path to the file where BSON representation of objects will be stor
 				Pop-Location
 			}
 		}
+		@{code={
+			# "Safe" logging by several writers
+			$data | Export-MdbcData $file -Append -Retry ([TimeSpan]::FromSeconds(10))
+		}}
 	)
 	links = @(
 		@{ text = 'Import-MdbcData' }
