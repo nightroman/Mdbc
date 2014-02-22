@@ -90,7 +90,8 @@ function Connect {
 
 # Gets input items from the path.
 function Input {
-	Get-ChildItem -LiteralPath $Path -Force -Recurse -ErrorAction Continue
+	$ea = if ($PSVersionTable.PSVersion.Major -ge 3) {'Ignore'} else { 0 }
+	Get-ChildItem -LiteralPath $Path -Force -Recurse -ErrorAction $ea
 }
 
 # Updates documents from input items.
@@ -150,7 +151,7 @@ $info.Path = $Path
 $time = [Diagnostics.Stopwatch]::StartNew()
 if ($Split) {
 	Import-Module SplitPipeline
-	Input | Split-Pipeline -Auto -Verbose -Load 100, 5000 -Function Connect, Update -Variable CollectionName, Log, Now `
+	Input | Split-Pipeline -Verbose -Count 2, 4 -Load 500, 5000 -Function Connect, Update -Variable CollectionName, Log, Now `
 	-Begin { . Connect } -Script { $input | Update } -End { $info } | .{process{
 		$info.Created += $_.Created
 		$info.Changed += $_.Changed

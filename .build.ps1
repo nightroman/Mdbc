@@ -37,7 +37,7 @@ param
 $ModuleRoot = Join-Path ([Environment]::GetFolderPath('MyDocuments')) WindowsPowerShell\Modules\Mdbc
 
 # Use MSBuild.
-use Framework\v4.0.30319 MSBuild
+use 4.0 MSBuild
 
 # Build (incremental).
 task Build {
@@ -204,14 +204,17 @@ features like bson/json file collections which do not require MongoDB.
 
 # Push to the repository with a version tag.
 task PushRelease Version, {
-     exec { git push }
-     exec { git tag -a "v$Version" -m "v$Version" }
-     exec { git push origin "v$Version" }
+	$changes = exec { git status --short }
+	assert (!$changes) "Please, commit changes."
+
+	exec { git push }
+	exec { git tag -a "v$Version" -m "v$Version" }
+	exec { git push origin "v$Version" }
 }
 
 # Make and push the NuGet package.
 task PushNuGet NuGet, {
-     exec { NuGet push "Mdbc.$Version.nupkg" }
+	exec { NuGet push "Mdbc.$Version.nupkg" }
 },
 Clean
 
