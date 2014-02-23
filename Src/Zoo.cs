@@ -1,5 +1,5 @@
 ﻿
-/* Copyright 2011-2013 Roman Kuzmin
+/* Copyright 2011-2014 Roman Kuzmin
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -137,6 +137,18 @@ namespace Mdbc
 	static class MyValue
 	{
 		public const string Id = "_id";
+		public static void ValidateNames(this BsonValue that)
+		{
+			switch (that.BsonType)
+			{
+				case BsonType.Document:
+					that.AsBsonDocument.ValidateNames();
+					break;
+				case BsonType.Array:
+					that.AsBsonArray.ValidateNames();
+					break;
+			}
+		}
 		public static bool EqualsOrMatches(this BsonValue value1, BsonValue value2)
 		{
 			if (value2.BsonType != BsonType.RegularExpression)
@@ -178,11 +190,7 @@ namespace Mdbc
 						case BsonType.Int32:
 							return new BsonInt32(v1.AsInt32 + v2.AsInt32);
 						case BsonType.Int64:
-							var v3264 = v1.AsInt32 + v2.AsInt64;
-							if (v3264 > int.MaxValue || v3264 < int.MinValue)
-								return new BsonInt64(v3264);
-							else
-								return new BsonInt32((int)v3264);
+							return new BsonInt64(v1.AsInt32 + v2.AsInt64);
 						case BsonType.Double:
 							return new BsonDouble(v1.AsInt32 + v2.AsDouble);
 						default: break;
@@ -217,6 +225,51 @@ namespace Mdbc
 			}
 			throw new InvalidOperationException("Addition expects numeric values.");
 		}
+		public static BsonValue Mul(BsonValue v1, BsonValue v2)
+		{
+			switch (v1.BsonType)
+			{
+				case BsonType.Int32:
+					switch (v2.BsonType)
+					{
+						case BsonType.Int32:
+							return new BsonInt32(v1.AsInt32 * v2.AsInt32);
+						case BsonType.Int64:
+							return new BsonInt64(v1.AsInt32 * v2.AsInt64);
+						case BsonType.Double:
+							return new BsonDouble(v1.AsInt32 * v2.AsDouble);
+						default: break;
+					}
+					break;
+				case BsonType.Int64:
+					switch (v2.BsonType)
+					{
+						case BsonType.Int32:
+							return new BsonInt64(v1.AsInt64 * v2.AsInt32);
+						case BsonType.Int64:
+							return new BsonInt64(v1.AsInt64 * v2.AsInt64);
+						case BsonType.Double:
+							return new BsonDouble(v1.AsInt64 * v2.AsDouble);
+						default: break;
+					}
+					break;
+				case BsonType.Double:
+					switch (v2.BsonType)
+					{
+						case BsonType.Int32:
+							return new BsonDouble(v1.AsDouble * v2.AsInt32);
+						case BsonType.Int64:
+							return new BsonDouble(v1.AsDouble * v2.AsInt64);
+						case BsonType.Double:
+							return new BsonDouble(v1.AsDouble * v2.AsDouble);
+						default: break;
+					}
+					break;
+				default:
+					break;
+			}
+			throw new InvalidOperationException("Multiplication expects numeric values.");
+		}
 		public static BsonValue BitwiseAnd(BsonValue v1, BsonValue v2)
 		{
 			switch (v1.BsonType)
@@ -227,7 +280,7 @@ namespace Mdbc
 						case BsonType.Int32:
 							return new BsonInt32(v1.AsInt32 & v2.AsInt32);
 						case BsonType.Int64:
-							return new BsonInt32((int)(v1.AsInt32 & v2.AsInt64));
+							return new BsonInt64(v1.AsInt32 & v2.AsInt64);
 						default: break;
 					}
 					break;
@@ -256,11 +309,7 @@ namespace Mdbc
 						case BsonType.Int32:
 							return new BsonInt32(v1.AsInt32 | v2.AsInt32);
 						case BsonType.Int64:
-							var v64 = (uint)v1.AsInt32 | v2.AsInt64;
-							if (v64 < int.MinValue || v64 > int.MaxValue)
-								return new BsonInt64(v64);
-							else
-								return new BsonInt32((int)v64);
+							return new BsonInt64((uint)v1.AsInt32 | v2.AsInt64);
 						default: break;
 					}
 					break;
@@ -279,9 +328,43 @@ namespace Mdbc
 			}
 			throw new InvalidOperationException("Bitwise OR expects Int32 or Int64 values.");
 		}
+		public static BsonValue BitwiseXor(BsonValue v1, BsonValue v2)
+		{
+			switch (v1.BsonType)
+			{
+				case BsonType.Int32:
+					switch (v2.BsonType)
+					{
+						case BsonType.Int32:
+							return new BsonInt32(v1.AsInt32 ^ v2.AsInt32);
+						case BsonType.Int64:
+							return new BsonInt64((uint)v1.AsInt32 ^ v2.AsInt64);
+						default: break;
+					}
+					break;
+				case BsonType.Int64:
+					switch (v2.BsonType)
+					{
+						case BsonType.Int32:
+							return new BsonInt64(v1.AsInt64 ^ (uint)v2.AsInt32);
+						case BsonType.Int64:
+							return new BsonInt64(v1.AsInt64 ^ v2.AsInt64);
+						default: break;
+					}
+					break;
+				default:
+					break;
+			}
+			throw new InvalidOperationException("Bitwise XOR expects Int32 or Int64 values.");
+		}
 	}
 	static class MyArray
 	{
+		public static void ValidateNames(this BsonArray that)
+		{
+			foreach (var v in that)
+				v.ValidateNames();
+		}
 		public static void AddToSet(this BsonArray that, BsonValue value)
 		{
 			if (!that.ContainsByCompareTo(value))
@@ -300,14 +383,11 @@ namespace Mdbc
 					return true;
 			return false;
 		}
-		// < 0 - insert at 0; >= n - add nulls and value; else return false
+		// >= n - add nulls and value; else return false; < 0 - v2.6: error; v2.4: insert at 0.
 		public static bool InsertOutOfRange(this BsonArray that, int index, Func<BsonValue> value)
 		{
 			if (index < 0)
-			{
-				that.Insert(0, value());
-				return true;
-			}
+				throw new InvalidOperationException(string.Format(null, "Cannot insert at index ({0}).", index));
 
 			if (index < that.Count)
 				return false;
@@ -401,6 +481,17 @@ namespace Mdbc
 	}
 	static class MyDocument
 	{
+		public static void ValidateNames(this BsonDocument that)
+		{
+			foreach (var e in that.Elements)
+			{
+				var name = e.Name;
+				if (name.Length == 0 || name[0] == '$' || name.IndexOf('.') >= 0)
+					throw new InvalidOperationException(string.Format(null, @"Invalid document element name: ""{0}"".", name));
+
+				e.Value.ValidateNames();
+			}
+		}
 		public static BsonValue EnsureId(this BsonDocument that)
 		{
 			BsonValue id;

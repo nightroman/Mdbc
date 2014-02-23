@@ -7,7 +7,7 @@ using System;
 [assembly: AssemblyVersion("4.6.0")]
 [assembly: AssemblyTitle("Mdbc module - MongoDB Cmdlets for PowerShell")]
 [assembly: AssemblyCompany("https://github.com/nightroman/Mdbc")]
-[assembly: AssemblyCopyright("Copyright (c) 2011-2013 Roman Kuzmin")]
+[assembly: AssemblyCopyright("Copyright (c) 2011-2014 Roman Kuzmin")]
 
 [assembly: ComVisible(false)]
 [assembly: CLSCompliant(false)]

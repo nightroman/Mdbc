@@ -3,8 +3,8 @@
 Import-Module Mdbc
 
 task Invalid {
-	Test-Error { Invoke-MdbcAggregate $null } "*'Operation' because it is null.*"
-	Test-Error { Invoke-MdbcAggregate -Operation bad } '*Cannot convert System.String to a document.*'
+	Test-Error { Invoke-MdbcAggregate $null } "*'Pipeline' because it is null.*"
+	Test-Error { Invoke-MdbcAggregate -Pipeline bad } '*Cannot convert System.String to a document.*'
 }
 
 #_131016_142302 see help example

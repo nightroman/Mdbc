@@ -1,6 +1,25 @@
 Mdbc Release Notes
 ==================
 
+## v4.7.0
+
+C# driver v1.9 and MongoDB v2.6
+
+*File collections*
+
+- Update operations check for invalid element names, as in the core.
+- Adjusted operation behaviour to corresponding changes in the core.
+
+`Invoke-MdbcAggregate`
+
+- Uses the cursor output mode.
+- New parameters `BatchSize`, `MaxTime`, `AllowDiskUse`.
+- Renamed parameter `Operation` to `Pipeline`, as in the driver.
+
+`New-MdbcUpdate`
+
+- New parameters: `Mul`, `Xor`, `Min`, `Max`, `CurrentDate`.
+
 ## v4.6.0
 
 New parameter `Retry` of `Export-MdbcData` tells to retry on failures to open

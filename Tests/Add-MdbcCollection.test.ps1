@@ -31,7 +31,7 @@ task AutoIndexId {
 	$d = Get-MdbcData
 	assert ($d._id)
 	$i = @($Collection.GetIndexes())
-	assert ($i.Count -eq 1) #bug should be 0 https://jira.mongodb.org/browse/CSHARP-841
+	assert ($i.Count -eq 0) # was 1, fixed https://jira.mongodb.org/browse/CSHARP-841
 
 	# default collection
 	Connect-Mdbc -NewCollection

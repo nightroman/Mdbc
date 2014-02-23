@@ -1,5 +1,5 @@
 ﻿
-/* Copyright 2011-2013 Roman Kuzmin
+/* Copyright 2011-2014 Roman Kuzmin
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -337,7 +337,7 @@ namespace Mdbc
 			var value = BsonValue.Create(id);
 
 			if (value.BsonType == BsonType.Array)
-				throw new ArgumentException("_id cannot be an array."); //_131110_085122
+				throw new ArgumentException("Can't use an array for _id."); //_131110_085122
 
 			return Query.EQ(MyValue.Id, value);
 		}

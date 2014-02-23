@@ -5,7 +5,7 @@ Import-Module Mdbc
 task BadId {
 	$d = @{_id = 1,2}
 	Invoke-Test {
-		Test-Error { $d | Add-MdbcData } '*_id cannot be an array*'
+		Test-Error { $d | Add-MdbcData } "*Can't use an array for _id*"
 	}{
 		Connect-Mdbc -NewCollection
 	}{

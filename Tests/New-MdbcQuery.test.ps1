@@ -89,8 +89,8 @@ task Type {
 
 task Where {
 	test { New-MdbcQuery -Where 'this.Length == null' } '{ "$where" : { "$code" : "this.Length == null" } }'
-	#bug $ne -> $not https://jira.mongodb.org/browse/CSHARP-840
-	test { New-MdbcQuery -Not (New-MdbcQuery -Where 'this.Length == null') } '{ "$where" : { "$ne" : { "$code" : "this.Length == null" } } }'
+	# fixed https://jira.mongodb.org/browse/CSHARP-840
+	test { New-MdbcQuery -Not (New-MdbcQuery -Where 'this.Length == null') } '{ "$nor" : [{ "$where" : { "$code" : "this.Length == null" } }] }'
 }
 
 task Match {
@@ -111,7 +111,7 @@ task ElemMatch {
 	test { New-MdbcQuery -Not (New-MdbcQuery Name -ElemMatch $query) } '{ "Name" : { "$not" : { "$elemMatch" : { "a" : 1, "b" : 2 } } } }'
 
 	#_131110_085122
-	Test-Error { New-MdbcQuery Name -ElemMatch 1,2 } '_id cannot be an array.'
+	Test-Error { New-MdbcQuery Name -ElemMatch 1,2 } "Can't use an array for _id."
 }
 
 task All {
@@ -173,7 +173,7 @@ task NotIn {
 	test { New-MdbcQuery Name -NotIn 1L, more } '{ "Name" : { "$nin" : [NumberLong(1), "more"] } }'
 	test { New-MdbcQuery Name -NotIn text, more } '{ "Name" : { "$nin" : ["text", "more"] } }'
 	test { New-MdbcQuery Name -NotIn text, ([regex]'^more$') } '{ "Name" : { "$nin" : ["text", /^more$/] } }'
-	test { New-MdbcQuery -Not (New-MdbcQuery Name -NotIn text, more) } '{ "Name" : { "$not" : { "$nin" : ["text", "more"] } } }'
+	test { New-MdbcQuery -Not (New-MdbcQuery Name -NotIn text, more) } '{ "Name" : { "$in" : ["text", "more"] } }'
 }
 
 task And {

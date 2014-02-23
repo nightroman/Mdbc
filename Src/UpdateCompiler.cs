@@ -1,5 +1,5 @@
 ﻿
-/* Copyright 2011-2013 Roman Kuzmin
+/* Copyright 2011-2014 Roman Kuzmin
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -43,6 +43,9 @@ namespace Mdbc
 					}
 				}
 			}
+
+			value.ValidateNames();
+
 			return Expression.Call(that, GetMethod("AddToSet"), Data, field, Expression.Constant(value, typeof(BsonValue)), Expression.Constant(addEach, typeof(bool)));
 		}
 		UpdateCompiler AddToSet(BsonDocument document, string name, BsonValue value, bool each)
@@ -93,41 +96,58 @@ namespace Mdbc
 					return Expression.Call(that, GetMethod("BitwiseAnd"), Data, field, Expression.Constant(v, typeof(BsonValue)));
 				case "or":
 					return Expression.Call(that, GetMethod("BitwiseOr"), Data, field, Expression.Constant(v, typeof(BsonValue)));
+				case "xor":
+					return Expression.Call(that, GetMethod("BitwiseXor"), Data, field, Expression.Constant(v, typeof(BsonValue)));
 				default:
-					throw new ArgumentException(@"Bitwise value element name must be ""and"" or ""or"".");
+					throw new ArgumentException(@"Bitwise value element name must be ""and"", ""or"", or ""xor"".");
 			}
 		}
-		static void Bitwise(BsonDocument document, string name, BsonValue value, bool and)
+		static void Bitwise(BsonDocument document, string name, BsonValue value, int type)
 		{
-			var r = document.ResolvePath(name);
-			if (r == null)
-				return;
+			var r = document.EnsurePath(name);
 
 			BsonValue old;
 			if (r.Array != null)
 			{
+				r.Array.InsertOutOfRange(r.Index, () => 0);
+
 				old = r.Array[r.Index];
 				if (old.BsonType != BsonType.Int32 && old.BsonType != BsonType.Int64)
 					throw new MongoException(string.Format(null, @"Item ""{0}"" must be Int32 or Int64.", name));
 
-				r.Array[r.Index] = and ? MyValue.BitwiseAnd(old, value) : MyValue.BitwiseOr(old, value);
+				switch (type)
+				{
+					case 0: r.Array[r.Index] = MyValue.BitwiseAnd(old, value); break;
+					case 1: r.Array[r.Index] = MyValue.BitwiseOr(old, value); break;
+					default: r.Array[r.Index] = MyValue.BitwiseXor(old, value); break;
+				}
 			}
 			else if (r.Document.TryGetValue(r.Key, out old))
 			{
 				if (old.BsonType != BsonType.Int32 && old.BsonType != BsonType.Int64)
 					throw new MongoException(string.Format(null, @"Field ""{0}"" must be Int32 or Int64.", name));
 
-				r.Document[r.Key] = and ? MyValue.BitwiseAnd(old, value) : MyValue.BitwiseOr(old, value);
+				switch (type)
+				{
+					case 0: r.Document[r.Key] = MyValue.BitwiseAnd(old, value); break;
+					case 1: r.Document[r.Key] = MyValue.BitwiseOr(old, value); break;
+					default: r.Document[r.Key] = MyValue.BitwiseXor(old, value); break;
+				}
 			}
 		}
 		UpdateCompiler BitwiseAnd(BsonDocument document, string name, BsonValue value)
 		{
-			Bitwise(document, name, value, true);
+			Bitwise(document, name, value, 0);
 			return this;
 		}
 		UpdateCompiler BitwiseOr(BsonDocument document, string name, BsonValue value)
 		{
-			Bitwise(document, name, value, false);
+			Bitwise(document, name, value, 1);
+			return this;
+		}
+		UpdateCompiler BitwiseXor(BsonDocument document, string name, BsonValue value)
+		{
+			Bitwise(document, name, value, 2);
 			return this;
 		}
 		static Expression IncExpression(Expression that, Expression field, BsonValue value)
@@ -163,6 +183,41 @@ namespace Mdbc
 			}
 			return this;
 		}
+		static Expression MulExpression(Expression that, Expression field, BsonValue value)
+		{
+			if (value == null || !value.IsNumeric)
+				throw new ArgumentException("Multiply value must be numeric.");
+
+			return Expression.Call(that, GetMethod("Mul"), Data, field, Expression.Constant(value, typeof(BsonValue)));
+		}
+		UpdateCompiler Mul(BsonDocument document, string name, BsonValue value)
+		{
+			var r = document.EnsurePath(name);
+			BsonValue old;
+			if (r.Document != null)
+			{
+				if (r.Document.TryGetValue(r.Key, out old))
+				{
+					if (!old.IsNumeric)
+						throw new MongoException(string.Format(null, @"Field ""{0}"" must be numeric.", name));
+				}
+				else
+				{
+					old = 0;
+				}
+
+				r.Document[r.Key] = MyValue.Mul(old, value);
+			}
+			else if (!r.Array.InsertOutOfRange(r.Index, () => MyValue.Mul(0, value)))
+			{
+				old = r.Array[r.Index];
+				if (!old.IsNumeric)
+					throw new MongoException(string.Format(null, @"Item ""{0}"" must be numeric.", name));
+
+				r.Array[r.Index] = MyValue.Mul(old, value);
+			}
+			return this;
+		}
 		static Expression PopExpression(Expression that, Expression field, BsonValue value)
 		{
 			int pop = value.IsNumeric ? value.ToInt32() : 0;
@@ -172,7 +227,7 @@ namespace Mdbc
 		{
 			var r = document.ResolvePath(name);
 			if (r == null)
-				return this;
+				throw new InvalidOperationException(string.Format(null, @"Cannot resolve ({0}).", name));
 
 			BsonValue vArray;
 			if (r.Array != null)
@@ -202,7 +257,7 @@ namespace Mdbc
 		{
 			var r = document.ResolvePath(name);
 			if (r == null)
-				return;
+				throw new InvalidOperationException(string.Format(null, @"Cannot resolve ({0}).", name));
 
 			BsonValue vArray;
 			if (r.Array != null)
@@ -295,63 +350,77 @@ namespace Mdbc
 		}
 		static Expression PushExpression(Expression that, Expression field, BsonValue value)
 		{
-			BsonDocument d;
-			BsonElement e;
-			if (value.BsonType == BsonType.Document && (d = value.AsBsonDocument).ElementCount > 0 && (e = d.GetElement(0)).Name == "$each")
+			if (value.BsonType == BsonType.Document)
 			{
-				if (e.Value.BsonType != BsonType.Array)
-					throw new ArgumentException("Push all/each value must be array.");
-
-				var each = e.Value.AsBsonArray;
-
-				BsonValue sort = null, slice = null;
-				for (int i = 1; i < d.ElementCount; ++i)
-				{
-					e = d.GetElement(i);
-					switch (e.Name)
-					{
-						case "$sort":
-							sort = e.Value;
-							break;
-						case "$slice":
-							slice = e.Value;
-							break;
-						default:
-							throw new ArgumentException("$each term takes only $slice (and optionally $sort) as complements.");
-					}
-				}
-
-				if (sort == null && slice == null)
-					return Expression.Call(that, GetMethod("PushAll"), Data, field, Expression.Constant(each, typeof(BsonValue)));
-
-				if (sort != null)
-				{
-					//! order
-
-					if (sort.BsonType != BsonType.Document)
-						throw new ArgumentException("$sort component of $push must be an object.");
-
-					foreach (var d1 in each)
-						if (d1.BsonType != BsonType.Document)
-							throw new ArgumentException("$sort requires $each to be an array of objects.");
-
-					if (slice == null)
-						throw new ArgumentException("$push $each cannot have a $sort without a $slice.");
-
-					// sort
-					each = new BsonArray(QueryCompiler.Query(each.Cast<BsonDocument>(), null, null, new SortByDocument(sort.AsBsonDocument), 0, 0));
-				}
-
-				if (!slice.IsNumeric)
-					throw new ArgumentException("$slice value must be a numeric integer.");
-
-				int sliceVal = slice.ToInt32();
-				if (sliceVal > 0)
-					throw new ArgumentException("$slice value must be negative or zero.");
-
-				return Expression.Call(that, GetMethod("PushAll"), Data, field, Expression.Constant(each.Slice(0, sliceVal), typeof(BsonValue)));
+				var d = value.AsBsonDocument;
+				if (d.Contains("$each"))
+					return PushEachExpression(that, field, d);
 			}
+
+			value.ValidateNames();
+
 			return Expression.Call(that, GetMethod("Push"), Data, field, Expression.Constant(value, typeof(BsonValue)));
+		}
+		// Assume $each exists.
+		static Expression PushEachExpression(Expression that, Expression field, BsonDocument document)
+		{
+			BsonArray each = null;
+			BsonValue sort = null, slice = null;
+			foreach (var e in document.Elements)
+			{
+				//TODO $position
+				switch (e.Name)
+				{
+					case "$each":
+						if (e.Value.BsonType != BsonType.Array)
+							throw new ArgumentException("Push all/each value must be array.");
+						each = e.Value.AsBsonArray;
+						break;
+					case "$sort":
+						sort = e.Value;
+						break;
+					case "$slice":
+						if (!e.Value.IsNumeric)
+							throw new ArgumentException("$slice must be a numeric value.");
+						slice = e.Value;
+						break;
+					default:
+						throw new ArgumentException(string.Format(null, "Unrecognized clause in $push: ({0}).", e.Name));
+				}
+			}
+
+			if (sort != null)
+			{
+				switch (sort.BsonType)
+				{
+					case BsonType.Int32:
+						switch (sort.AsInt32)
+						{
+							case 1:
+								each = new BsonArray(each.OrderBy(x => x)); break; //TODO comparer?
+							case -1:
+								each = new BsonArray(each.OrderByDescending(x => x)); break; //TODO comparer?
+							default:
+								throw new ArgumentException("Numeric $sort value must be either 1 or -1.");
+						}
+						break;
+					case BsonType.Document:
+						//TODO not needed in Mongo v2.6
+						foreach (var d1 in each)
+							if (d1.BsonType != BsonType.Document)
+								throw new ArgumentException("$sort requires $each to be an array of objects.");
+
+						each = new BsonArray(QueryCompiler.Query(each.Cast<BsonDocument>(), null, null, new SortByDocument(sort.AsBsonDocument), 0, 0));
+						break;
+					default:
+						throw new ArgumentException("$sort value must be 1, -1, or a document.");
+				}
+			}
+
+			if (slice != null)
+				each = each.Slice(0, slice.ToInt32());
+
+			return Expression.Call(that, GetMethod("PushAll"), Data, field, Expression.Constant(each, typeof(BsonValue)));
 		}
 		UpdateCompiler Push(BsonDocument document, string name, BsonValue value)
 		{
@@ -396,6 +465,8 @@ namespace Mdbc
 		}
 		UpdateCompiler Set(BsonDocument document, string name, BsonValue value)
 		{
+			value.ValidateNames();
+
 			var r = document.EnsurePath(name);
 			if (r.Document != null)
 			{
@@ -404,6 +475,68 @@ namespace Mdbc
 			else if (!r.Array.InsertOutOfRange(r.Index, () => value))
 			{
 				r.Array[r.Index] = value;
+			}
+			return this;
+		}
+		static Expression CurrentDateExpression(Expression that, Expression field)
+		{
+			return Expression.Call(that, GetMethod("CurrentDate"), Data, field);
+		}
+		UpdateCompiler CurrentDate(BsonDocument document, string name)
+		{
+			var value = new BsonDateTime(DateTime.Now);
+			var r = document.EnsurePath(name);
+			if (r.Document != null)
+			{
+				r.Document[r.Key] = value;
+			}
+			else if (!r.Array.InsertOutOfRange(r.Index, () => value))
+			{
+				r.Array[r.Index] = value;
+			}
+			return this;
+		}
+		static Expression MaxExpression(Expression that, Expression field, BsonValue value)
+		{
+			return Expression.Call(that, GetMethod("Max"), Data, field, Expression.Constant(value, typeof(BsonValue)));
+		}
+		UpdateCompiler Max(BsonDocument document, string name, BsonValue value)
+		{
+			value.ValidateNames();
+
+			var r = document.EnsurePath(name);
+			if (r.Document != null)
+			{
+				BsonValue old;
+				if (!r.Document.TryGetValue(r.Key, out old) || value.CompareTo(old) > 0)
+					r.Document[r.Key] = value;
+			}
+			else if (!r.Array.InsertOutOfRange(r.Index, () => value))
+			{
+				if (value.CompareTo(r.Array[r.Index]) > 0)
+					r.Array[r.Index] = value;
+			}
+			return this;
+		}
+		static Expression MinExpression(Expression that, Expression field, BsonValue value)
+		{
+			return Expression.Call(that, GetMethod("Min"), Data, field, Expression.Constant(value, typeof(BsonValue)));
+		}
+		UpdateCompiler Min(BsonDocument document, string name, BsonValue value)
+		{
+			value.ValidateNames();
+
+			var r = document.EnsurePath(name);
+			if (r.Document != null)
+			{
+				BsonValue old;
+				if (!r.Document.TryGetValue(r.Key, out old) || value.CompareTo(old) < 0)
+					r.Document[r.Key] = value;
+			}
+			else if (!r.Array.InsertOutOfRange(r.Index, () => value))
+			{
+				if (value.CompareTo(r.Array[r.Index]) < 0)
+					r.Array[r.Index] = value;
 			}
 			return this;
 		}
@@ -435,7 +568,11 @@ namespace Mdbc
 			{
 				case "$addToSet": return AddToSetExpression(that, field, value);
 				case "$bit": return BitwiseExpression(that, field, value);
+				case "$currentDate": return CurrentDateExpression(that, field);
 				case "$inc": return IncExpression(that, field, value);
+				case "$max": return MaxExpression(that, field, value);
+				case "$min": return MinExpression(that, field, value);
+				case "$mul": return MulExpression(that, field, value);
 				case "$pop": return PopExpression(that, field, value);
 				case "$pull": return PullExpression(that, field, value);
 				case "$pullAll": return PullAllExpression(that, field, value);
@@ -456,15 +593,16 @@ namespace Mdbc
 
 			foreach (var element in query.ToBsonDocument())
 			{
+				// v2.6 fails
 				if (element.Name[0] == '$')
-					continue;
+					throw new ArgumentException(string.Format(null, "Unknown top level query operator: ({0}).", element.Name));
 
 				var selector = element.Value;
-				switch(selector.BsonType)
+				switch (selector.BsonType)
 				{
 					case BsonType.RegularExpression:
 						continue;
-					case BsonType.Document:
+					case BsonType.Document: //TODO _140223_223449
 						var document = selector.AsBsonDocument;
 						if (document.ElementCount > 0)
 						{

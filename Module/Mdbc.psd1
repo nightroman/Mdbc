@@ -4,7 +4,7 @@
 	ModuleVersion = '4.6.0'
 	CompanyName = 'https://github.com/nightroman/Mdbc'
 	Description = 'Mdbc module - MongoDB Cmdlets for PowerShell'
-	Copyright = '(C) 2011-2013 Roman Kuzmin. All rights reserved.'
+	Copyright = '(C) 2011-2014 Roman Kuzmin. All rights reserved.'
 
 	NestedModules = 'Mdbc.dll'
 	RequiredAssemblies = 'Mdbc.dll', 'MongoDB.Driver.dll', 'MongoDB.Bson.dll'

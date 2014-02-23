@@ -1,5 +1,5 @@
 ﻿
-/* Copyright 2011-2013 Roman Kuzmin
+/* Copyright 2011-2014 Roman Kuzmin
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -93,6 +93,24 @@ namespace Mdbc.Commands
 
 		[Parameter]
 		[ValidateNotNull]
+		public PSObject[] BitwiseXor
+		{
+			get { return null; }
+			set
+			{
+				_BitwiseXor = new UpdateBuilder();
+				foreach (var e in Convert(value, x => new IntLong(x)))
+				{
+					var n = e.Key;
+					var x = e.Value;
+					_BitwiseXor.Combine(x.Int.HasValue ? Update.BitwiseXor(n, x.Int.Value) : Update.BitwiseXor(n, x.Long.Value));
+				}
+			}
+		}
+		UpdateBuilder _BitwiseXor;
+
+		[Parameter]
+		[ValidateNotNull]
 		public PSObject[] Inc
 		{
 			get { return null; }
@@ -108,6 +126,24 @@ namespace Mdbc.Commands
 			}
 		}
 		UpdateBuilder _Inc;
+
+		[Parameter]
+		[ValidateNotNull]
+		public PSObject[] Mul
+		{
+			get { return null; }
+			set
+			{
+				_Mul = new UpdateBuilder();
+				foreach (var e in Convert(value, x => new IntLongDouble(x)))
+				{
+					var n = e.Key;
+					var x = e.Value;
+					_Mul.Combine(x.Int.HasValue ? Update.Mul(n, x.Int.Value) : x.Long.HasValue ? Update.Mul(n, x.Long.Value) : Update.Mul(n, x.Double.Value));
+				}
+			}
+		}
+		UpdateBuilder _Mul;
 
 		[Parameter]
 		[ValidateNotNull]
@@ -260,6 +296,34 @@ namespace Mdbc.Commands
 
 		[Parameter]
 		[ValidateNotNull]
+		public PSObject[] Max
+		{
+			get { return null; }
+			set
+			{
+				_Max = new UpdateBuilder();
+				foreach (var e in Convert(value, Actor.ToBsonValue))
+					_Max.Combine(Update.Max(e.Key, e.Value));
+			}
+		}
+		UpdateBuilder _Max;
+
+		[Parameter]
+		[ValidateNotNull]
+		public PSObject[] Min
+		{
+			get { return null; }
+			set
+			{
+				_Min = new UpdateBuilder();
+				foreach (var e in Convert(value, Actor.ToBsonValue))
+					_Min.Combine(Update.Min(e.Key, e.Value));
+			}
+		}
+		UpdateBuilder _Min;
+
+		[Parameter]
+		[ValidateNotNull]
 		public string[] Unset
 		{
 			get { return null; }
@@ -272,6 +336,21 @@ namespace Mdbc.Commands
 			}
 		}
 		UpdateBuilder _Unset;
+
+		[Parameter]
+		[ValidateNotNull]
+		public string[] CurrentDate
+		{
+			get { return null; }
+			set
+			{
+				_CurrentDate = new UpdateBuilder();
+				foreach (var name in value)
+					if (name != null)
+						_CurrentDate.Combine(Update.CurrentDate(name));
+			}
+		}
+		UpdateBuilder _CurrentDate;
 
 		static IEnumerable<KeyValuePair<string, T>> Convert<T>(PSObject[] values, Func<object, T> selector)
 		{
@@ -313,14 +392,29 @@ namespace Mdbc.Commands
 			if (_SetOnInsert != null)
 				r.Combine(_SetOnInsert);
 
+			if (_Max != null)
+				r.Combine(_Max);
+
+			if (_Min != null)
+				r.Combine(_Min);
+
 			if (_BitwiseAnd != null)
 				r.Combine(_BitwiseAnd);
 
 			if (_BitwiseOr != null)
 				r.Combine(_BitwiseOr);
 
+			if (_BitwiseXor != null)
+				r.Combine(_BitwiseXor);
+
 			if (_Inc != null)
 				r.Combine(_Inc);
+
+			if (_Mul != null)
+				r.Combine(_Mul);
+
+			if (_CurrentDate != null)
+				r.Combine(_CurrentDate);
 
 			if (_AddToSet != null)
 				r.Combine(_AddToSet);

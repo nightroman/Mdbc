@@ -681,12 +681,12 @@ Adds a value to an array only if the value is not in the array already.
 If a field argument is a collection then it is treated as a single value to
 add. Use AddToSetEach in order to add each value.
 
-Mongo: { $addToSet: { <field>: <addition> }
+Mongo: { $addToSet: { field: <addition> }
 '@
 		AddToSetEach = @'
 Adds values to an array only if the values are not in the array already.
 
-Mongo: { $addToSet: { <field>: { $each: [ <value1>, <value2> ... ] } } }
+Mongo: { $addToSet: { field: { $each: [ <value1>, <value2> ... ] } } }
 '@
 		BitwiseAnd = @'
 Performs bitwise AND update of integer values (int or long).
@@ -698,12 +698,42 @@ Performs bitwise OR update of integer values (int or long).
 
 Mongo: { $bit: { field: { or: NumberInt(5) } } }
 '@
-		Inc = @'
-Increments a value of a field by a specified amount. If a field does not exist,
-it adds the field and sets it to the specified value. It accepts positive and
-negative values (int, long, or double).
+		BitwiseXor = @'
+Performs bitwise XOR update of integer values (int or long).
 
-Mongo: { $inc: { <field1>: <amount1>, ... } }
+Mongo: { $bit: { field: { xor: NumberInt(5) } } }
+'@
+		Inc = @'
+Increments a field by a specified number. If a field does not exist, it adds
+the field and sets it to the specified value. It accepts positive and negative
+values (int, long, or double).
+
+Mongo: { $inc: { field: <number> } }
+'@
+		Mul = @'
+Multiplies a field by a specified number. The field to update must contain a
+numeric value. If the field does not exist, it creates the field and sets the
+value to zero of the same numeric type as the multiplier.
+
+Mongo: { $mul: { field: <number> } }
+'@
+		Min = @'
+The $min updates the value of the field to a specified value if the specified
+value is less than the current value of the field. If the field does not
+exists, the $min operator sets the field to the specified value. The $min
+operator can compare values of different types, using the BSON comparison
+order.
+
+Mongo: { $min: { field: <value> } }
+'@
+		Max = @'
+The $max operator updates the value of the field to a specified value if the
+specified value is greater than the current value of the field. If the field
+does not exists, the $max operator sets the field to the specified value. The
+$max operator can compare values of different types, using the BSON comparison
+order.
+
+Mongo: { $max: { field: <value> } }
 '@
 		PopFirst = @'
 Removes the first element in an array.
@@ -747,12 +777,12 @@ array.
 If a field argument is a collection then it is treated as a single value to
 push. Use PushAll in order to push all values.
 
-Mongo: { $push: { <field>: <value> }
+Mongo: { $push: { field: <value> }
 '@
 		PushAll = @'
 Appends all values to an array.
 
-Mongo: { $push: { <field>: { $each: [ value1, valu2 ... ] } } }
+Mongo: { $push: { field: { $each: [ value1, valu2 ... ] } } }
 '@
 		Rename = @'
 Renames a field. A field argument is a new field name.
@@ -767,18 +797,23 @@ commands are the same:
 
 	New-MdbcUpdate -Set @{field = value}
 
-Mongo: { $set: { <field1>: <value1>, ... } }
+Mongo: { $set: { field1: <value1>, ... } }
 '@
 		SetOnInsert = @'
 Sets a field value on adding a new document during update. It has no effect on
 updates that modify existing documents.
 
-Mongo: { $setOnInsert: { <field1>: <value1>, ... } }
+Mongo: { $setOnInsert: { field1: <value1>, ... } }
 '@
 		Unset = @'
 Tells to remove a field from an existing document.
 
-Mongo: { $unset: { <field1>: "", ... } }
+Mongo: { $unset: { field1: "", ... } }
+'@
+		CurrentDate = @'
+The $currentDate operator sets the value of a field to the current date.
+
+Mongo: { $currentDate: { field: true } }
 '@
 	}
 	inputs = @()
@@ -1088,9 +1123,12 @@ The driver currently provides just a raw API for aggregate operations. So does
 this cmdlet. When the API change the cmdlet will be redesigned.
 '@
 	parameters = @{
-		Operation = @'
+		Pipeline = @'
 One or more aggregation pipeline operations represented by JSON-like hashtables.
 '@
+		BatchSize = 'Specifies the size of a batch when using a cursor.'
+		MaxTime = 'Specifies the max time the server should spend on the aggregation command.'
+		AllowDiskUse = 'Tells to allow disk use.'
 	}
 	inputs = @()
 	outputs = @(

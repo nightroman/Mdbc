@@ -1,5 +1,5 @@
 ﻿
-/* Copyright 2011-2013 Roman Kuzmin
+/* Copyright 2011-2014 Roman Kuzmin
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ namespace Mdbc
 		readonly List<string> _Include; // after Include(_id) it is empty and not null, this is important for null checks
 		readonly Dictionary<string, int[]> _Slice = new Dictionary<string, int[]>();
 		readonly Dictionary<string, Func<BsonDocument, bool>> _ElemMatch = new Dictionary<string, Func<BsonDocument, bool>>();
-		static void ThrowMix() { throw new InvalidOperationException("You cannot currently mix including and excluding fields."); } //! DB text
+		static void ThrowMix() { throw new InvalidOperationException("Projection cannot have a mix of inclusion and exclusion."); } //! DB text
 		// Assume that keys are already unique, so we avoid many checks.
 		FieldCompiler(IMongoFields fields)
 		{

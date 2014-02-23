@@ -52,7 +52,7 @@ task RawBson {
 		$a = $md.array
 		assert ($a.IsFixedSize)
 		assert ($a.IsReadOnly)
-		assert (!$a.Array().IsReadOnly) #bug https://jira.mongodb.org/browse/CSHARP-842
+		assert ($a.Array().IsReadOnly) # fixed https://jira.mongodb.org/browse/CSHARP-842
 		Test-Type $a.Array() MongoDB.Bson.RawBsonArray
 		assert (![object]::ReferenceEquals($a.Array(), $md.array.Array()))
 	}

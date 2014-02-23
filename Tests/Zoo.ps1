@@ -75,7 +75,10 @@ function Test-Table([System.Collections.IDictionary]$1, [System.Collections.IDic
 		}
 
 		if ($v1 -cne $v2) {
-			Write-Error -ErrorAction 1 "Different dictionary ($key) values: ($v1) and ($v2)."
+			if ($Force -and $v1 -is [datetime] -and [math]::Abs(($v1 - $v2).TotalSeconds) -lt 2) {}
+			else {
+				Write-Error -ErrorAction 1 "Different dictionary ($key) values: ($v1) and ($v2)."
+			}
 		}
 	}
 }
@@ -114,7 +117,10 @@ function Test-List([System.Collections.IList]$1, [System.Collections.IList]$2, [
 		}
 
 		if ($v1 -cne $v2) {
-			Write-Error -ErrorAction 1 "Different list ($i) values: ($v1) and ($v2)."
+			if ($Force -and $v1 -is [datetime] -and [math]::Abs(($v1 - $v2).TotalSeconds) -lt 2) {}
+			else {
+				Write-Error -ErrorAction 1 "Different list ($i) values: ($v1) and ($v2)."
+			}
 		}
 	}
 }

@@ -1,5 +1,5 @@
 ﻿
-/* Copyright 2011-2013 Roman Kuzmin
+/* Copyright 2011-2014 Roman Kuzmin
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -95,13 +95,23 @@ namespace Mdbc
 		}
 		public object FindAndModifyAs(Type documentType, IMongoQuery query, IMongoSortBy sortBy, IMongoUpdate update, IMongoFields fields, bool returnNew, bool upsert, out UpdateResult result)
 		{
-			var r = _this.FindAndModify(query, sortBy, update, fields, returnNew, upsert);
+			var args = new FindAndModifyArgs();
+			args.Query = query;
+			args.SortBy = sortBy;
+			args.Update = update;
+			args.Fields = fields;
+			args.Upsert = upsert;
+			args.VersionReturned = returnNew ? FindAndModifyDocumentVersion.Modified : FindAndModifyDocumentVersion.Original;
+			var r = _this.FindAndModify(args);
 			result = new FindAndModifyUpdateResult(r);
 			return r.GetModifiedDocumentAs(documentType);
 		}
 		public object FindAndRemoveAs(Type documentType, IMongoQuery query, IMongoSortBy sortBy)
 		{
-			return _this.FindAndRemove(query, sortBy).GetModifiedDocumentAs(documentType);
+			var args = new FindAndRemoveArgs();
+			args.Query = query;
+			args.SortBy = sortBy;
+			return _this.FindAndRemove(args).GetModifiedDocumentAs(documentType);
 		}
 		public WriteConcernResult Insert(BsonDocument document, WriteConcern writeConcern, bool needResult)
 		{

@@ -127,7 +127,7 @@ task NE {
 
 task GT {
 	query (New-MdbcQuery null -GT $null) 0 '{ "null" : { "$gt" : null } }' 'GT(data, "null", BsonNull)'
-	query (New-MdbcQuery miss -GT $null) 1 '{ "miss" : { "$gt" : null } }' 'GT(data, "miss", BsonNull)'
+	query (New-MdbcQuery miss -GT $null) 0 '{ "miss" : { "$gt" : null } }' 'GT(data, "miss", BsonNull)'
 	query (New-MdbcQuery miss -GT 12345) 0 '{ "miss" : { "$gt" : 12345 } }' 'GT(data, "miss", 12345)'
 
 	query (New-MdbcQuery int -GT (-99)) 1 '{ "int" : { "$gt" : -99 } }' 'GT(data, "int", -99)'
@@ -155,7 +155,7 @@ task GTE {
 
 task LT {
 	query (New-MdbcQuery null -LT $null) 0 '{ "null" : { "$lt" : null } }' 'LT(data, "null", BsonNull)'
-	query (New-MdbcQuery miss -LT $null) 1 '{ "miss" : { "$lt" : null } }' 'LT(data, "miss", BsonNull)'
+	query (New-MdbcQuery miss -LT $null) 0 '{ "miss" : { "$lt" : null } }' 'LT(data, "miss", BsonNull)'
 	query (New-MdbcQuery miss -LT 12345) 0 '{ "miss" : { "$lt" : 12345 } }' 'LT(data, "miss", 12345)'
 
 	query (New-MdbcQuery int -LT (-99)) 0 '{ "int" : { "$lt" : -99 } }' 'LT(data, "int", -99)'
@@ -232,8 +232,9 @@ task Or {
 }
 
 task Matches {
-	query @{null=@{'$regex'=$null}} 0 '{ "null" : { "$regex" : null } }' 'Matches(data, "null", null)'
-	query @{miss=@{'$regex'=$null}} 0 '{ "miss" : { "$regex" : null } }' 'Matches(data, "miss", null)'
+	query @{null=@{'$regex'=1}} -QError '*$regex has to be a string*' -EError '*Invalid $regex argument.*'
+	query @{null=@{'$regex'=$null}} -QError '*$regex has to be a string*' -EError '*Invalid $regex argument.*'
+	query @{miss=@{'$regex'=$null}} -QError '*$regex has to be a string*' -EError '*Invalid $regex argument.*'
 
 	query (New-MdbcQuery miss -Matches 'text') 0 '{ "miss" : /text/ }' 'Matches(data, "miss", text)'
 	query (New-MdbcQuery int -Matches '42') 0 '{ "int" : /42/ }' 'Matches(data, "int", 42)'
@@ -256,25 +257,22 @@ task Type {
 	query @{int=@{'$type'=16.0}} 1 '{ "int" : { "$type" : 16.0 } }' 'Type(data, "int", Int32)'
 	query @{int=@{'$type'=16L}} 1 '{ "int" : { "$type" : NumberLong(16) } }' 'Type(data, "int", Int32)'
 
-	query @{int=@{'$type'=$null}} -QError '*type not supported*' -EError '*$type argument must be number.*'
-	query @{int=@{'$type'='16'}} -QError '*type not supported*' -EError '*$type argument must be number.*'
+	query @{int=@{'$type'=$null}} -QError '*$type has to be a number*' -EError '*$type argument must be number.*'
+	query @{int=@{'$type'='16'}} -QError '*$type has to be a number*' -EError '*$type argument must be number.*'
 }
 
 task Mod {
-	# KO: argument is not array #bug assert https://jira.mongodb.org/browse/SERVER-11744
-	#query @{int=@{'$mod'=1}} -QError '*failed: exception: assertion d:\*' -EError '*$mod argument must be array.*'
+	# fixed assert https://jira.mongodb.org/browse/SERVER-11744
+	query @{int=@{'$mod'=1}} -QError '*malformed mod, needs to be an array*' -EError '*$mod argument must be array.*'
 
-	# KO: divisor is 0
-	$mm = @{QError = "*exception: mod can't be 0*"; EError = '*$mod divisor cannot be 0.*'}
-	query @{int=@{'$mod'=@()}} @mm
-	query @{int=@{'$mod'=@(0,1)}} @mm
-	query @{int=@{'$mod'=@('bad',1)}} @mm
+	# KO item count
+	query @{int=@{'$mod'=@()}} -QError '*malformed mod, not enough elements*' -EError '*$mod array must have two items.*'
+	query @{int=@{'$mod'=@(2)}} -QError '*malformed mod, not enough elements*' -EError '*$mod array must have two items.*'
+	query @{int=@{'$mod'=@(2,0,1)}} -QError '*malformed mod, too many elements*' -EError '*$mod array must have two items.*'
 
-	# 1 argument
-	query @{int=@{'$mod'=@(2)}} 1 '{ "int" : { "$mod" : [2] } }' 'Mod(data, "int", 2, 0)'
-
-	# 3 arguments
-	query @{int=@{'$mod'=@(2,0,1)}} 1 '{ "int" : { "$mod" : [2, 0, 1] } }' 'Mod(data, "int", 2, 0)'
+	# KO divisor
+	query @{int=@{'$mod'=@(0,1)}} -QError '*divisor cannot be 0*' -EError '*$mod divisor cannot be 0.*'
+	query @{int=@{'$mod'=@('bad',1)}} -QError '*malformed mod, divisor not a number*' -EError '*$mod divisor must be number.*'
 
 	# not numbers are treated as 0
 	query @{int=@{'$mod'=@(2,'bad')}} 1 '{ "int" : { "$mod" : [2, "bad"] } }' 'Mod(data, "int", 2, 0)'
@@ -307,21 +305,28 @@ task Size {
 	query (New-MdbcQuery three -Size 3) 1 '{ "three" : { "$size" : 3 } }' 'Size(data, "three", 3)'
 	query (New-MdbcQuery three -Size 4) 0 '{ "three" : { "$size" : 4 } }' 'Size(data, "three", 4)'
 
-	query @{empty=@{'$size'=$null}} 1 '{ "empty" : { "$size" : null } }' 'Size(data, "empty", 0)'
+	# KO size v2.6
+	query @{empty=@{'$size'=$null}} -QError '*$size needs a number*' -EError '*Invalid $size argument.*'
+	query @{empty=@{'$size'=$true}} -QError '*$size needs a number*' -EError '*Invalid $size argument.*'
+	query @{empty=@{'$size'=$date}} -QError '*$size needs a number*' -EError '*Invalid $size argument.*'
+	query @{empty=@{'$size'=@()}} -QError '*$size needs a number*' -EError '*Invalid $size argument.*'
+	query @{empty=@{'$size'=@{}}} -QError '*$size needs a number*' -EError '*Invalid $size argument.*'
+	query @{empty=@{'$size'=[regex]''}} -QError '*$size needs a number*' -EError '*Invalid $size argument.*'
+
+	# BUT Mongo treats strings as 0
+	query @{empty=@{'$size'='text'}} 1 '{ "empty" : { "$size" : "text" } }' 'Size(data, "empty", 0)'
+	query @{three=@{'$size'='text'}} 0 '{ "three" : { "$size" : "text" } }' 'Size(data, "three", 0)'
+	query @{empty=@{'$size'='3'}} 1 '{ "empty" : { "$size" : "3" } }' 'Size(data, "empty", 0)'
+	query @{three=@{'$size'='3'}} 0 '{ "three" : { "$size" : "3" } }' 'Size(data, "three", 0)'
+
 	query @{three=@{'$size'=3L}} 1 '{ "three" : { "$size" : NumberLong(3) } }' 'Size(data, "three", 3)'
 	query @{three=@{'$size'=3.0}} 1 '{ "three" : { "$size" : 3.0 } }' 'Size(data, "three", 3)'
 	query @{three=@{'$size'=3.14}} 0 '{ "three" : { "$size" : 3.14 } }' 'Size(data, "three", 3.14)'
-
-	# Mongo treats non numbers as 0
-	query @{empty=@{'$size'='text'}} 1 '{ "empty" : { "$size" : "text" } }' 'Size(data, "empty", 0)'
-	query @{three=@{'$size'='text'}} 0 '{ "three" : { "$size" : "text" } }' 'Size(data, "three", 0)'
-	query @{empty=@{'$size'=$date}} 1 '{ "empty" : { "$size" : ISODate("2000-01-01T00:00:00Z") } }' 'Size(data, "empty", 0)'
-	query @{three=@{'$size'=$date}} 0 '{ "three" : { "$size" : ISODate("2000-01-01T00:00:00Z") } }' 'Size(data, "three", 0)'
 }
 
 task In {
 	# $in/$nin needs array
-	query @{int=@{'$in'=42}} -QError '*invalid query*' -EError '*$in/$nin argument must be array.*'
+	query @{int=@{'$in'=42}} -QError '*$in needs an array*' -EError '*$in/$nin argument must be array.*'
 	query @{int=@{'$nin'=42}} -QError '*$nin needs an array*' -EError '*$in/$nin argument must be array.*'
 
 	# $nin is just a negation of $in, so does Mdbc
@@ -359,10 +364,10 @@ task In {
 
 task All {
 	# $all needs array
-	query @{three=@{'$all'=42}} -QError '*$all requires array*' -EError '*$all argument must be array.*'
+	query @{three=@{'$all'=42}} -QError '*$all needs an array*' -EError '*$all argument must be array.*'
 
 	# $elemMatch needs document
-	query (New-MdbcQuery doc2 -All @(@{'$elemMatch'=1})) -QError '*expected an object ($elemMatch)*' -EError '*$all $elemMatch argument must be document.*'
+	query (New-MdbcQuery doc2 -All @(@{'$elemMatch'=1})) -QError '*$elemMatch needs an Object*' -EError '*$all $elemMatch argument must be document.*'
 
 	# false if array is empty
 	query (New-MdbcQuery int -All @()) 0 '{ "int" : { "$all" : [] } }' 'All(data, "int", ...)'
@@ -394,7 +399,7 @@ task All {
 }
 
 task ElemMatch {
-	query @{doc1=@{'$elemMatch'=1}} -QError '*expected an object ($elemMatch)*' -EError '*$elemMatch argument must be document.*'
+	query @{doc1=@{'$elemMatch'=1}} -QError '*$elemMatch needs an Object*' -EError '*$elemMatch argument must be document.*'
 
 	query (New-MdbcQuery doc1 -ElemMatch (New-MdbcQuery -And @{x=1}, @{y=2})) 0 `
 	'{ "doc1" : { "$elemMatch" : { "x" : 1, "y" : 2 } } }' 'ElemMatch(data, "doc1", ...)'
@@ -407,7 +412,7 @@ task ElemMatch {
 }
 
 task Not {
-	query @{int=@{'$not'=1}} -QError '*invalid use of $not*' -EError '*Invalid form of $not.*'
+	query @{int=@{'$not'=1}} -QError '*$not needs a regex or a document*' -EError '*Invalid form of $not.*'
 
 	query @{text=@{'$not'=[regex]'miss'}} 1 '{ "text" : { "$not" : /miss/ } }' 'Not(Matches(data, "text", miss))'
 	query @{text=@{'$not'=[regex]'text'}} 0 '{ "text" : { "$not" : /text/ } }' 'Not(Matches(data, "text", text))'

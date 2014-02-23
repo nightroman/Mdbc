@@ -12,7 +12,7 @@ task ErrorControl {
 	Connect-Mdbc -NewCollection
 	@{_id=1; n=1} | Add-MdbcData
 
-	$pattern = '*Cannot apply $pop modifier to non-array*'
+	$pattern = '*Can only $pop from arrays.*'
 
 	$command = New-MdbcData
 	$command.findAndModify = 'test'

@@ -31,7 +31,7 @@ task AddToSet {
 		assert ($d.array[1] -eq $null)
 	}{
 		Connect-Mdbc -NewCollection
-		$1310110108 = '*Cannot apply $addToSet modifier to non-array*'
+		$1310110108 = '*Cannot apply $addToSet to a non-array field.*'
 	}{
 		Open-MdbcFile
 		$1310110108 = 'Value "value" must be array.'
@@ -219,7 +219,7 @@ task Push {
 		assert ($d.array[1] -eq $null)
 	}{
 		Connect-Mdbc -NewCollection
-		$1310110138 = '*Cannot apply $push/$pushAll modifier to non-array*'
+		$1310110138 = "*The field 'value' must be an array*"
 	}{
 		Open-MdbcFile
 		$1310110138 = 'Value "value" must be array.'
@@ -284,8 +284,8 @@ task ChangeId {
 
 	Connect-Mdbc -NewCollection
 	@{_id = 1} | Add-MdbcData
-	Test-Error { Update-MdbcData (New-MdbcUpdate -Set @{_id = 42; x = 1}) @{} } '*"Mod on _id not allowed", "code" : 10148,*'
-	Test-Error { Update-MdbcData (New-MdbcUpdate -Unset _id) @{} } '*"Mod on _id not allowed", "code" : 10148,*'
+	Test-Error { Update-MdbcData (New-MdbcUpdate -Set @{_id = 42; x = 1}) @{} } "*the (immutable) field '_id' was found*"
+	Test-Error { Update-MdbcData (New-MdbcUpdate -Unset _id) @{} } "*the (immutable) field '_id' was found*"
 	$r = Get-MdbcData
 	assert ($r.Count -eq 1 -and $r._id -eq 1)
 
@@ -431,7 +431,7 @@ task WriteConcernResult {
 		assert (!$r.UpdatedExisting)
 		assert ($null -eq $r.ErrorMessage)
 		assert ($r.Ok)
-		$m = if ('test.test' -eq $Collection) {'*Cannot apply $push/$pushAll modifier to non-array*'} else {'*Value "x" must be array.*'}
+		$m = if ('test.test' -eq $Collection) {"*The field 'x' must be an array but*"} else {'*Value "x" must be array.*'}
 		assert ($r.LastErrorMessage -like $m)
 		assert ($e -like $m)
 	}{

@@ -27,6 +27,12 @@ task Unset {
 	test { New-MdbcUpdate -Unset Name } '{ "$unset" : { "Name" : 1 } }'
 	test { New-MdbcUpdate -Unset a, b } '{ "$unset" : { "a" : 1, "b" : 1 } }'
 }
+
+task CurrentDate {
+	test { New-MdbcUpdate -CurrentDate Name } '{ "$currentDate" : { "Name" : true } }'
+	test { New-MdbcUpdate -CurrentDate a, b } '{ "$currentDate" : { "a" : true, "b" : true } }'
+}
+
 task Rename {
 	test { New-MdbcUpdate -Rename @{One = 'Two'} } '{ "$rename" : { "One" : "Two" } }'
 	test { New-MdbcUpdate -Rename @{a = 1; b = 2}, @{c = 3} } '{ "$rename" : { "a" : "1", "b" : "2", "c" : "3" } }'
@@ -42,6 +48,14 @@ task Set-SetOnInsert {
 	test { New-MdbcUpdate -SetOnInsert @{a = 1; b = 2}, @{c = 3} } '{ "$setOnInsert" : { "a" : 1, "b" : 2, "c" : 3 } }'
 }
 
+task MinMax {
+	test { New-MdbcUpdate -Min @{Name = 'one'} } '{ "$min" : { "Name" : "one" } }'
+	test { New-MdbcUpdate -Max @{Name = 'one'} } '{ "$max" : { "Name" : "one" } }'
+
+	test { New-MdbcUpdate -Min @{a = 1; b = 2}, @{c = 3} } '{ "$min" : { "a" : 1, "b" : 2, "c" : 3 } }'
+	test { New-MdbcUpdate -Max @{a = 1; b = 2}, @{c = 3} } '{ "$max" : { "a" : 1, "b" : 2, "c" : 3 } }'
+}
+
 task Inc {
 	test { New-MdbcUpdate -Inc @{Name = 1} } '{ "$inc" : { "Name" : 1 } }'
 	test { New-MdbcUpdate -Inc @{Name = 1L} } '{ "$inc" : { "Name" : NumberLong(1) } }'
@@ -49,15 +63,25 @@ task Inc {
 	test { New-MdbcUpdate -Inc @{a = 1; b = 2}, @{c = 3} } '{ "$inc" : { "a" : 1, "b" : 2, "c" : 3 } }'
 }
 
+task Mul {
+	test { New-MdbcUpdate -Mul @{Name = 1} } '{ "$mul" : { "Name" : 1 } }'
+	test { New-MdbcUpdate -Mul @{Name = 1L} } '{ "$mul" : { "Name" : NumberLong(1) } }'
+	test { New-MdbcUpdate -Mul @{Name = 1.1} } '{ "$mul" : { "Name" : 1.1 } }'
+	test { New-MdbcUpdate -Mul @{a = 1; b = 2}, @{c = 3} } '{ "$mul" : { "a" : 1, "b" : 2, "c" : 3 } }'
+}
+
 task Bitwise {
 	test { New-MdbcUpdate -BitwiseAnd @{Name = 1} } '{ "$bit" : { "Name" : { "and" : 1 } } }'
 	test { New-MdbcUpdate -BitwiseOr @{Name = 1} } '{ "$bit" : { "Name" : { "or" : 1 } } }'
+	test { New-MdbcUpdate -BitwiseXor @{Name = 1} } '{ "$bit" : { "Name" : { "xor" : 1 } } }'
 
 	test { New-MdbcUpdate -BitwiseAnd @{Name = 1L} } '{ "$bit" : { "Name" : { "and" : NumberLong(1) } } }'
 	test { New-MdbcUpdate -BitwiseOr @{Name = 1L} } '{ "$bit" : { "Name" : { "or" : NumberLong(1) } } }'
+	test { New-MdbcUpdate -BitwiseXor @{Name = 1L} } '{ "$bit" : { "Name" : { "xor" : NumberLong(1) } } }'
 
 	test { New-MdbcUpdate -BitwiseAnd @{a = 1; b = 2}, @{c = 3} } '{ "$bit" : { "a" : { "and" : 1 }, "b" : { "and" : 2 }, "c" : { "and" : 3 } } }'
 	test { New-MdbcUpdate -BitwiseOr @{a = 1; b = 2}, @{c = 3} } '{ "$bit" : { "a" : { "or" : 1 }, "b" : { "or" : 2 }, "c" : { "or" : 3 } } }'
+	test { New-MdbcUpdate -BitwiseXor @{a = 1; b = 2}, @{c = 3} } '{ "$bit" : { "a" : { "xor" : 1 }, "b" : { "xor" : 2 }, "c" : { "xor" : 3 } } }'
 }
 
 task AddToSet {

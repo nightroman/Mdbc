@@ -1,5 +1,5 @@
 ﻿
-/* Copyright 2011-2013 Roman Kuzmin
+/* Copyright 2011-2014 Roman Kuzmin
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -64,15 +64,12 @@ namespace Mdbc
 		}
 		static bool GT(BsonDocument document, string name, BsonValue value)
 		{
-			bool ok = false;
 			foreach (var data in document.GetNestedValues(name))
 			{
-				ok = true;
 				if (data.CompareTo(value) > 0)
 					return true;
 			}
-
-			return ok ? false : value.BsonType == BsonType.Null;
+			return false;
 		}
 		static Expression GTEExpression(Expression field, BsonValue args)
 		{
@@ -110,14 +107,12 @@ namespace Mdbc
 		}
 		static bool LT(BsonDocument document, string name, BsonValue value)
 		{
-			bool ok = false;
 			foreach (var data in document.GetNestedValues(name))
 			{
-				ok = true;
 				if (data.CompareTo(value) < 0)
 					return true;
 			}
-			return ok ? false : value.BsonType == BsonType.Null;
+			return false;
 		}
 		static Expression LTEExpression(Expression field, BsonValue args)
 		{
@@ -136,14 +131,13 @@ namespace Mdbc
 		}
 		static Expression MatchesExpression(Expression field, BsonValue args)
 		{
-			var regex = args.BsonType == BsonType.RegularExpression ? args.AsRegex : null;
-			return Expression.Call(GetMethod("Matches"), Data, field, Expression.Constant(regex, typeof(Regex)));
+			if (args.BsonType != BsonType.RegularExpression)
+				throw new ArgumentException("Invalid $regex argument.");
+
+			return Expression.Call(GetMethod("Matches"), Data, field, Expression.Constant(args.AsRegex, typeof(Regex)));
 		}
 		static bool Matches(BsonDocument document, string name, Regex regex)
 		{
-			if (regex == null)
-				return false;
-
 			foreach (var data in document.GetNestedValues(name))
 				if (data.BsonType == BsonType.String && regex.IsMatch(data.AsString))
 					return true;
@@ -230,12 +224,17 @@ namespace Mdbc
 				throw new ArgumentException("$mod argument must be array.");
 
 			var mod = args.AsBsonArray;
+			if (mod.Count != 2)
+				throw new ArgumentException("$mod array must have two items.");
 
-			long mod0 = mod.Count > 0 ? (long)mod[0].ToDoubleOrZero() : 0;
+			if (!mod[0].IsNumeric)
+				throw new ArgumentException("$mod divisor must be number.");
+
+			long mod0 = (long)mod[0].ToDouble();
 			if (mod0 == 0)
 				throw new ArgumentException("$mod divisor cannot be 0.");
 
-			long mod1 = mod.Count > 1 ? (long)mod[1].ToDoubleOrZero() : 0;
+			long mod1 = (long)mod[1].ToDoubleOrZero();
 
 			return Expression.Call(GetMethod("Mod"), Data, field, Expression.Constant(mod0, typeof(long)), Expression.Constant(mod1, typeof(long)));
 		}
@@ -265,7 +264,15 @@ namespace Mdbc
 		}
 		static Expression SizeExpression(Expression field, BsonValue args)
 		{
-			return Expression.Call(GetMethod("Size"), Data, field, Expression.Constant(args.ToDoubleOrZero(), typeof(double)));
+			double size;
+			if (args.IsNumeric)
+				size = args.ToDouble();
+			else if (args.IsString)
+				size = 0;
+			else
+				throw new ArgumentException("Invalid $size argument.");
+
+			return Expression.Call(GetMethod("Size"), Data, field, Expression.Constant(size, typeof(double)));
 		}
 		// If missing or not a number then false.
 		// If value is not a number then size 0 is used instead.

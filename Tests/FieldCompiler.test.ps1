@@ -22,7 +22,7 @@ function get($Property) {
 task Error {
 	Invoke-Test {
 		Test-Error { get a, a } '*Duplicate element name*'
-		Test-Error { get $fb::Include('a').Exclude('b') } '*You cannot currently mix including and excluding fields.*'
+		Test-Error { get $fb::Include('a').Exclude('b') } '*Projection cannot have a mix of inclusion and exclusion.*'
 		Test-Error { get $fb::Slice('arr', 0, 0) } '*$slice limit must be positive*'
 	}{
 		Connect-Mdbc -NewCollection

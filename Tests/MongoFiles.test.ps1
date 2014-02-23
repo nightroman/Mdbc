@@ -78,7 +78,7 @@ task Update-MongoFiles {
 	assert ($r.Removed -eq 2)
 
 	assert ((Get-MdbcData -Count -Collection $log) -eq 2)
-	$1, $2 = Get-MdbcData -Collection $log
+	$1, $2 = Get-MdbcData -Collection $log -SortBy _id
 
 	assert ($1._id -like '*\Tests\z')
 	assert ($1.Log.Count -eq 2)

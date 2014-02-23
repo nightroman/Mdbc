@@ -1,5 +1,5 @@
 ﻿
-/* Copyright 2011-2013 Roman Kuzmin
+/* Copyright 2011-2014 Roman Kuzmin
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -67,35 +67,36 @@ namespace Mdbc.Commands
 			var mc = TargetCollection.Collection as MongoCollection;
 			if (mc == null) ThrowNotImplementedForFiles("MapReduce");
 
-			var options = new MapReduceOptionsBuilder();
+			var args = new MapReduceArgs();
 
-			options.SetJSMode(JSMode);
+			args.JsMode = JSMode;
 
+			args.MapFunction = new BsonJavaScript(Function[0]);
+			args.ReduceFunction = new BsonJavaScript(Function[1]);
 			if (Function.Length == 3)
-				options.SetFinalize(new BsonJavaScript(Function[2]));
+				args.FinalizeFunction = new BsonJavaScript(Function[2]);
 
 			if (_Query != null)
-				options.SetQuery(_Query);
+				args.Query = _Query;
 
 			if (_SortBy != null)
-				options.SetSortOrder(_SortBy);
+				args.SortBy = _SortBy;
 
 			if (First > 0)
-				options.SetLimit(First);
+				args.Limit = First;
 
 			if (Scope != null)
-				options.SetScope(new ScopeDocument(Scope));
+				args.Scope = new ScopeDocument(Scope);
 
 			if (!string.IsNullOrEmpty(OutCollection) && OutMode == MapReduceOutputMode.Inline)
 				OutMode = MapReduceOutputMode.Replace;
 
-			var output = new MapReduceOutput();
-			output.Mode = OutMode;
-			output.DatabaseName = OutDatabase;
-			output.CollectionName = OutCollection;
-			options.SetOutput(output);
+			// output
+			args.OutputMode = OutMode;
+			args.OutputDatabaseName = OutDatabase;
+			args.OutputCollectionName = OutCollection;
 
-			var result = mc.MapReduce(new BsonJavaScript(Function[0]), new BsonJavaScript(Function[1]), options);
+			var result = mc.MapReduce(args);
 
 			if (ResultVariable != null)
 				SessionState.PSVariable.Set(ResultVariable, result);

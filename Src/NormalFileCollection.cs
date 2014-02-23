@@ -1,5 +1,5 @@
 ﻿
-/* Copyright 2011-2013 Roman Kuzmin
+/* Copyright 2011-2014 Roman Kuzmin
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ namespace Mdbc
 			if (!document.TryGetValue(MyValue.Id, out id))
 				id = document.EnsureId();
 			else if (id.BsonType == BsonType.Array)
-				throw new InvalidOperationException("_id cannot be an array.");
+				throw new InvalidOperationException("Can't use an array for _id.");
 
 			// try to add
 			try
