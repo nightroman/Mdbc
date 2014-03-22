@@ -229,7 +229,7 @@ task CheckFiles {
 # Call tests.
 task Test {
 	Invoke-Build ** Tests -Result result
-	$testCount = 154
+	$testCount = 155
 	if ($testCount -ne $result.Tasks.Count) {Write-Warning "Unexpected test count:`n Sample : $testCount`n Result : $($result.Tasks.Count)"}
 },
 CleanTest

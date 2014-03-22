@@ -79,7 +79,7 @@ task Retry {
 
 		1..$dataCount | Split-Pipeline -Verbose -Count $pipeCount -Variable file -Module Mdbc {process{
 			@{_id=$_; data=[runspace]::DefaultRunspace.InstanceId} |
-			Export-MdbcData -Verbose -Append -Retry (New-TimeSpan -Seconds 5) $file
+			Export-MdbcData -Verbose -Append -Retry (New-TimeSpan -Seconds 10) $file
 		}}
 
 		# all data are there

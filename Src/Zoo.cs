@@ -639,8 +639,12 @@ namespace Mdbc
 				if (noArrays)
 					throw new InvalidOperationException("Array indexes are not supported.");
 
+				//_140322_065506
+				if (arrayIndex < 0)
+					throw new InvalidOperationException(string.Format(null, "Invalid negative array index in ({0}).", path));
+				
 				var array = value.AsBsonArray;
-				if (arrayIndex < 0 || arrayIndex >= array.Count)
+				if (arrayIndex >= array.Count)
 					return null;
 
 				if (i == last - 1)

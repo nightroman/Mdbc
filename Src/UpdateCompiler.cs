@@ -227,7 +227,7 @@ namespace Mdbc
 		{
 			var r = document.ResolvePath(name);
 			if (r == null)
-				throw new InvalidOperationException(string.Format(null, @"Cannot resolve ({0}).", name));
+				return this; //_140322_064404
 
 			BsonValue vArray;
 			if (r.Array != null)
@@ -257,7 +257,7 @@ namespace Mdbc
 		{
 			var r = document.ResolvePath(name);
 			if (r == null)
-				throw new InvalidOperationException(string.Format(null, @"Cannot resolve ({0}).", name));
+				return; //_140322_065637
 
 			BsonValue vArray;
 			if (r.Array != null)
@@ -323,7 +323,7 @@ namespace Mdbc
 			Pull(document, name, value, true);
 			return this;
 		}
-		static void Push(BsonDocument document, string name, BsonValue value, bool all)
+		static void Push(BsonDocument document, string name, BsonValue value, bool all, int position)
 		{
 			var r = document.EnsurePath(name);
 
@@ -344,9 +344,26 @@ namespace Mdbc
 
 			var array = v2.AsBsonArray;
 			if (all)
-				array.AddRange(value.AsBsonArray);
+			{
+				if (position < 0 || position >= array.Count)
+				{
+					array.AddRange(value.AsBsonArray);
+				}
+				else
+				{
+					var array2 = value.AsBsonArray;
+					for (int i = array2.Count; --i >= 0; )
+						array.Insert(position, array2[i]);
+				}
+			}
 			else
-				array.Add(value);
+			{
+				//TODO is position actually used in this case?
+				if (position < 0 || position >= array.Count)
+					array.Add(value);
+				else
+					array.Insert(position, value);
+			}
 		}
 		static Expression PushExpression(Expression that, Expression field, BsonValue value)
 		{
@@ -364,11 +381,12 @@ namespace Mdbc
 		// Assume $each exists.
 		static Expression PushEachExpression(Expression that, Expression field, BsonDocument document)
 		{
+			int position = -1;
 			BsonArray each = null;
 			BsonValue sort = null, slice = null;
 			foreach (var e in document.Elements)
 			{
-				//TODO $position
+				//TODO 
 				switch (e.Name)
 				{
 					case "$each":
@@ -383,6 +401,13 @@ namespace Mdbc
 						if (!e.Value.IsNumeric)
 							throw new ArgumentException("$slice must be a numeric value.");
 						slice = e.Value;
+						break;
+					case "$position":
+						if (!e.Value.IsNumeric)
+							throw new ArgumentException("$position must be a numeric value.");
+						position = e.Value.ToInt32();
+						if (position < 0)
+							throw new ArgumentException("$position must not be negative.");
 						break;
 					default:
 						throw new ArgumentException(string.Format(null, "Unrecognized clause in $push: ({0}).", e.Name));
@@ -420,12 +445,13 @@ namespace Mdbc
 			if (slice != null)
 				each = each.Slice(0, slice.ToInt32());
 
-			return Expression.Call(that, GetMethod("PushAll"), Data, field, Expression.Constant(each, typeof(BsonValue)));
+			return Expression.Call(that, GetMethod("PushAll"), Data, field,
+				Expression.Constant(each, typeof(BsonValue)), Expression.Constant(position, typeof(int)));
 		}
 		UpdateCompiler Push(BsonDocument document, string name, BsonValue value)
 		{
 
-			Push(document, name, value, false);
+			Push(document, name, value, false, -1);
 			return this;
 		}
 		static Expression PushAllExpression(Expression that, Expression field, BsonValue value)
@@ -433,11 +459,12 @@ namespace Mdbc
 			if (value.BsonType != BsonType.Array)
 				throw new ArgumentException("Push all/each value must be array.");
 
-			return Expression.Call(that, GetMethod("PushAll"), Data, field, Expression.Constant(value, typeof(BsonValue)));
+			return Expression.Call(that, GetMethod("PushAll"), Data, field,
+				Expression.Constant(value, typeof(BsonValue)), Expression.Constant(-1, typeof(int)));
 		}
-		UpdateCompiler PushAll(BsonDocument document, string name, BsonValue value)
+		UpdateCompiler PushAll(BsonDocument document, string name, BsonValue value, int position)
 		{
-			Push(document, name, value, true);
+			Push(document, name, value, true, position);
 			return this;
 		}
 		static Expression RenameExpression(Expression that, Expression field, BsonValue value)

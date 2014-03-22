@@ -38,6 +38,9 @@ namespace Mdbc.Commands
 		[Parameter]
 		public SwitchParameter AllowDiskUse { get; set; }
 
+		//[Parameter]
+		//public SwitchParameter Explain { get; set; }
+
 		protected override void BeginProcessing()
 		{
 			var mc = TargetCollection.Collection as MongoCollection;
@@ -50,7 +53,13 @@ namespace Mdbc.Commands
 				args.BatchSize = BatchSize;
 			if (MaxTime.Ticks > 0)
 				args.MaxTime = MaxTime;
-			
+
+			//if (Explain)
+			//{
+			//    WriteObject(new Dictionary(mc.AggregateExplain(args).Response));
+			//    return;
+			//}
+
 			var result = mc.Aggregate(args);
 			foreach (var document in result)
 				WriteObject(new Dictionary(document));
