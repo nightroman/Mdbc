@@ -107,9 +107,9 @@ task Unset {
 	update (New-MdbcUpdate -Unset a.1.x) @{a=1,@{x=1;y=1},3} @{a=1,@{y=1},3} '.Unset(data, "a.1.x")'
 
 	# unset a.<out>
-	#bug Mongo is silent here, fails in similar cases; https://jira.mongodb.org/browse/SERVER-13317
-	update (New-MdbcUpdate -Unset a.-2) @{a=1,2,3} @{a=1,2,3} -EError '*Invalid negative array index in (a.-2).*'
-	update (New-MdbcUpdate -Unset a.99) @{a=1,2,3} @{a=1,2,3} '.Unset(data, "a.99")'
+	#_140322_154514 https://jira.mongodb.org/browse/SERVER-13317
+	update (New-MdbcUpdate -Unset a.-2) @{a=1,2} @{a=1,2} '.Unset(data, "a.-2")'
+	update (New-MdbcUpdate -Unset a.99) @{a=1,2} @{a=1,2} '.Unset(data, "a.99")'
 }
 
 task CurrentDate {

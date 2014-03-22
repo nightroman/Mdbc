@@ -473,7 +473,7 @@ namespace Mdbc
 		}
 		UpdateCompiler Rename(BsonDocument document, string name, string newName)
 		{
-			var r1 = document.ResolvePath(name, true); //_131028_234439 Weird, we can rename in arrays but follow Mongo that cannot.
+			var r1 = document.ResolvePath(name, ResolvePathOptions.NoArray); //_131028_234439 Weird, we can rename in arrays but follow Mongo that cannot.
 			if (r1 != null)
 			{
 				BsonValue value;
@@ -573,14 +573,16 @@ namespace Mdbc
 		}
 		UpdateCompiler Unset(BsonDocument document, string name)
 		{
-			var r = document.ResolvePath(name);
-			if (r != null)
-			{
-				if (r.Document != null)
-					r.Document.Remove(r.Key);
-				else
-					r.Array[r.Index] = BsonNull.Value;
-			}
+			//_140322_154514 negative index
+			var r = document.ResolvePath(name, ResolvePathOptions.YesNegativeIndex);
+			if (r == null)
+				return this;
+
+			if (r.Document != null)
+				r.Document.Remove(r.Key);
+			else
+				r.Array[r.Index] = BsonNull.Value;
+
 			return this;
 		}
 		#endregion

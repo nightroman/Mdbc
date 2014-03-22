@@ -479,6 +479,13 @@ namespace Mdbc
 		public BsonArray Array;
 		public int Index;
 	}
+	[Flags]
+	enum ResolvePathOptions
+	{
+		None = 0,
+		NoArray = 1,
+		YesNegativeIndex = 2
+	}
 	static class MyDocument
 	{
 		public static void ValidateNames(this BsonDocument that)
@@ -598,7 +605,7 @@ namespace Mdbc
 		// Returns one of:
 		// - Document and Key, Key may be missing
 		// - Array and Index, Index is always valid
-		public static ResolvedDocumentPath ResolvePath(this BsonDocument that, string path, bool noArrays = false)
+		public static ResolvedDocumentPath ResolvePath(this BsonDocument that, string path, ResolvePathOptions options = ResolvePathOptions.None)
 		{
 			var r = new ResolvedDocumentPath();
 
@@ -636,12 +643,16 @@ namespace Mdbc
 				if (value.BsonType != BsonType.Array || !int.TryParse(keys[i + 1], out arrayIndex))
 					return null;
 
-				if (noArrays)
+				if ((options & ResolvePathOptions.NoArray) != ResolvePathOptions.None)
 					throw new InvalidOperationException("Array indexes are not supported.");
 
 				//_140322_065506
 				if (arrayIndex < 0)
+				{
+					if ((options & ResolvePathOptions.YesNegativeIndex) != ResolvePathOptions.None)
+						return null;
 					throw new InvalidOperationException(string.Format(null, "Invalid negative array index in ({0}).", path));
+				}
 				
 				var array = value.AsBsonArray;
 				if (arrayIndex >= array.Count)
