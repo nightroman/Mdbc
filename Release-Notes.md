@@ -3,7 +3,7 @@ Mdbc Release Notes
 
 ## v4.7.0
 
-C# driver v1.9 and MongoDB v2.6
+C# driver v1.9. Tested with MongoDB v2.6.0-rc3
 
 *File collections*
 

@@ -113,7 +113,7 @@ task Unset {
 }
 
 task CurrentDate {
-	$now = [datetime]::Now
+	$now = [datetime]::UtcNow #TODO it's UTC, think
 
 	# simple
 	update (New-MdbcUpdate -CurrentDate x) @{x=1} @{x=$now} '.CurrentDate(data, "x")'
