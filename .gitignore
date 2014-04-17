@@ -8,4 +8,6 @@
 [D|d]ebug
 [O|o]bj
 [R|r]elease
+AssemblyInfo.cs
+Mdbc.psd1
 MongoDB.*

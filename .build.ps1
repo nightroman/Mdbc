@@ -4,57 +4,109 @@
 	Build script (https://github.com/nightroman/Invoke-Build)
 
 .Description
-	How to use this script and build the module:
+	HOW TO USE THIS SCRIPT AND BUILD THE MODULE
 
-	Copy MongoDB.Bson.dll and MongoDB.Driver.dll from the released package to
-	the Module directory. The project Mdbc.csproj assumes they are there.
+	Get and copy MongoDB.Bson.dll and MongoDB.Driver.dll to Module.
 
 	Get the utility script Invoke-Build.ps1:
 	https://github.com/nightroman/Invoke-Build
 
-	Copy it to the path. Set location to this directory. Build:
+	Copy it to the path. Set location to here. Build:
 	PS> Invoke-Build Build
 
-	This command builds the module and installs it to the $ModuleRoot which is
-	the working location of the Mdbc module. The build fails if the module is
-	currently in use. Ensure it is not and then repeat.
-
-	The build task Help fails if the help builder Helps is not installed.
-	Ignore this or better get and use the script (it is really easy):
+	The task Help fails if Helps.ps1 is missing.
+	Ignore this error or get Helps.ps1:
 	https://github.com/nightroman/Helps
 
 	In order to deal with the latest C# driver sources set the environment
 	variable MongoDBCSharpDriverRepo to its repository path. Then all tasks
-	*Driver from this script should work as well.
+	*Driver should work as well.
 #>
 
-param
-(
+param(
 	$Configuration = 'Release'
 )
 
-# Standard location of the Mdbc module (caveat: may not work if MyDocuments is not standard)
+# Module directory.
 $ModuleRoot = Join-Path ([Environment]::GetFolderPath('MyDocuments')) WindowsPowerShell\Modules\Mdbc
 
 # Use MSBuild.
 use 4.0 MSBuild
 
-# Build (incremental).
-task Build {
+# Get version from release notes.
+function Get-Version {
+	assert ([System.IO.File]::ReadAllText('Release-Notes.md') -match '##\s+v(\d+\.\d+\.\d+)')
+	$Matches[1]
+}
+
+# Generate or update meta files.
+task Meta -Inputs Release-Notes.md -Outputs Module\Mdbc.psd1, Src\AssemblyInfo.cs {
+	$Version = Get-Version
+	$Project = 'https://github.com/nightroman/Mdbc'
+	$Summary = 'Mdbc module - MongoDB Cmdlets for PowerShell'
+	$Copyright = 'Copyright (c) 2011-2014 Roman Kuzmin'
+
+	Set-Content Module\Mdbc.psd1 @"
+@{
+	Author = 'Roman Kuzmin'
+	ModuleVersion = '$Version'
+	CompanyName = '$Project'
+	Description = '$Summary'
+	Copyright = '$Copyright'
+
+	ModuleToProcess = 'Mdbc.dll'
+	RequiredAssemblies = 'Mdbc.dll', 'MongoDB.Driver.dll', 'MongoDB.Bson.dll'
+
+	PowerShellVersion = '2.0'
+	GUID = '12c81cd8-bde3-4c91-a292-e6c4f868106a'
+}
+"@
+
+	Set-Content Src\AssemblyInfo.cs @"
+using System.Reflection;
+using System.Runtime.InteropServices;
+using System;
+
+[assembly: AssemblyProduct("Mdbc")]
+[assembly: AssemblyVersion("$Version")]
+[assembly: AssemblyCompany("$Project")]
+[assembly: AssemblyTitle("$Summary")]
+[assembly: AssemblyCopyright("$Copyright")]
+
+[assembly: ComVisible(false)]
+[assembly: CLSCompliant(false)]
+"@
+}
+
+# Build, copy files on post-build event, make help.
+task Build Meta, {
 	exec { MSBuild Src\Mdbc.csproj /t:Build /p:Configuration=$Configuration /p:TargetFrameworkVersion=v3.5}
 },
-@{Help=1}
+(job Help -Safe)
 
-# Rebuild all (force).
+# Post-build event of Mdbc.csproj.
+# Copy files to the module directory.
+task PostBuild {
+	exec { robocopy Module $ModuleRoot /s /np /r:0 /xf *-Help.ps1 } (0..3)
+	Copy-Item Src\Bin\$Configuration\Mdbc.dll $ModuleRoot
+}
+
+# Rebuild all.
 task Rebuild {
 	Invoke-Build Clean
 	Remove-Item $ModuleRoot -Force -Recurse -ErrorAction 0
 },
 Build
 
-# Clean all.
+# Remove temp and info files.
 task Clean RemoveMarkdownHtml, {
-	Remove-Item z, Src\bin, Src\obj, Module\Mdbc.dll, *.nupkg -Force -Recurse -ErrorAction 0
+	Remove-Item  -Force -Recurse -ErrorAction 0 `
+	*.nupkg,
+	Module\Mdbc.psd1,
+	Src\AssemblyInfo.cs,
+	Src\bin,
+	Src\obj,
+	z
 }
 
 # Remove test.test* collections
@@ -65,13 +117,6 @@ task CleanTest {
 			$null = $Collection.Drop()
 		}
 	}
-}
-
-# Copy files to the module directory.
-# It is called as the post-build event of Mdbc.csproj.
-task PostBuild {
-	Copy-Item Src\Bin\$Configuration\Mdbc.dll Module
-	exec { robocopy Module $ModuleRoot /s /np /r:0 /xf *-Help.ps1 } (0..3)
 }
 
 # Build help by Helps (https://github.com/nightroman/Helps).
@@ -105,21 +150,22 @@ $UpdateScriptInputs = @(
 	'TabExpansionProfile.Mdbc.ps1'
 	'Update-MongoFiles.ps1'
 )
-# Copy external scripts from their working location to the project.
-# It fails if the scripts are not available.
+
+# Copy external scripts to the project.
+# It fails if a script is missing.
 task UpdateScript -Partial `
--Inputs {Get-Command $UpdateScriptInputs | %{ $_.Definition }} `
+-Inputs { Get-Command $UpdateScriptInputs | .{process{ $_.Definition }} } `
 -Outputs {process{ "Scripts\$(Split-Path -Leaf $_)" }} `
 {process{ Copy-Item $_ $2 }}
 
-# Pull C# driver sources.
+# Pull driver sources.
 task PullDriver {
 	assert $env:MongoDBCSharpDriverRepo
 	Set-Location $env:MongoDBCSharpDriverRepo
 	exec { git pull }
 }
 
-# Build driver assemblies and copy to Module.
+# Build driver and copy to Module.
 task BuildDriver {
 	assert $env:MongoDBCSharpDriverRepo
 	exec { MSBuild $env:MongoDBCSharpDriverRepo\CSharpDriver-2010.sln /t:Build /p:Configuration=Release }
@@ -141,7 +187,7 @@ try { Markdown.tasks.ps1 }
 catch { task ConvertMarkdown; task RemoveMarkdownHtml }
 
 # Make the package in z\tools for NuGet.
-task Package ConvertMarkdown, @{UpdateScript=1}, {
+task Package ConvertMarkdown, (job UpdateScript -Safe), {
 	Remove-Item [z] -Force -Recurse
 	$null = mkdir z\tools\Mdbc\en-US, z\tools\Mdbc\Scripts
 
@@ -167,10 +213,13 @@ task Package ConvertMarkdown, @{UpdateScript=1}, {
 	Release-Notes.htm
 }
 
-# Set $script:Version = assembly version as 'X.Y.Z'
+# Set $script:Version.
 task Version {
-	assert ((Get-Item $ModuleRoot\Mdbc.dll).VersionInfo.FileVersion -match '^(\d+\.\d+\.\d+)')
-	$script:Version = $matches[1]
+	($script:Version = Get-Version)
+	# module version
+	assert ((Get-Module Mdbc -ListAvailable).Version -eq ([Version]$script:Version))
+	# assembly version
+	assert ((Get-Item $ModuleRoot\Mdbc.dll).VersionInfo.FileVersion -eq ([Version]"$script:Version.0"))
 }
 
 # Make NuGet package.
