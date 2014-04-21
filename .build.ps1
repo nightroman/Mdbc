@@ -27,8 +27,10 @@ param(
 	$Configuration = 'Release'
 )
 
+$ModuleName = 'Mdbc'
+
 # Module directory.
-$ModuleRoot = Join-Path ([Environment]::GetFolderPath('MyDocuments')) WindowsPowerShell\Modules\Mdbc
+$ModuleRoot = Join-Path ([Environment]::GetFolderPath('MyDocuments')) WindowsPowerShell\Modules\$ModuleName
 
 # Use MSBuild.
 use 4.0 MSBuild
@@ -40,22 +42,22 @@ function Get-Version {
 }
 
 # Generate or update meta files.
-task Meta -Inputs Release-Notes.md -Outputs Module\Mdbc.psd1, Src\AssemblyInfo.cs {
+task Meta -Inputs Release-Notes.md -Outputs Module\$ModuleName.psd1, Src\AssemblyInfo.cs {
 	$Version = Get-Version
 	$Project = 'https://github.com/nightroman/Mdbc'
 	$Summary = 'Mdbc module - MongoDB Cmdlets for PowerShell'
 	$Copyright = 'Copyright (c) 2011-2014 Roman Kuzmin'
 
-	Set-Content Module\Mdbc.psd1 @"
+	Set-Content Module\$ModuleName.psd1 @"
 @{
 	Author = 'Roman Kuzmin'
 	ModuleVersion = '$Version'
-	CompanyName = '$Project'
 	Description = '$Summary'
+	CompanyName = '$Project'
 	Copyright = '$Copyright'
 
-	ModuleToProcess = 'Mdbc.dll'
-	RequiredAssemblies = 'Mdbc.dll', 'MongoDB.Driver.dll', 'MongoDB.Bson.dll'
+	ModuleToProcess = '$ModuleName.dll'
+	RequiredAssemblies = 'MongoDB.Driver.dll', 'MongoDB.Bson.dll'
 
 	PowerShellVersion = '2.0'
 	GUID = '12c81cd8-bde3-4c91-a292-e6c4f868106a'
@@ -63,14 +65,14 @@ task Meta -Inputs Release-Notes.md -Outputs Module\Mdbc.psd1, Src\AssemblyInfo.c
 "@
 
 	Set-Content Src\AssemblyInfo.cs @"
+using System;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using System;
 
-[assembly: AssemblyProduct("Mdbc")]
+[assembly: AssemblyProduct("$ModuleName")]
 [assembly: AssemblyVersion("$Version")]
-[assembly: AssemblyCompany("$Project")]
 [assembly: AssemblyTitle("$Summary")]
+[assembly: AssemblyCompany("$Project")]
 [assembly: AssemblyCopyright("$Copyright")]
 
 [assembly: ComVisible(false)]
@@ -78,36 +80,126 @@ using System;
 "@
 }
 
-# Build, copy files on post-build event, make help.
+# Build, on post-build event copy files and make help.
 task Build Meta, {
-	exec { MSBuild Src\Mdbc.csproj /t:Build /p:Configuration=$Configuration /p:TargetFrameworkVersion=v3.5}
+	exec { MSBuild Src\$ModuleName.csproj /t:Build /p:Configuration=$Configuration /p:TargetFrameworkVersion=v3.5}
+}
+
+# Copy files to the module, then make help.
+# It is called from the post-build event.
+task PostBuild {
+	exec { robocopy Module $ModuleRoot /s /np /r:0 /xf *-Help.ps1 } (0..3)
+	Copy-Item Src\Bin\$Configuration\$ModuleName.dll $ModuleRoot
 },
 (job Help -Safe)
 
-# Post-build event of Mdbc.csproj.
-# Copy files to the module directory.
-task PostBuild {
-	exec { robocopy Module $ModuleRoot /s /np /r:0 /xf *-Help.ps1 } (0..3)
-	Copy-Item Src\Bin\$Configuration\Mdbc.dll $ModuleRoot
-}
-
-# Rebuild all.
-task Rebuild {
-	Invoke-Build Clean
-	Remove-Item $ModuleRoot -Force -Recurse -ErrorAction 0
-},
-Build
-
 # Remove temp and info files.
-task Clean RemoveMarkdownHtml, {
-	Remove-Item  -Force -Recurse -ErrorAction 0 `
-	*.nupkg,
-	Module\Mdbc.psd1,
-	Src\AssemblyInfo.cs,
-	Src\bin,
-	Src\obj,
-	z
+task Clean {
+	Remove-Item -Force -Recurse -ErrorAction 0 `
+	Module\$ModuleName.psd1, "$ModuleName.*.nupkg",
+	z, Src\bin, Src\obj, Src\AssemblyInfo.cs, README.htm, Release-Notes.htm
 }
+
+# Build help by Helps (https://github.com/nightroman/Helps).
+task Help -Inputs (
+	Get-Item Src\Commands\*, Module\en-US\$ModuleName.dll-Help.ps1
+) -Outputs (
+	"$ModuleRoot\en-US\$ModuleName.dll-Help.xml"
+) {
+	. Helps.ps1
+	Convert-Helps Module\en-US\$ModuleName.dll-Help.ps1 $Outputs
+}
+
+# Build and test help.
+task TestHelpExample {
+	. Helps.ps1
+	Test-Helps Module\en-US\$ModuleName.dll-Help.ps1
+}
+
+# Docs by https://www.nuget.org/packages/MarkdownToHtml
+task ConvertMarkdown {
+	exec { MarkdownToHtml from=README.md to=README.htm }
+	exec { MarkdownToHtml from=Release-Notes.md to=Release-Notes.htm }
+}
+
+# Set $script:Version.
+task Version {
+	($script:Version = Get-Version)
+	# module version
+	assert ((Get-Module $ModuleName -ListAvailable).Version -eq ([Version]$script:Version))
+	# assembly version
+	assert ((Get-Item $ModuleRoot\$ModuleName.dll).VersionInfo.FileVersion -eq ([Version]"$script:Version.0"))
+}
+
+# Make the package in z\tools.
+task Package ConvertMarkdown, (job UpdateScript -Safe), {
+	Remove-Item [z] -Force -Recurse
+	$null = mkdir z\tools\$ModuleName\en-US, z\tools\$ModuleName\Scripts
+
+	Copy-Item -Destination z\tools\$ModuleName `
+	LICENSE.txt,
+	README.htm,
+	Release-Notes.htm,
+	$ModuleRoot\$ModuleName.dll,
+	$ModuleRoot\$ModuleName.psd1,
+	$ModuleRoot\MongoDB.Bson.dll,
+	$ModuleRoot\MongoDB.Driver.dll
+
+	Copy-Item -Destination z\tools\$ModuleName\en-US `
+	$ModuleRoot\en-US\about_$ModuleName.help.txt,
+	$ModuleRoot\en-US\$ModuleName.dll-Help.xml
+
+	Copy-Item -Destination z\tools\$ModuleName\Scripts `
+	.\Scripts\Mdbc.ps1,
+	.\Scripts\Get-MongoFile.ps1,
+	.\Scripts\Update-MongoFiles.ps1,
+	.\Scripts\TabExpansionProfile.Mdbc.ps1
+}
+
+# Make NuGet package.
+task NuGet Package, Version, {
+	$text = @'
+Mdbc is the Windows PowerShell module based on the official MongoDB C# driver.
+It makes MongoDB scripting in PowerShell easier and provides some extra
+features like bson/json file collections which do not require MongoDB.
+'@
+	# nuspec
+	Set-Content z\Package.nuspec @"
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+	<metadata>
+		<id>$ModuleName</id>
+		<version>$Version</version>
+		<authors>Roman Kuzmin</authors>
+		<owners>Roman Kuzmin</owners>
+		<projectUrl>https://github.com/nightroman/Mdbc</projectUrl>
+		<licenseUrl>http://www.apache.org/licenses/LICENSE-2.0</licenseUrl>
+		<requireLicenseAcceptance>false</requireLicenseAcceptance>
+		<summary>$text</summary>
+		<description>$text</description>
+		<tags>Mongo MongoDB PowerShell Module Database</tags>
+	</metadata>
+</package>
+"@
+	# pack
+	exec { NuGet pack z\Package.nuspec -NoPackageAnalysis }
+}
+
+# Push to the repository with a version tag.
+task PushRelease Version, {
+	$changes = exec { git status --short }
+	assert (!$changes) "Please, commit changes."
+
+	exec { git push }
+	exec { git tag -a "v$Version" -m "v$Version" }
+	exec { git push origin "v$Version" }
+}
+
+# Make and push the NuGet package.
+task PushNuGet NuGet, {
+	exec { NuGet push "$ModuleName.$Version.nupkg" }
+},
+Clean
 
 # Remove test.test* collections
 task CleanTest {
@@ -117,18 +209,6 @@ task CleanTest {
 			$null = $Collection.Drop()
 		}
 	}
-}
-
-# Build help by Helps (https://github.com/nightroman/Helps).
-task Help -Inputs (Get-Item Src\Commands\*, Module\en-US\Mdbc.dll-Help.ps1) -Outputs "$ModuleRoot\en-US\Mdbc.dll-Help.xml" {
-	. Helps.ps1
-	Convert-Helps Module\en-US\Mdbc.dll-Help.ps1 $Outputs
-}
-
-# Test help examples.
-task TestHelpExample {
-	. Helps.ps1
-	Test-Helps Module\en-US\Mdbc.dll-Help.ps1
 }
 
 # Test synopsis of each cmdlet and warn about unexpected.
@@ -181,92 +261,6 @@ task CleanDriver {
 # Pull the latest driver, build it, then build Mdbc, test and clean all.
 task Driver PullDriver, BuildDriver, Build, Test, Clean, CleanDriver
 
-# Import markdown tasks ConvertMarkdown and RemoveMarkdownHtml.
-# <https://github.com/nightroman/Invoke-Build/wiki/Partial-Incremental-Tasks>
-try { Markdown.tasks.ps1 }
-catch { task ConvertMarkdown; task RemoveMarkdownHtml }
-
-# Make the package in z\tools for NuGet.
-task Package ConvertMarkdown, (job UpdateScript -Safe), {
-	Remove-Item [z] -Force -Recurse
-	$null = mkdir z\tools\Mdbc\en-US, z\tools\Mdbc\Scripts
-
-	Copy-Item -Destination z\tools\Mdbc `
-	LICENSE.txt,
-	$ModuleRoot\Mdbc.dll,
-	$ModuleRoot\Mdbc.psd1,
-	$ModuleRoot\MongoDB.Bson.dll,
-	$ModuleRoot\MongoDB.Driver.dll
-
-	Copy-Item -Destination z\tools\Mdbc\en-US `
-	$ModuleRoot\en-US\about_Mdbc.help.txt,
-	$ModuleRoot\en-US\Mdbc.dll-Help.xml
-
-	Copy-Item -Destination z\tools\Mdbc\Scripts `
-	.\Scripts\Mdbc.ps1,
-	.\Scripts\Get-MongoFile.ps1,
-	.\Scripts\Update-MongoFiles.ps1,
-	.\Scripts\TabExpansionProfile.Mdbc.ps1
-
-	Move-Item -Destination z\tools\Mdbc `
-	README.htm,
-	Release-Notes.htm
-}
-
-# Set $script:Version.
-task Version {
-	($script:Version = Get-Version)
-	# module version
-	assert ((Get-Module Mdbc -ListAvailable).Version -eq ([Version]$script:Version))
-	# assembly version
-	assert ((Get-Item $ModuleRoot\Mdbc.dll).VersionInfo.FileVersion -eq ([Version]"$script:Version.0"))
-}
-
-# Make NuGet package.
-task NuGet Package, Version, {
-	$text = @'
-Mdbc is the Windows PowerShell module based on the official MongoDB C# driver.
-It makes MongoDB scripting in PowerShell easier and provides some extra
-features like bson/json file collections which do not require MongoDB.
-'@
-	# nuspec
-	Set-Content z\Package.nuspec @"
-<?xml version="1.0"?>
-<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
-	<metadata>
-		<id>Mdbc</id>
-		<version>$Version</version>
-		<authors>Roman Kuzmin</authors>
-		<owners>Roman Kuzmin</owners>
-		<projectUrl>https://github.com/nightroman/Mdbc</projectUrl>
-		<licenseUrl>http://www.apache.org/licenses/LICENSE-2.0</licenseUrl>
-		<requireLicenseAcceptance>false</requireLicenseAcceptance>
-		<summary>$text</summary>
-		<description>$text</description>
-		<tags>Mongo MongoDB PowerShell Module Database</tags>
-	</metadata>
-</package>
-"@
-	# pack
-	exec { NuGet pack z\Package.nuspec -NoPackageAnalysis }
-}
-
-# Push to the repository with a version tag.
-task PushRelease Version, {
-	$changes = exec { git status --short }
-	assert (!$changes) "Please, commit changes."
-
-	exec { git push }
-	exec { git tag -a "v$Version" -m "v$Version" }
-	exec { git push origin "v$Version" }
-}
-
-# Make and push the NuGet package.
-task PushNuGet NuGet, {
-	exec { NuGet push "Mdbc.$Version.nupkg" }
-},
-Clean
-
 # Check expected files.
 task CheckFiles {
 	$Pattern = '\.(cs|csproj|md|ps1|psd1|psm1|ps1xml|sln|txt|xml|gitignore)$'
@@ -284,4 +278,4 @@ task Test {
 CleanTest
 
 # Build, test and clean all.
-task . Rebuild, TestHelp, Test, Clean, CheckFiles
+task . Build, TestHelp, Test, Clean, CheckFiles
