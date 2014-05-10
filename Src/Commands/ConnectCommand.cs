@@ -14,6 +14,7 @@
 * limitations under the License.
 */
 
+using System;
 using System.Management.Automation;
 using MongoDB.Driver;
 
@@ -24,28 +25,31 @@ namespace Mdbc.Commands
 	{
 		[Parameter(Position = 0)]
 		public string ConnectionString { get; set; }
-		
+
 		[Parameter(Position = 1)]
 		public string DatabaseName { get; set; }
-		
+
 		[Parameter(Position = 2)]
 		public string CollectionName { get; set; }
-		
+
 		[Parameter]
 		[ValidateNotNull]
 		public string ServerVariable { get; set; }
-		
+
 		[Parameter]
 		[ValidateNotNull]
 		public string DatabaseVariable { get; set; }
-		
+
 		[Parameter]
 		[ValidateNotNull]
 		public string CollectionVariable { get; set; }
-		
+
+		[Parameter]
+		public TimeSpan Timeout { get; set; }
+
 		[Parameter]
 		public SwitchParameter NewCollection { get; set; }
-		
+
 		protected override void BeginProcessing()
 		{
 			if (ConnectionString == null)
@@ -57,8 +61,11 @@ namespace Mdbc.Commands
 			}
 
 			var client = ConnectionString == "." ? new MongoClient() : new MongoClient(ConnectionString);
-			var server =  client.GetServer();
-			server.Connect();
+			var server = client.GetServer();
+			if (Timeout.Ticks > 0)
+				server.Connect(Timeout);
+			else
+				server.Connect();
 			SessionState.PSVariable.Set(ServerVariable ?? Actor.ServerVariable, server);
 
 			if (DatabaseName == null)

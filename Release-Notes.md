@@ -1,5 +1,10 @@
+
 Mdbc Release Notes
 ==================
+
+## v4.7.1
+
+`Connect-Mdbc`: New parameter `Timeout`: Determines the maximum time to wait before timing out.
 
 ## v4.7.0
 

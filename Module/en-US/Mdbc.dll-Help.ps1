@@ -238,8 +238,8 @@ specified then they are assumed to be ., test, test respectively.
 		ServerVariable = 'Name of a new variable in the current scope with the connected server. The default variable name is Server.'
 		DatabaseVariable = 'Name of a new variable in the current scope with the connected database. The default variable name is Database.'
 		CollectionVariable = $CollectionVariable
+		Timeout = 'Determines the maximum time to wait before timing out.'
 	}
-	inputs = @()
 	outputs = @(
 		@{ type = 'None or database or collection names.' }
 	)
@@ -633,7 +633,6 @@ executes more slowly than native operators but is very flexible. See the
 server-side processing page for more information (official site).
 '@
 	}
-	inputs = @()
 	outputs = @{
 		type = '[MongoDB.Driver.IMongoQuery]'
 		description = 'Used by Get-MdbcData, Remove-MdbcData, Update-MdbcData, ...'
@@ -816,7 +815,6 @@ The $currentDate operator sets the value of a field to the current date.
 Mongo: { $currentDate: { field: true } }
 '@
 	}
-	inputs = @()
 	outputs = @{
 		type = '[MongoDB.Driver.IMongoUpdate]';
 		description = 'Update expression used by Update-MdbcData.'
@@ -913,7 +911,6 @@ Tells to store the update result as a variable with the specified name. The
 result object properties: DocumentsAffected (long), UpdatedExisting (bool).
 '@
 	}
-	inputs = @()
 	outputs = @(
 		@{
 			type = 'Int64'
@@ -1011,8 +1008,6 @@ It may be set to true or false to explicitly enable or disable automatic
 creation of a unique key index on the _id field.
 '@
 	}
-	inputs = @()
-	outputs = @()
 }
 
 ### Invoke-MdbcCommand
@@ -1045,7 +1040,6 @@ Use Mdbc.Dictionary instead:
 The argument value required by the command with one argument.
 '@
 	}
-	inputs = @()
 	outputs = @{
 		type = 'Mdbc.Dictionary'
 		description = 'The response document wrapped by Mdbc.Dictionary.'
@@ -1130,7 +1124,6 @@ One or more aggregation pipeline operations represented by JSON-like hashtables.
 		MaxTime = 'Specifies the max time the server should spend on the aggregation command.'
 		AllowDiskUse = 'Tells to allow disk use.'
 	}
-	inputs = @()
 	outputs = @(
 		@{
 			type = '[Mdbc.Dictionary]'
@@ -1210,7 +1203,6 @@ Specifies the variables that can be used by Map, Reduce, and Finalize functions.
 This parameter is used together with Query.
 '@
 	}
-	inputs = @()
 	outputs = @(
 		@{
 			type = 'Mdbc.Dictionary or custom objects'
@@ -1260,7 +1252,6 @@ is 50 milliseconds.
 '@
 	}
 	inputs = $DocumentInputs
-	outputs = @()
 	examples = @(
 		@{
 			code = $ExampleIOCode
@@ -1304,7 +1295,6 @@ Specifies the path to the BSON file where objects will be restored from.
 		FileFormat = $FileFormatParameter
 	}
 
-	inputs = @()
 	outputs = @(
 		@{
 			type = '[Mdbc.Dictionary]'
@@ -1394,9 +1384,6 @@ is simply stored for saving, the source file is not touched at this moment.
 		FileFormat = $FileFormatParameter
 	}
 
-	inputs = @()
-	outputs = @()
-
 	examples = $OpenSaveExample, @{code={
 	# Open and query data produced by ConvertTo-Json (PowerShell V3)
 	Get-Process | ConvertTo-Json -Depth 1 | Set-Content process.json
@@ -1437,8 +1424,6 @@ error is thrown.
 This parameter is ignored if the path is omitted or empty.
 '@
 	}
-	inputs = @()
-	outputs = @()
 	examples = @($OpenSaveExample)
 	links = @(
 		@{ text = 'Open-MdbcFile' }

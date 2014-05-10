@@ -37,8 +37,7 @@ use 4.0 MSBuild
 
 # Get version from release notes.
 function Get-Version {
-	assert ([System.IO.File]::ReadAllText('Release-Notes.md') -match '##\s+v(\d+\.\d+\.\d+)')
-	$Matches[1]
+	switch -Regex -File Release-Notes.md {'##\s+v(\d+\.\d+\.\d+)' {return $Matches[1]} }
 }
 
 # Generate or update meta files.
