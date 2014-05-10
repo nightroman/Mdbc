@@ -15,6 +15,7 @@
 */
 
 using System;
+using System.Diagnostics;
 using System.Management.Automation;
 using MongoDB.Driver;
 
@@ -63,9 +64,29 @@ namespace Mdbc.Commands
 			var client = ConnectionString == "." ? new MongoClient() : new MongoClient(ConnectionString);
 			var server = client.GetServer();
 			if (Timeout.Ticks > 0)
-				server.Connect(Timeout);
+			{
+				// In some cases the actual time may be larger than the specified.
+				// This is not just about the timeout on connection to a running server.
+				// We retry as well. This is useful on waiting for a just started server.
+				var sw = Stopwatch.StartNew();
+				for (; ; )
+				{
+					try
+					{
+						server.Connect(Timeout);
+						break;
+					}
+					catch(MongoConnectionException)
+					{
+						if (sw.Elapsed > Timeout)
+							throw;
+					}
+				}
+			}
 			else
+			{
 				server.Connect();
+			}
 			SessionState.PSVariable.Set(ServerVariable ?? Actor.ServerVariable, server);
 
 			if (DatabaseName == null)
