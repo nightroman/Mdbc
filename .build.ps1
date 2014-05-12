@@ -40,7 +40,7 @@ function Get-Version {
 	switch -Regex -File Release-Notes.md {'##\s+v(\d+\.\d+\.\d+)' {return $Matches[1]} }
 }
 
-# Generate or update meta files.
+# Synopsis: Generate or update meta files.
 task Meta -Inputs Release-Notes.md -Outputs Module\$ModuleName.psd1, Src\AssemblyInfo.cs {
 	$Version = Get-Version
 	$Project = 'https://github.com/nightroman/Mdbc'
@@ -79,12 +79,12 @@ using System.Runtime.InteropServices;
 "@
 }
 
-# Build, on post-build event copy files and make help.
+# Synopsis: Build, on post-build event copy files and make help.
 task Build Meta, {
 	exec { MSBuild Src\$ModuleName.csproj /t:Build /p:Configuration=$Configuration /p:TargetFrameworkVersion=v3.5}
 }
 
-# Copy files to the module, then make help.
+# Synopsis: Copy files to the module, then make help.
 # It is called from the post-build event.
 task PostBuild {
 	exec { robocopy Module $ModuleRoot /s /np /r:0 /xf *-Help.ps1 } (0..3)
@@ -92,14 +92,14 @@ task PostBuild {
 },
 (job Help -Safe)
 
-# Remove temp and info files.
+# Synopsis: Remove temp and info files.
 task Clean {
 	Remove-Item -Force -Recurse -ErrorAction 0 `
 	Module\$ModuleName.psd1, "$ModuleName.*.nupkg",
 	z, Src\bin, Src\obj, Src\AssemblyInfo.cs, README.htm, Release-Notes.htm
 }
 
-# Build help by Helps (https://github.com/nightroman/Helps).
+# Synopsis: Build help by Helps (https://github.com/nightroman/Helps).
 task Help -Inputs (
 	Get-Item Src\Commands\*, Module\en-US\$ModuleName.dll-Help.ps1
 ) -Outputs (
@@ -109,19 +109,19 @@ task Help -Inputs (
 	Convert-Helps Module\en-US\$ModuleName.dll-Help.ps1 $Outputs
 }
 
-# Build and test help.
+# Synopsis: Build and test help.
 task TestHelpExample {
 	. Helps.ps1
 	Test-Helps Module\en-US\$ModuleName.dll-Help.ps1
 }
 
-# Docs by https://www.nuget.org/packages/MarkdownToHtml
+# Synopsis: Docs by https://www.nuget.org/packages/MarkdownToHtml
 task ConvertMarkdown {
 	exec { MarkdownToHtml from=README.md to=README.htm }
 	exec { MarkdownToHtml from=Release-Notes.md to=Release-Notes.htm }
 }
 
-# Set $script:Version.
+# Synopsis: Set $script:Version.
 task Version {
 	($script:Version = Get-Version)
 	# module version
@@ -130,7 +130,7 @@ task Version {
 	assert ((Get-Item $ModuleRoot\$ModuleName.dll).VersionInfo.FileVersion -eq ([Version]"$script:Version.0"))
 }
 
-# Make the package in z\tools.
+# Synopsis: Make the package in z\tools.
 task Package ConvertMarkdown, (job UpdateScript -Safe), {
 	Remove-Item [z] -Force -Recurse
 	$null = mkdir z\tools\$ModuleName\en-US, z\tools\$ModuleName\Scripts
@@ -155,7 +155,7 @@ task Package ConvertMarkdown, (job UpdateScript -Safe), {
 	.\Scripts\TabExpansionProfile.Mdbc.ps1
 }
 
-# Make NuGet package.
+# Synopsis: Make NuGet package.
 task NuGet Package, Version, {
 	$text = @'
 Mdbc is the Windows PowerShell module based on the official MongoDB C# driver.
@@ -184,7 +184,7 @@ features like bson/json file collections which do not require MongoDB.
 	exec { NuGet pack z\Package.nuspec -NoPackageAnalysis }
 }
 
-# Push to the repository with a version tag.
+# Synopsis: Push to the repository with a version tag.
 task PushRelease Version, {
 	$changes = exec { git status --short }
 	assert (!$changes) "Please, commit changes."
@@ -194,13 +194,13 @@ task PushRelease Version, {
 	exec { git push origin "v$Version" }
 }
 
-# Make and push the NuGet package.
+# Synopsis: Make and push the NuGet package.
 task PushNuGet NuGet, {
 	exec { NuGet push "$ModuleName.$Version.nupkg" }
 },
 Clean
 
-# Remove test.test* collections
+# Synopsis: Remove test.test* collections
 task CleanTest {
 	Import-Module Mdbc
 	foreach($Collection in Connect-Mdbc . test *) {
@@ -210,7 +210,7 @@ task CleanTest {
 	}
 }
 
-# Test synopsis of each cmdlet and warn about unexpected.
+# Synopsis: Test synopsis of each cmdlet and warn about unexpected.
 task TestHelpSynopsis {
 	Import-Module Mdbc
 	Get-Command *-Mdbc* -CommandType cmdlet | Get-Help | .{process{
@@ -220,7 +220,7 @@ task TestHelpSynopsis {
 	}}
 }
 
-# Update help then run help tests.
+# Synopsis: Update help then run help tests.
 task TestHelp Help, TestHelpExample, TestHelpSynopsis
 
 $UpdateScriptInputs = @(
@@ -230,37 +230,37 @@ $UpdateScriptInputs = @(
 	'Update-MongoFiles.ps1'
 )
 
-# Copy external scripts to the project.
+# Synopsis: Copy external scripts to the project.
 # It fails if a script is missing.
 task UpdateScript -Partial `
 -Inputs { Get-Command $UpdateScriptInputs | .{process{ $_.Definition }} } `
 -Outputs {process{ "Scripts\$(Split-Path -Leaf $_)" }} `
 {process{ Copy-Item $_ $2 }}
 
-# Pull driver sources.
+# Synopsis: Pull driver sources.
 task PullDriver {
 	assert $env:MongoDBCSharpDriverRepo
 	Set-Location $env:MongoDBCSharpDriverRepo
 	exec { git pull }
 }
 
-# Build driver and copy to Module.
+# Synopsis: Build driver and copy to Module.
 task BuildDriver {
 	assert $env:MongoDBCSharpDriverRepo
 	exec { MSBuild $env:MongoDBCSharpDriverRepo\CSharpDriver-2010.sln /t:Build /p:Configuration=Release }
 	Copy-Item $env:MongoDBCSharpDriverRepo\Driver\bin\Release\*.dll Module
 }
 
-# Clean driver sources.
+# Synopsis: Clean driver sources.
 task CleanDriver {
 	assert $env:MongoDBCSharpDriverRepo
 	exec { MSBuild $env:MongoDBCSharpDriverRepo\CSharpDriver-2010.sln /t:Clean /p:Configuration=Release }
 }
 
-# Pull the latest driver, build it, then build Mdbc, test and clean all.
+# Synopsis: Pull the latest driver, build it, then build Mdbc, test and clean all.
 task Driver PullDriver, BuildDriver, Build, Test, Clean, CleanDriver
 
-# Check expected files.
+# Synopsis: Check expected files.
 task CheckFiles {
 	$Pattern = '\.(cs|csproj|md|ps1|psd1|psm1|ps1xml|sln|txt|xml|gitignore)$'
 	foreach ($file in git status -s) { if ($file -notmatch $Pattern) {
@@ -268,7 +268,7 @@ task CheckFiles {
 	}}
 }
 
-# Call tests.
+# Synopsis: Call tests.
 task Test {
 	Invoke-Build ** Tests -Result result
 	$testCount = 155
@@ -276,5 +276,5 @@ task Test {
 },
 CleanTest
 
-# Build, test and clean all.
+# Synopsis: Build, test and clean all.
 task . Build, TestHelp, Test, Clean, CheckFiles
