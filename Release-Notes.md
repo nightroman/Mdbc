@@ -2,6 +2,10 @@
 Mdbc Release Notes
 ==================
 
+## v4.8.0
+
+Resolved #2. `Mdbc.Dictionary` gets null on `$data['missing-key']`.
+
 ## v4.7.3
 
 C# driver v1.9.1

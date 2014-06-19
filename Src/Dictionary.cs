@@ -72,7 +72,8 @@ namespace Mdbc
 			get
 			{
 				if (key == null) throw new ArgumentNullException("key");
-				return Actor.ToObject(_document.GetValue(key.ToString()));
+				BsonValue value;
+				return _document.TryGetValue(key.ToString(), out value) ? Actor.ToObject(value) : null;
 			}
 			set
 			{

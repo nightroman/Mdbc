@@ -268,11 +268,10 @@ task CheckFiles {
 	}}
 }
 
-# Synopsis: Call tests.
+# Synopsis: Call tests and test the expected count.
 task Test {
 	Invoke-Build ** Tests -Result result
-	$testCount = 155
-	if ($testCount -ne $result.Tasks.Count) {Write-Warning "Unexpected test count:`n Sample : $testCount`n Result : $($result.Tasks.Count)"}
+	assert (156 -eq $result.Tasks.Count) "Unexpected test count: $($result.Tasks.Count)."
 },
 CleanTest
 

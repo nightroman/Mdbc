@@ -21,6 +21,18 @@ task Constructors {
 	Test-Error { [Mdbc.Dictionary]$Host } '*cannot be mapped to a BsonValue.*'
 }
 
+# v4.8.0
+task GetMissing {
+	$d = New-MdbcData
+
+	# get missing as null by []
+	assert ($null -eq $d['missing'])
+
+	# dot notation fails in strict mode
+	$$ = try { $d.missing } catch {$_}
+	assert ($$ -like "Property 'missing' cannot be found on this object.*")
+}
+
 # $null should be preserved
 task SetNull {
 	$d = New-MdbcData @{x = 1; y = 2}
