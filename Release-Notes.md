@@ -2,6 +2,10 @@
 Mdbc Release Notes
 ==================
 
+## v4.8.1
+
+Fixed #3 (`Get-MdbcData -SortBy` with file collections).
+
 ## v4.8.0
 
 Resolved #2. `Mdbc.Dictionary` gets null on `$data['missing-key']`.

@@ -1,4 +1,9 @@
 
+<#
+.Synopsis
+	Tests Get-MdbcData.
+#>
+
 . .\Zoo.ps1
 Import-Module Mdbc
 Set-StrictMode -Version Latest
@@ -327,5 +332,54 @@ task UpdateResult {
 		$$ = { Connect-Mdbc -NewCollection }
 	}{
 		$$ = { Open-MdbcFile }
+	}
+}
+
+task IncludeFields {
+	Invoke-Test {
+		@{_id=1; p1=1; p2=2} | Add-MdbcData
+
+		$r = Get-MdbcData 1 -Property p2, p3
+		assert ($r._id -eq 1)
+		assert ($r.p2 -eq 2)
+	}{
+		Connect-Mdbc -NewCollection
+	}{
+		Open-MdbcFile
+	}
+}
+
+task ExcludeFields {
+	Invoke-Test {
+		@{_id=1; p1=1; p2=2} | Add-MdbcData
+
+		$ff = New-Object MongoDB.Driver.Builders.FieldsBuilder
+		$ff = $ff.Exclude('p1', 'p3')
+
+		$r = Get-MdbcData 1 -Property $ff
+		assert ($r.Count -eq 2)
+		assert ($r._id -eq 1)
+		assert ($r.p2 -eq 2)
+	}{
+		Connect-Mdbc -NewCollection
+	}{
+		Open-MdbcFile
+	}
+}
+
+# Synopsis: Fixed #3.
+task SortByMissing {
+	Invoke-Test {
+		@{_id=1; p1=1; p2=2},
+		@{_id=2; p1=0; p2=2} | Add-MdbcData
+
+		$r = Get-MdbcData -SortBy p1, p3
+		assert ($r.Count -eq 2)
+		assert ($r[0]._id -eq 2)
+		assert ($r[1]._id -eq 1)
+	}{
+		Connect-Mdbc -NewCollection
+	}{
+		Open-MdbcFile
 	}
 }

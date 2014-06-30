@@ -271,7 +271,7 @@ task CheckFiles {
 # Synopsis: Call tests and test the expected count.
 task Test {
 	Invoke-Build ** Tests -Result result
-	assert (156 -eq $result.Tasks.Count) "Unexpected test count: $($result.Tasks.Count)."
+	assert (159 -eq $result.Tasks.Count) "Unexpected test count: $($result.Tasks.Count)."
 },
 CleanTest
 

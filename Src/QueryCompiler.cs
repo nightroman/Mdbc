@@ -492,7 +492,8 @@ namespace Mdbc
 				queryableData.Expression,
 				Expression.Lambda<Func<BsonDocument, bool>>(predicateBody, Data));
 
-			var miGetValue = typeof(BsonDocument).GetMethod("GetValue", new Type[] { typeof(string) });
+			// #3 - use GetValue(string, <default>) because fields may be missing, GetValue(string) throws
+			var miGetValue = typeof(BsonDocument).GetMethod("GetValue", new Type[] { typeof(string), typeof(BsonValue) });
 
 			if (sortBy != null)
 			{
@@ -501,7 +502,7 @@ namespace Mdbc
 				{
 					var element = sortDocument.GetElement(i);
 
-					var selector = Expression.Call(Data, miGetValue, Expression.Constant(element.Name, typeof(string)));
+					var selector = Expression.Call(Data, miGetValue, Expression.Constant(element.Name, typeof(string)), Expression.Constant(null, typeof(BsonValue)));
 
 					string sortMethodName;
 					if (i == 0)
