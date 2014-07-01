@@ -30,7 +30,9 @@ task GetMissing {
 
 	# dot notation fails in strict mode
 	$$ = try { $d.missing } catch {$_}
-	assert ($$ -like "Property 'missing' cannot be found on this object.*")
+	# v2,3 : Property...
+	# v4   : The property...
+	assert ($$ -like "*property 'missing' cannot be found on this object.*")
 }
 
 # $null should be preserved

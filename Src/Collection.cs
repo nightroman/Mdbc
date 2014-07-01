@@ -51,7 +51,9 @@ namespace Mdbc
 		public int Count { get { return _array.Count; } }
 		public void CopyTo(Array array, int index)
 		{
-			throw new NotImplementedException();
+			if (array == null) throw new ArgumentNullException("array");
+			foreach (var v in this)
+				array.SetValue(v, index++);
 		}
 		public bool IsFixedSize
 		{

@@ -2,6 +2,10 @@
 Mdbc Release Notes
 ==================
 
+## v4.8.2
+
+C# driver v1.9.2
+
 ## v4.8.1
 
 Fixed #3 (`Get-MdbcData -SortBy` with file collections).
