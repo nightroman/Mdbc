@@ -339,11 +339,9 @@ task Errors {
 
 	. $init 'Acknowledged, ErrorAction Continue'
 	$r = Update-MdbcData $update @{} -All -Result -ErrorAction 0 -ErrorVariable e
+	assert ($null -eq $r) # Driver 1.10
 	assert ($e.Count -eq 1) # error
 	$e[0].ToString()
-	assert ($r) # result
-	#bug driver DocumentsAffected should be 1
-	assert ($r.DocumentsAffected -eq 0)
 	. $test
 
 	. $init 'Acknowledged, ErrorAction Stop'
@@ -426,14 +424,9 @@ task WriteConcernResult {
 		# Error, data do not fit the update
 		. $$
 		$r = Update-MdbcData (New-MdbcUpdate -Push @{x=42}) @{_id=1} -Result -ErrorAction 0 -ErrorVariable e
-		assert ($r.DocumentsAffected -eq 0)
-		assert ($r.HasLastErrorMessage)
-		assert (!$r.UpdatedExisting)
-		assert ($null -eq $r.ErrorMessage)
-		assert ($r.Ok)
+		assert ($null -eq $r) # Driver 1.10
 		$m = if ('test.test' -eq $Collection) {"*The field 'x' must be an array but*"} else {'*Value "x" must be array.*'}
-		assert ($r.LastErrorMessage -like $m)
-		assert ($e -like $m)
+		assert ($e[0] -like $m)
 	}{
 		$$ = { Connect-Mdbc -NewCollection; . $data }
 	}{

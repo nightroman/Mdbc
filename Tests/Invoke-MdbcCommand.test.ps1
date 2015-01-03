@@ -21,8 +21,7 @@ task ErrorControl {
 	Test-Error { Invoke-MdbcCommand $command -ErrorAction Stop } $pattern
 
 	$r = Invoke-MdbcCommand $command -ErrorAction 0 -ErrorVariable e
-	assert ($r.ok -eq 0)
-	assert ($r.errmsg -like $pattern)
+	assert ($null -eq $r) # Driver 1.10
 	assert ($e.Count -eq 1)
 	assert ($e[0] -like $pattern)
 }

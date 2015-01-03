@@ -24,7 +24,8 @@
 #>
 
 param(
-	$Configuration = 'Release'
+	$Configuration = 'Release',
+	$TargetFrameworkVersion = 'v3.5'
 )
 
 $ModuleName = 'Mdbc'
@@ -81,7 +82,7 @@ using System.Runtime.InteropServices;
 
 # Synopsis: Build, on post-build event copy files and make help.
 task Build Meta, {
-	exec { MSBuild Src\$ModuleName.csproj /t:Build /p:Configuration=$Configuration /p:TargetFrameworkVersion=v3.5}
+	exec { MSBuild Src\$ModuleName.sln /t:Build /p:Configuration=$Configuration /p:TargetFrameworkVersion=$TargetFrameworkVersion}
 }
 
 # Synopsis: Copy files to the module, then make help.
@@ -92,11 +93,11 @@ task PostBuild {
 },
 (job Help -Safe)
 
-# Synopsis: Remove temp and info files.
+# Synopsis: Remove temp files.
 task Clean {
 	Remove-Item -Force -Recurse -ErrorAction 0 `
-	Module\$ModuleName.psd1, "$ModuleName.*.nupkg",
-	z, Src\bin, Src\obj, Src\AssemblyInfo.cs, README.htm, Release-Notes.htm
+	"$ModuleName.*.nupkg",
+	z, Src\bin, Src\obj, README.htm, Release-Notes.htm
 }
 
 # Synopsis: Build help by Helps (https://github.com/nightroman/Helps).

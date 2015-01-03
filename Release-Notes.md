@@ -2,6 +2,14 @@
 Mdbc Release Notes
 ==================
 
+## v4.8.3
+
+MongoDB 2.8, C# driver 1.10
+
+Possibly incompatible change. Due to the server and driver changes cmdlets do
+not write server results on exceptions. Similar server data are available in
+error inner exceptions, e.g. the property `Result` (`BsonDocument`).
+
 ## v4.8.2
 
 C# driver v1.9.2

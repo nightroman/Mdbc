@@ -1,6 +1,7 @@
 
 . .\Zoo.ps1
 Import-Module Mdbc
+Set-StrictMode -Version Latest
 
 task BadId {
 	$d = @{_id = 1,2}
@@ -49,7 +50,7 @@ task ErrorTargetObject {
 		}
 	}{
 		Connect-Mdbc -NewCollection
-		$131111_121454 = '*E11000 duplicate key error index: test.test.$_id_  dup key: { : 1 }*'
+		$131111_121454 = '*E11000 duplicate key error index: test.test.$_id_ dup key: { : 1 }*'
 	}{
 		Open-MdbcFile
 		$131111_121454 = 'Duplicate _id 1.'
@@ -114,11 +115,7 @@ task WriteConcernResult {
 		# 0 added due to error
 		$r = @{_id=2; x=2} | Add-MdbcData -Result -ErrorAction 0 -ErrorVariable e
 		assert ("$(Get-MdbcData -Distinct _id)" -eq '1 2')
-		assert ($r.DocumentsAffected -eq 0)
-		assert (!$r.UpdatedExisting)
-		assert ($null -eq $r.ErrorMessage)
-		assert ($r.Ok)
-		assert ($r.LastErrorMessage -like '*duplicate*')
+		assert ($null -eq $r) # Driver 1.10
 		assert ($e -like '*duplicate*')
 
 		# 1 added, 1 result

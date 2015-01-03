@@ -379,6 +379,8 @@ namespace Mdbc
 			return Expression.Call(that, GetMethod("Push"), Data, field, Expression.Constant(value, typeof(BsonValue)));
 		}
 		// Assume $each exists.
+		// TODO AvoidExcessiveComplexity
+		[System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
 		static Expression PushEachExpression(Expression that, Expression field, BsonDocument document)
 		{
 			int position = -1;

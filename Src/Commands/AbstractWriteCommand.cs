@@ -33,18 +33,5 @@ namespace Mdbc.Commands
 			if (Result && result != null)
 				WriteObject(result);
 		}
-		protected override void WriteException(Exception exception, object target)
-		{
-			// error first
-			base.WriteException(exception, target);
-			
-			// then result
-			if (Result)
-			{
-				var wce = exception as WriteConcernException;
-				if (wce != null)
-					WriteResult(wce.CommandResult);
-			}
-		}
 	}
 }

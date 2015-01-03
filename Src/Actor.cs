@@ -64,7 +64,7 @@ namespace Mdbc
 		public static object BaseObject(object value)
 		{
 			if (value == null)
-				return value;
+				return null;
 			var ps = value as PSObject;
 			return ps == null ? value : ps.BaseObject;
 		}
@@ -72,7 +72,7 @@ namespace Mdbc
 		{
 			custom = null;
 			if (value == null)
-				return value;
+				return null;
 			var ps = value as PSObject;
 			if (ps == null)
 				return value;

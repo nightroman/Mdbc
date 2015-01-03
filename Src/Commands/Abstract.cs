@@ -28,7 +28,7 @@ namespace Mdbc.Commands
 		{
 			Actor.Register();
 		}
-		protected virtual void WriteException(Exception exception, object target)
+		protected void WriteException(Exception exception, object target)
 		{
 			WriteError(new ErrorRecord(exception, "Mdbc", ErrorCategory.NotSpecified, target));
 		}

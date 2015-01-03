@@ -1016,12 +1016,12 @@ Merge-Helps $ADatabase @{
 	synopsis = 'Invokes a command for a database.'
 	description = @'
 This cmdlet is normally used in order to invoke commands not covered by the
-driver or Mdbc helpers. See MongoDB manuals for available commands and their
+driver or the module. See MongoDB manuals for available commands and their
 parameters.
 '@
 	parameters = @{
 		Command = @'
-Either the name of command with no arguments or one argument or a JSON-like
+Either the name of a command with no arguments or one argument or a JSON-like
 hashtable that defines a more complex command, for example:
 
 	Invoke-MdbcCommand @{create='test'; capped=$true; size=1kb; max=5 }
@@ -1037,7 +1037,7 @@ Use Mdbc.Dictionary instead:
 	Invoke-MdbcCommand $c
 '@
 		Value = @'
-The argument value required by the command with one argument.
+The argument value required by a command with one argument.
 '@
 	}
 	outputs = @{

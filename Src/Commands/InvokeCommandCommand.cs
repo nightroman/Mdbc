@@ -64,7 +64,6 @@ namespace Mdbc.Commands
 			catch (MongoCommandException ex)
 			{
 				WriteException(ex, null);
-				WriteObject(new Dictionary(ex.CommandResult.Response));
 			}
 		}
 	}

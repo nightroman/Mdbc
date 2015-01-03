@@ -23,6 +23,7 @@ using MongoDB.Bson;
 using MongoDB.Bson.IO;
 using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Options;
+using MongoDB.Bson.Serialization.Serializers;
 using MongoDB.Driver;
 
 namespace Mdbc
@@ -137,7 +138,7 @@ namespace Mdbc
 			}
 			catch (Exception ex)
 			{
-				throw new WriteConcernException(ex.Message, new WriteConcernResult(NewResponse(0, false, ex.Message, null)));
+				throw new MongoWriteConcernException(ex.Message, new WriteConcernResult(NewResponse(0, false, ex.Message, null)));
 			}
 		}
 		public WriteConcernResult Remove(IMongoQuery query, RemoveFlags flags, WriteConcern writeConcern, bool needResult)
@@ -195,7 +196,7 @@ namespace Mdbc
 			}
 			catch (Exception ex)
 			{
-				throw new WriteConcernException(ex.Message, new WriteConcernResult(NewResponse(documentsAffected, updatedExisting, ex.Message, null)));
+				throw new MongoWriteConcernException(ex.Message, new WriteConcernResult(NewResponse(documentsAffected, updatedExisting, ex.Message, null)));
 			}
 		}
 		#endregion
@@ -334,7 +335,7 @@ namespace Mdbc
 
 			var tmp = File.Exists(saveAs) ? saveAs + ".tmp" : saveAs;
 
-			var serializer = BsonSerializer.LookupSerializer(typeof(BsonDocument));
+			var serializer = new BsonDocumentSerializer();
 			var options = DocumentSerializationOptions.Defaults;
 			
 			if (format == FileFormat.Json)
