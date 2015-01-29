@@ -50,7 +50,7 @@ task ErrorTargetObject {
 		}
 	}{
 		Connect-Mdbc -NewCollection
-		$131111_121454 = '*E11000 duplicate key error index: test.test.$_id_ dup key: { : 1 }*'
+		$131111_121454 = '*E11000 duplicate key error*dup key: { : 1 }*'
 	}{
 		Open-MdbcFile
 		$131111_121454 = 'Duplicate _id 1.'

@@ -307,9 +307,9 @@ specified then they are assumed to be ., test, test respectively.
 				Connect-Mdbc . test *
 			}
 			test = {
-				$collections = . $args[0]
-				# at least: test, process
-				if ($collections.Count -lt 2) { throw }
+				$collections = @(. $args[0])
+				#! MMAPv1: files, system.indexes; WiredTiger: files
+				if ($collections.Count -lt 1) { throw }
 				if ($collections[0].GetType().Name -ne 'MongoCollection`1') { throw }
 			}
 		}
