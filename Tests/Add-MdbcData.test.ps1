@@ -42,10 +42,7 @@ task ErrorTargetObject {
 		$r = Get-MdbcData
 		assert ("$r" -ceq '{ "_id" : 1, "x" : 1 }')
 		assert ($e -like $131111_121454) $e
-		if ($PSVersionTable.PSVersion.Major -le 2) {
-			assert ($null -eq $e.TargetObject)
-		}
-		else {
+		if ($PSVersionTable.PSVersion.Major -ge 3) {
 			assert ($e.TargetObject.x -eq 2)
 		}
 	}{

@@ -63,6 +63,9 @@ task Basics {
 	Set-Alias mongorestore ([IO.Path]::GetDirectoryName((Get-Process mongod).Path) + '\mongorestore.exe')
 	exec { $ErrorActionPreference = 0; mongorestore -d test -c test test2.bson }
 	$data2 = Get-MdbcData
+	#! WiredTiger Win8: data restored not in the original order; Win7: fine.
+	#! Weird? Maybe it's not guaranteed. Anyway, let's use SortBy.
+	$data2 = Get-MdbcData -SortBy _id
 	Test-Dictionary3 $data1 $data2
 
 	# end

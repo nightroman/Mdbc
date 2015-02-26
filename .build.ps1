@@ -46,7 +46,7 @@ task Meta -Inputs Release-Notes.md -Outputs Module\$ModuleName.psd1, Src\Assembl
 	$Version = Get-Version
 	$Project = 'https://github.com/nightroman/Mdbc'
 	$Summary = 'Mdbc module - MongoDB Cmdlets for PowerShell'
-	$Copyright = 'Copyright (c) 2011-2014 Roman Kuzmin'
+	$Copyright = 'Copyright (c) 2011-2015 Roman Kuzmin'
 
 	Set-Content Module\$ModuleName.psd1 @"
 @{

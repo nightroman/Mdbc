@@ -168,7 +168,7 @@ task SortBy {
 }
 
 # Tests Get-MdbcData -Update -Add -New
-# https://github.com/mongodb/mongo/blob/master/jstests/find_and_modify4.js
+# https://github.com/mongodb/mongo/blob/master/jstests/core/find_and_modify4.js (path changes!)
 task Update {
 	Invoke-Test {
 		. $$
