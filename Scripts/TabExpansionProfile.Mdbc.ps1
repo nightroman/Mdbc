@@ -6,7 +6,7 @@
 .Description
 	This script should be in the path. It is invoked on the first call of the
 	custom TabExpansion2. It adds code completers to the global option table.
-	https://farnet.googlecode.com/svn/trunk/PowerShellFar/TabExpansion2.ps1
+	https://github.com/nightroman/FarNet/blob/master/PowerShellFar/TabExpansion2.ps1
 
 	Completers are added for arguments of
 
