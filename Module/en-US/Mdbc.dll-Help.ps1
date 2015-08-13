@@ -62,8 +62,9 @@ See New-MdbcData examples.
 '@
 
 $CollectionParameter = @'
-Collection object. It is obtained by Connect-Mdbc or from database or server
-objects. If it is not specified then the current variable Collection is used.
+Collection object. It is obtained by Connect-Mdbc, Open-MdbcFile, or using the
+driver methods, for example from a database instance. If it is not specified
+then the variable Collection is used.
 '@
 
 $QueryTypes = @'

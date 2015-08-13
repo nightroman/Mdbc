@@ -2,6 +2,10 @@
 Mdbc Release Notes
 ==================
 
+## v4.8.4
+
+C# driver 1.10.1, tested with MongoDB 3.0.5
+
 ## v4.8.3
 
 C# driver 1.10, MongoDB 3.0.0-rc7

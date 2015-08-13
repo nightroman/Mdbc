@@ -17,10 +17,6 @@
 	The task Help fails if Helps.ps1 is missing.
 	Ignore this error or get Helps.ps1:
 	https://github.com/nightroman/Helps
-
-	In order to deal with the latest C# driver sources set the environment
-	variable MongoDBCSharpDriverRepo to its repository path. Then all tasks
-	*Driver should work as well.
 #>
 
 param(
@@ -237,29 +233,6 @@ task UpdateScript -Partial `
 -Inputs { Get-Command $UpdateScriptInputs | .{process{ $_.Definition }} } `
 -Outputs {process{ "Scripts\$(Split-Path -Leaf $_)" }} `
 {process{ Copy-Item $_ $2 }}
-
-# Synopsis: Pull driver sources.
-task PullDriver {
-	assert $env:MongoDBCSharpDriverRepo
-	Set-Location $env:MongoDBCSharpDriverRepo
-	exec { git pull }
-}
-
-# Synopsis: Build driver and copy to Module.
-task BuildDriver {
-	assert $env:MongoDBCSharpDriverRepo
-	exec { MSBuild $env:MongoDBCSharpDriverRepo\CSharpDriver-2010.sln /t:Build /p:Configuration=Release }
-	Copy-Item $env:MongoDBCSharpDriverRepo\Driver\bin\Release\*.dll Module
-}
-
-# Synopsis: Clean driver sources.
-task CleanDriver {
-	assert $env:MongoDBCSharpDriverRepo
-	exec { MSBuild $env:MongoDBCSharpDriverRepo\CSharpDriver-2010.sln /t:Clean /p:Configuration=Release }
-}
-
-# Synopsis: Pull the latest driver, build it, then build Mdbc, test and clean all.
-task Driver PullDriver, BuildDriver, Build, Test, Clean, CleanDriver
 
 # Synopsis: Check expected files.
 task CheckFiles {
