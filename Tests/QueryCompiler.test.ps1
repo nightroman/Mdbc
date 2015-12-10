@@ -257,8 +257,11 @@ task Type {
 	query @{int=@{'$type'=16.0}} 1 '{ "int" : { "$type" : 16.0 } }' 'Type(data, "int", Int32)'
 	query @{int=@{'$type'=16L}} 1 '{ "int" : { "$type" : NumberLong(16) } }' 'Type(data, "int", Int32)'
 
-	query @{int=@{'$type'=$null}} -QError '*$type has to be a number*' -EError '*$type argument must be number.*'
-	query @{int=@{'$type'='16'}} -QError '*$type has to be a number*' -EError '*$type argument must be number.*'
+	#TODO 3.2 what changed?
+	# 3.0 was *$type has to be a number*
+	query @{int=@{'$type'=$null}} -QError '*$type is not a number or a string*' -EError '*$type argument must be number.*'
+	# 3.0 was *$type has to be a number*
+	query @{int=@{'$type'='16'}} -QError '*unknown string alias for $type*' -EError '*$type argument must be number.*'
 }
 
 task Mod {
