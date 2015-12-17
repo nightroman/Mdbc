@@ -87,6 +87,11 @@ task Type {
 	test { New-MdbcQuery -Not (New-MdbcQuery Name -Type Double) } '{ "Name" : { "$not" : { "$type" : 1 } } }'
 }
 
+task TypeAlias {
+	test { New-MdbcQuery Name -TypeAlias number } '{ "Name" : { "$type" : "number" } }'
+	test { New-MdbcQuery -Not (New-MdbcQuery Name -TypeAlias number) } '{ "Name" : { "$not" : { "$type" : "number" } } }'
+}
+
 task Where {
 	test { New-MdbcQuery -Where 'this.Length == null' } '{ "$where" : { "$code" : "this.Length == null" } }'
 	# fixed https://jira.mongodb.org/browse/CSHARP-840

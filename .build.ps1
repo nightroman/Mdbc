@@ -13,10 +13,6 @@
 
 	Copy it to the path. Set location to here. Build:
 	PS> Invoke-Build Build
-
-	The task Help fails if Helps.ps1 is missing.
-	Ignore this error or get Helps.ps1:
-	https://github.com/nightroman/Helps
 #>
 
 param(
@@ -28,9 +24,6 @@ $ModuleName = 'Mdbc'
 
 # Module directory.
 $ModuleRoot = Join-Path ([Environment]::GetFolderPath('MyDocuments')) WindowsPowerShell\Modules\$ModuleName
-
-# Use MSBuild.
-use 4.0 MSBuild
 
 # Get version from release notes.
 function Get-Version {
@@ -76,18 +69,18 @@ using System.Runtime.InteropServices;
 "@
 }
 
-# Synopsis: Build, on post-build event copy files and make help.
+# Synopsis: Build and trigger PostBuild.
 task Build Meta, {
-	exec { MSBuild Src\$ModuleName.sln /t:Build /p:Configuration=$Configuration /p:TargetFrameworkVersion=$TargetFrameworkVersion}
+	use * MSBuild.exe
+	exec { MSBuild.exe Src\$ModuleName.csproj /t:Build /p:Configuration=$Configuration /p:TargetFrameworkVersion=$TargetFrameworkVersion}
 }
 
-# Synopsis: Copy files to the module, then make help.
-# It is called from the post-build event.
+# Synopsis: Copy files to the module root.
+# It is called from the post build event.
 task PostBuild {
 	exec { robocopy Module $ModuleRoot /s /np /r:0 /xf *-Help.ps1 } (0..3)
 	Copy-Item Src\Bin\$Configuration\$ModuleName.dll $ModuleRoot
-},
-(job Help -Safe)
+}
 
 # Synopsis: Remove temp files.
 task Clean {
@@ -112,10 +105,11 @@ task TestHelpExample {
 	Test-Helps Module\en-US\$ModuleName.dll-Help.ps1
 }
 
-# Synopsis: Docs by https://www.nuget.org/packages/MarkdownToHtml
-task ConvertMarkdown {
-	exec { MarkdownToHtml from=README.md to=README.htm }
-	exec { MarkdownToHtml from=Release-Notes.md to=Release-Notes.htm }
+# Synopsis: Convert markdown files to HTML.
+# <http://johnmacfarlane.net/pandoc/>
+task Markdown {
+	exec { pandoc.exe --standalone --from=markdown_strict --output=README.htm README.md }
+	exec { pandoc.exe --standalone --from=markdown_strict --output=Release-Notes.htm Release-Notes.md }
 }
 
 # Synopsis: Set $script:Version.
@@ -128,7 +122,7 @@ task Version {
 }
 
 # Synopsis: Make the package in z\tools.
-task Package ConvertMarkdown, (job UpdateScript -Safe), {
+task Package Markdown, (job UpdateScript -Safe), {
 	Remove-Item [z] -Force -Recurse
 	$null = mkdir z\tools\$ModuleName\en-US, z\tools\$ModuleName\Scripts
 
@@ -245,9 +239,14 @@ task CheckFiles {
 # Synopsis: Call tests and test the expected count.
 task Test {
 	Invoke-Build ** Tests -Result result
-	assert (159 -eq $result.Tasks.Count) "Unexpected test count: $($result.Tasks.Count)."
+	assert (160 -eq $result.Tasks.Count) "Unexpected test count: $($result.Tasks.Count)."
 },
 CleanTest
 
+# Synopsis: Test v2.
+task TestV2 {
+	exec {PowerShell.exe -Version 2 Invoke-Build Test}
+}
+
 # Synopsis: Build, test and clean all.
-task . Build, TestHelp, Test, Clean, CheckFiles
+task . Build, TestHelp, Test, TestV2, Clean, CheckFiles

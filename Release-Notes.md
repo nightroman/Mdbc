@@ -2,6 +2,10 @@
 Mdbc Release Notes
 ==================
 
+## v4.8.6
+
+`New-MdbcQuery`: new parameter `TypeAlias` for type aliases (MongoDB 3.2).
+
 ## v4.8.5
 
 C# driver 1.11, tested with MongoDB 3.2

@@ -249,19 +249,25 @@ task Matches {
 
 task Type {
 	query (New-MdbcQuery null -Type Null) 1 '{ "null" : { "$type" : 10 } }' 'Type(data, "null", Null)'
+	query (New-MdbcQuery null -TypeAlias null) 1 '{ "null" : { "$type" : "null" } }' 'Type(data, "null", Null)'
+
 	query (New-MdbcQuery miss -Type Null) 0 '{ "miss" : { "$type" : 10 } }' 'Type(data, "miss", Null)'
+	query (New-MdbcQuery miss -TypeAlias null) 0 '{ "miss" : { "$type" : "null" } }' 'Type(data, "miss", Null)'
 
 	query (New-MdbcQuery int -Type Int32) 1 '{ "int" : { "$type" : 16 } }' 'Type(data, "int", Int32)'
+	query (New-MdbcQuery int -TypeAlias int) 1 '{ "int" : { "$type" : "int" } }' 'Type(data, "int", Int32)'
+	query (New-MdbcQuery int -TypeAlias number) 1 '{ "int" : { "$type" : "number" } }' 'TypeNumber(data, "int")'
+
 	query (New-MdbcQuery int -Type Int64) 0 '{ "int" : { "$type" : 18 } }' 'Type(data, "int", Int64)'
+	query (New-MdbcQuery int -TypeAlias long) 0 '{ "int" : { "$type" : "long" } }' 'Type(data, "int", Int64)'
 
 	query @{int=@{'$type'=16.0}} 1 '{ "int" : { "$type" : 16.0 } }' 'Type(data, "int", Int32)'
 	query @{int=@{'$type'=16L}} 1 '{ "int" : { "$type" : NumberLong(16) } }' 'Type(data, "int", Int32)'
+	query @{int=@{'$type'='int'}} 1 '{ "int" : { "$type" : "int" } }' 'Type(data, "int", Int32)'
+	query @{int=@{'$type'='number'}} 1 '{ "int" : { "$type" : "number" } }' 'TypeNumber(data, "int")'
 
-	#TODO 3.2 what changed?
-	# 3.0 was *$type has to be a number*
-	query @{int=@{'$type'=$null}} -QError '*$type is not a number or a string*' -EError '*$type argument must be number.*'
-	# 3.0 was *$type has to be a number*
-	query @{int=@{'$type'='16'}} -QError '*unknown string alias for $type*' -EError '*$type argument must be number.*'
+	query @{int=@{'$type'=$null}} -QError '*$type is not a number or a string*' -EError '*$type argument must be number or string.*'
+	query @{int=@{'$type'='16'}} -QError '*unknown string alias for $type*' -EError '*Unknown string alias of $type argument.*'
 }
 
 task Mod {

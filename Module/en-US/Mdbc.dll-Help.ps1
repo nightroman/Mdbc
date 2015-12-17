@@ -605,6 +605,10 @@ JSON-like form: @{name = @{'$size' = value}}
 Element type test.
 JSON-like form: @{name = @{'$type' = type}}
 '@
+		TypeAlias = @'
+Element type test with an alias.
+JSON-like form: @{name = @{'$type' = 'type'}}
+'@
 		In = @'
 Checks if the field value equals or matches to one of the specified values or
 regular expressions.

@@ -287,16 +287,61 @@ namespace Mdbc
 		}
 		static Expression TypeExpression(Expression field, BsonValue args)
 		{
-			if (!args.IsNumeric)
-				throw new ArgumentException("$type argument must be number.");
+			BsonType type;
+			if (args.IsString)
+			{
+				switch (args.ToString())
+				{
+					case "double": type = BsonType.Double; break;
+					case "string": type = BsonType.String; break;
+					case "object": type = BsonType.Document; break;
+					case "array": type = BsonType.Array; break;
+					case "binData": type = BsonType.Binary; break;
+					case "undefined": type = BsonType.Undefined; break;
+					case "objectId": type = BsonType.ObjectId; break;
+					case "bool": type = BsonType.Boolean; break;
+					case "date": type = BsonType.DateTime; break;
+					case "null": type = BsonType.Null; break;
+					case "regex": type = BsonType.RegularExpression; break;
+					case "dbPointer": type = (BsonType)12; break;
+					case "javascript": type = BsonType.JavaScript; break;
+					case "symbol": type = BsonType.Symbol; break;
+					case "javascriptWithScope": type = BsonType.JavaScriptWithScope; break;
+					case "int": type = BsonType.Int32; break;
+					case "timestamp": type = BsonType.Timestamp; break;
+					case "long": type = BsonType.Int64; break;
+					case "minKey": type = BsonType.MinKey; break;
+					case "maxKey": type = BsonType.MaxKey; break;
+					case "number":
+						return Expression.Call(GetMethod("TypeNumber"), Data, field);
+					default:
+						throw new ArgumentException("Unknown string alias of $type argument.");
+				}
+			}
+			else if (args.IsNumeric)
+				type = (BsonType)args.ToInt32();
+			else
+				throw new ArgumentException("$type argument must be number or string.");
 
-			return Expression.Call(GetMethod("Type"), Data, field, Expression.Constant((BsonType)args.ToInt32(), typeof(BsonType)));
+			return Expression.Call(GetMethod("Type"), Data, field, Expression.Constant(type, typeof(BsonType)));
 		}
 		static bool Type(BsonDocument document, string name, BsonType type)
 		{
 			foreach (var data in document.GetNestedValues(name))
 				if (data.BsonType == type)
 					return true;
+
+			return false;
+		}
+		static bool TypeNumber(BsonDocument document, string name)
+		{
+			foreach (var data in document.GetNestedValues(name))
+				switch (data.BsonType)
+				{
+					case BsonType.Double: return true;
+					case BsonType.Int32: return true;
+					case BsonType.Int64: return true;
+				}
 
 			return false;
 		}

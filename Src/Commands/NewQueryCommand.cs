@@ -47,6 +47,7 @@ namespace Mdbc.Commands
 		const string nsOr = "Or";
 		const string nsSize = "Size";
 		const string nsType = "Type";
+		const string nsTypeAlias = "TypeAlias";
 		const string nsWhere = "Where";
 
 		// Name is for all but unary and binary
@@ -68,6 +69,7 @@ namespace Mdbc.Commands
 		[Parameter(Position = 0, ParameterSetName = nsNotIn)]
 		[Parameter(Position = 0, ParameterSetName = nsSize)]
 		[Parameter(Position = 0, ParameterSetName = nsType)]
+		[Parameter(Position = 0, ParameterSetName = nsTypeAlias)]
 		[ValidateNotNullOrEmpty]
 		public string Name { get; set; }
 
@@ -143,6 +145,9 @@ namespace Mdbc.Commands
 		[Parameter(Mandatory = true, ParameterSetName = nsType)]
 		public BsonType Type { get; set; }
 
+		[Parameter(Mandatory = true, ParameterSetName = nsTypeAlias)]
+		public string TypeAlias { get; set; }
+
 		[Parameter(Mandatory = true, ParameterSetName = nsWhere)]
 		public string Where { get; set; }
 
@@ -207,6 +212,7 @@ namespace Mdbc.Commands
 				case nsOr: query = Query.Or(Or.Select(Actor.ObjectToQuery)); break;
 				case nsSize: query = Query.Size(Name, Size); break;
 				case nsType: query = Query.Type(Name, Type); break;
+				case nsTypeAlias: query = Query.Type(Name, TypeAlias); break;
 				case nsWhere: query = Query.Where(Where); break;
 				default: return;
 			}
