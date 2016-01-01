@@ -25,5 +25,5 @@ task HelpExample {
 			@{ '$limit' = 3 }
 		)
 	}
-	assert ($r.Count -eq 3)
+	equals $r.Count 3
 }

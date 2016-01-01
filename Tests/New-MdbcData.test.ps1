@@ -84,14 +84,14 @@ task DataTypes {
 
 	# get the documents back
 	$data = Get-MdbcData
-	assert ($data.Count -eq 2)
+	equals $data.Count 2
 
 	# test requested documents
-	$data | %{ Test-Document $_ }
+	$data | .{process{ Test-Document $_ }}
 
 	# get as PS objects
 	$data = Get-MdbcData -As PS
-	assert ($data.Count -eq 2)
+	equals $data.Count 2
 }
 
 task HashtableToDocument {
@@ -138,15 +138,22 @@ task PSCustomObject {
 
 task KeepNullValues {
 	$d = 1 | Select-Object p1, p2 | New-MdbcData
-	assert ($d.Count -eq 2 -and $d.Contains('p1') -and $d.Contains('p2'))
+	equals $d.Count 2
+	assert $d.Contains('p1')
+	assert $d.Contains('p2')
 
 	$d = @{p1 = $null; p2 = $null} | New-MdbcData
-	assert ($d.Count -eq 2 -and $d.Contains('p1') -and $d.Contains('p2'))
+	equals $d.Count 2
+	assert $d.Contains('p1')
+	assert $d.Contains('p2')
 }
 
 task KeepProblemValues {
 	$d = (Get-Process -Id $Pid) | New-MdbcData -Property Name, ExitCode
-	assert ($d.Count -eq 2 -and $d.Name -and $d.Contains('ExitCode') -and $null -eq $d.ExitCode)
+	equals $d.Count 2
+	assert $d.Name
+	assert $d.Contains('ExitCode')
+	equals $d.ExitCode
 }
 
 task KeysMustBeStrings {
@@ -157,10 +164,12 @@ task KeysMustBeStrings {
 
 task MissingProperty {
 	$d = New-MdbcData $Host -Property Name, Missing
-	assert ($d.Count -eq 1 -and $d.Name)
+	equals $d.Count 1
+	assert $d.Name
 
 	$d = @{Name = 'Name1'} | New-MdbcData -Property Name, Missing
-	assert ($d.Count -eq 1 -and $d.Name)
+	equals $d.Count 1
+	assert $d.Name
 }
 
 # This code is used as example
@@ -175,12 +184,13 @@ task Property {
 		@{n='_id'; e='Id'},       # @{name=...; expression=...} like Select-Object does
 		@{l='Code'; e='ExitCode'} # @{label=...; expression=...} another like Select-Object
 
-	assert ($d.Count -eq 5)
-	assert ($d.Name -eq $p.Name)
-	assert ($d.WS1 -eq $p.WS)
-	assert ($d.WS2 -eq $p.WS)
-	assert ($d._id -eq $p.Id)
-	assert ($d.Contains('Code') -and $null -eq $d.Code)
+	equals $d.Count 5
+	equals $d.Name $p.Name
+	equals $d.WS1 $p.WS
+	equals $d.WS2 $p.WS
+	equals $d._id $p.Id
+	assert $d.Contains('Code')
+	equals $d.Code
 }
 
 task Convert {
@@ -192,11 +202,13 @@ task Convert {
 
 	# convert unknown to nulls
 	$r = New-MdbcData $Host -Convert {}
-	assert ($r.Contains('Version') -and $null -eq $r.Version)
+	assert $r.Contains('Version')
+	equals $r.Version
 
 	# ditto
 	$r = New-MdbcData $Host -Convert {$null}
-	assert ($r.Contains('Version') -and $null -eq $r.Version)
+	assert $r.Contains('Version')
+	equals $r.Version
 
 	# convert unknowns to strings
 	$r = New-MdbcData $Host -Convert {"$_"}
@@ -224,5 +236,5 @@ task Cyclic {
 	#! not a cycle
 	$d = @{x = 1}
 	$d = @{array = $d, $d} | New-MdbcData
-	assert ($d.array.Count -eq 2)
+	equals $d.array.Count 2
 }

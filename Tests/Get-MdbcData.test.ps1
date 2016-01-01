@@ -35,7 +35,7 @@ public class TestGetMdbcDataAs3 {
 		. $$
 
 		# add data with custom _id
-		1..5 | %{@{_id = $_; data = $_ % 2; time = Get-Date}} | Add-MdbcData
+		1..5 | .{process{ @{_id = $_; data = $_ % 2; time = Get-Date} }} | Add-MdbcData
 
 		# get full data
 		$r = Get-MdbcData -As ([TestGetMdbcDataAs1]) -First 1
@@ -48,7 +48,7 @@ public class TestGetMdbcDataAs3 {
 		. $$
 
 		# add data with default _id
-		1..5 | %{@{data = $_}} | Add-MdbcData
+		1..5 | .{process{ @{data = $_} }} | Add-MdbcData
 
 		# get data, the extra field `time` is not an issue
 		$r = Get-MdbcData -As ([TestGetMdbcDataAs3]) -First 1
@@ -64,23 +64,23 @@ task Cursor {
 	Connect-Mdbc -NewCollection
 
 	# add documents
-	20..1 | %{@{_id = $_}} | Add-MdbcData
+	20..1 | .{process{ @{_id = $_} }} | Add-MdbcData
 
 	# get 5 skipping 5
 	$cursor = $Collection.FindAllAs([Mdbc.Dictionary]).SetSkip(5).SetLimit(5)
-	assert ($cursor.Count() -eq 20)
-	assert ($cursor.Size() -eq 5)
+	equals $cursor.Count() 20L
+	equals $cursor.Size() 5L
 
 	# get data as array
 	$set = @($cursor)
-	assert ($set[0]._id -eq 15)
-	assert ($set[-1]._id -eq 11)
+	equals $set[0]._id 15
+	equals $set[-1]._id 11
 
 	# get and test ordered data
 	$cursor = $Collection.FindAllAs([Mdbc.Dictionary]).SetSkip(5).SetLimit(5)
 	$set = @($cursor.SetSortOrder('_id'))
-	assert ($set[0]._id -eq 6)
-	assert ($set[-1]._id -eq 10)
+	equals $set[0]._id 6
+	equals $set[-1]._id 10
 }
 
 #_131119_113717
@@ -94,7 +94,7 @@ task Distinct {
 		$data | Add-MdbcData
 		$r = Get-MdbcData -Distinct x
 		"$r"
-		assert ("$r" -ceq '1 True 2 { "y" : 3 }')
+		equals "$r" '1 True 2 { "y" : 3 }'
 	}{
 		Connect-Mdbc -NewCollection
 	}{
@@ -105,32 +105,32 @@ task Distinct {
 task Remove {
 	Invoke-Test {
 		# add documents
-		1..9 | %{@{Value1 = $_; Value2 = $_ % 2}} | Add-MdbcData
+		1..9 | .{process{ @{Value1 = $_; Value2 = $_ % 2} }} | Add-MdbcData
 
 		# get and remove the first even > 2, it is 4
 		$data = Get-MdbcData (New-MdbcQuery Value1 -GT 2) -SortBy Value2, Value1 -Remove -As Default
-		assert ($data.Value1 -eq 4)
+		equals $data.Value1 4
 
 		# do again, it is 6
 		$data = Get-MdbcData (New-MdbcQuery Value1 -GT 2) -SortBy Value2, Value1 -Remove
-		assert ($data.Value1 -eq 6)
+		equals $data.Value1 6
 
 		# try missing
 		$data = Get-MdbcData (New-MdbcQuery Value1 -LT 0) -SortBy Value2, Value1 -Remove
-		assert ($null -eq $data)
+		equals $data
 
 		# count: 9 - 2
-		assert (7 -eq (Get-MdbcData -Count))
+		equals 7L (Get-MdbcData -Count)
 
 		# null SortBy
 		$data = Get-MdbcData (New-MdbcQuery Value1 -GT 2) -Remove
-		assert ($data.Value1 -eq 3)
-		assert (6 -eq (Get-MdbcData -Count))
+		equals $data.Value1 3
+		equals 6L (Get-MdbcData -Count)
 
 		# null Query
 		$data = Get-MdbcData -SortBy Value2, Value1 -Remove
-		assert ($data.Value1 -eq 2)
-		assert (5 -eq (Get-MdbcData -Count))
+		equals $data.Value1 2
+		equals 5L (Get-MdbcData -Count)
 	}{
 		Connect-Mdbc -NewCollection
 	}{
@@ -141,25 +141,25 @@ task Remove {
 task SortBy {
 	Invoke-Test {
 		# add documents (9,1), (8,0), (7,1), .. (0,0)
-		9..0 | %{@{Value1 = $_; Value2 = $_ % 2}} | Add-MdbcData
+		9..0 | .{process{ @{Value1 = $_; Value2 = $_ % 2} }} | Add-MdbcData
 
 		# sort by Value1
 		$data = Get-MdbcData -SortBy Value1 -First 1
-		assert ($data.Value1 -eq 0)
+		equals $data.Value1 0
 
 		# sort by two values, ascending by default
 		$data = Get-MdbcData -SortBy Value2, Value1
-		assert ($data[0].Value1 -eq 0)
-		assert ($data[1].Value1 -eq 2)
-		assert ($data[-2].Value1 -eq 7)
-		assert ($data[-1].Value1 -eq 9)
+		equals $data[0].Value1 0
+		equals $data[1].Value1 2
+		equals $data[-2].Value1 7
+		equals $data[-1].Value1 9
 
 		# sort by two values, descending explicitly
 		$data = Get-MdbcData -SortBy @{Value2=0}, @{Value1=0}
-		assert ($data[0].Value1 -eq 9)
-		assert ($data[1].Value1 -eq 7)
-		assert ($data[-2].Value1 -eq 2)
-		assert ($data[-1].Value1 -eq 0)
+		equals $data[0].Value1 9
+		equals $data[1].Value1 7
+		equals $data[-2].Value1 2
+		equals $data[-1].Value1 0
 	}{
 		Connect-Mdbc -NewCollection
 	}{
@@ -178,12 +178,12 @@ task Update {
 			(Get-MdbcData (New-MdbcQuery _id $counterName) -Update (New-MdbcUpdate -Inc @{val = 1}) -Add -New -As Default).val
 		}
 
-		assert (1 -eq (getNextVal a))
-		assert (2 -eq (getNextVal a))
-		assert (3 -eq (getNextVal a))
-		assert (1 -eq (getNextVal z))
-		assert (2 -eq (getNextVal z))
-		assert (4 -eq (getNextVal a))
+		equals 1 (getNextVal a)
+		equals 2 (getNextVal a)
+		equals 3 (getNextVal a)
+		equals 1 (getNextVal z)
+		equals 2 (getNextVal z)
+		equals 4 (getNextVal a)
 
 		. $$
 
@@ -192,28 +192,31 @@ task Update {
 		}
 
 		# upsert:false so nothing there before and after
-		assert ($null -eq (helper $false))
-		assert (0 -eq (Get-MdbcData -Count))
+		equals (helper $false)
+		equals 0L (Get-MdbcData -Count)
 
 		# upsert:true so nothing there before; something there after
-		assert ($null -eq (helper $true))
-		assert (1 -eq (Get-MdbcData -Count))
+		equals (helper $true)
+		equals 1L (Get-MdbcData -Count)
 
 		$data = helper $true
-		assert ($data._id -eq 'asdf' -and $data.val -eq 1) #_131103_185751
+		equals $data._id asdf
+		equals $data.val 1 #_131103_185751
 
 		# upsert only matters when obj doesn't exist
 		$data = helper $false
-		assert ($data._id -eq 'asdf' -and $data.val -eq 2)
+		equals $data._id asdf
+		equals $data.val 2
 
 		$data = helper $true
-		assert ($data._id -eq 'asdf' -and $data.val -eq 3)
+		equals $data._id asdf
+		equals $data.val 3
 
 		# _id created if not specified
 		$out = Get-MdbcData (New-MdbcQuery a 1) -Update (New-MdbcUpdate @{b = 2}) -Add -New
-		assert ($null -ne $out._id)
-		assert (1 -eq $out.a)
-		assert (2 -eq $out.b)
+		assert $out._id
+		equals 1 $out.a
+		equals 2 $out.b
 	}{
 		$$ = {Connect-Mdbc -NewCollection}
 	}{
@@ -225,17 +228,17 @@ task Update {
 task Limits {
 	Invoke-Test {
 		1..5 | .{process{@{_id=$_}}} | Add-MdbcData
-		assert ((Get-MdbcData -Count -First 3) -eq 3)
-		assert ((Get-MdbcData -Count -Last 3) -eq 3)
-		assert ((Get-MdbcData -Count -Skip 3) -eq 2)
+		equals (Get-MdbcData -Count -First 3) 3L
+		equals (Get-MdbcData -Count -Last 3) 3L
+		equals (Get-MdbcData -Count -Skip 3) 2L
 
 		$r = @(Get-MdbcData -First 2 -Skip 1 (New-MdbcQuery _id -GTE 2))
-		assert ($r.Count -eq 2) $r.Count
-		assert ($r[0]._id -eq 3)
+		equals $r.Count 2
+		equals $r[0]._id 3
 
 		$r = @(Get-MdbcData -Last 2 -Skip 1 (New-MdbcQuery _id -LTE 4))
-		assert ($r.Count -eq 2)
-		assert ($r[1]._id -eq 3)
+		equals $r.Count 2
+		equals $r[1]._id 3
 
 		Test-Error { Get-MdbcData -First 1 -Last 1 } '*Parameters First and Last cannot be specified together.'
 	}{
@@ -254,24 +257,24 @@ task Upsert {
 		. $$
 		$r = Get-MdbcData $query -Update $update
 		assert (!$r)
-		assert ((Get-MdbcData -Count) -eq 0)
+		equals (Get-MdbcData -Count) 0L
 
 		# -Update -Add
 		. $$
 		$r = Get-MdbcData $query -Update $update -Add
 		assert (!$r)
 		$r = Get-MdbcData
-		assert ($r.x -eq 42)
-		assert ($r._id -eq 'miss')
+		equals $r.x 42
+		equals $r._id 'miss'
 
 		# -Update -Add -New
 		. $$
 		$r = Get-MdbcData $query -Update $update -Add -New
-		assert ($r.x = 42)
-		assert ($r._id -eq 'miss')
+		equals $r.x 42
+		equals $r._id 'miss'
 		$r = Get-MdbcData
-		assert ($r.x = 42)
-		assert ($r._id -eq 'miss')
+		equals $r.x 42
+		equals $r._id 'miss'
 	}{
 		$$ = { Connect-Mdbc -NewCollection }
 	}{
@@ -287,47 +290,47 @@ task UpdateResult {
 		. $$
 		$d = Get-MdbcData $query -Update $update -ResultVariable r
 		assert (!$d)
-		assert ((Get-MdbcData -Count) -eq 0)
-		assert ($r.DocumentsAffected -eq 0)
-		assert ($r.UpdatedExisting -eq 0)
+		equals (Get-MdbcData -Count) 0L
+		equals $r.DocumentsAffected 0L
+		equals $r.UpdatedExisting $false
 
 		# update existing, get old
 		. $$
 		@{_id = 1; x = 1} | Add-MdbcData
 		$d = Get-MdbcData $query -Update $update -ResultVariable r
-		assert ("$d" -ceq '{ "_id" : 1, "x" : 1 }')
+		equals "$d" '{ "_id" : 1, "x" : 1 }'
 		$d = Get-MdbcData
-		assert ("$d" -ceq '{ "_id" : 1, "x" : 42 }')
-		assert ($r.DocumentsAffected -eq 1)
-		assert ($r.UpdatedExisting -eq 1)
+		equals "$d" '{ "_id" : 1, "x" : 42 }'
+		equals $r.DocumentsAffected 1L
+		equals $r.UpdatedExisting $true
 
 		# update existing, get new
 		. $$
 		@{_id = 1; x = 1} | Add-MdbcData
 		$d = Get-MdbcData $query -Update $update -New -ResultVariable r
-		assert ("$d" -ceq '{ "_id" : 1, "x" : 42 }')
+		equals "$d" '{ "_id" : 1, "x" : 42 }'
 		$d = Get-MdbcData
-		assert ("$d" -ceq '{ "_id" : 1, "x" : 42 }')
-		assert ($r.DocumentsAffected -eq 1)
-		assert ($r.UpdatedExisting -eq 1)
+		equals "$d" '{ "_id" : 1, "x" : 42 }'
+		equals $r.DocumentsAffected 1L
+		equals $r.UpdatedExisting $true
 
 		# upsert missing, get old
 		. $$
 		$d = Get-MdbcData $query -Update $update -Add -ResultVariable r
 		assert (!$d)
 		$d = Get-MdbcData
-		assert ("$d" -eq '{ "_id" : 1, "x" : 42 }')
-		assert ($r.DocumentsAffected -eq 1)
-		assert ($r.UpdatedExisting -eq 0)
+		equals "$d" '{ "_id" : 1, "x" : 42 }'
+		equals $r.DocumentsAffected 1L
+		equals $r.UpdatedExisting $false
 
 		# upsert missing, get new
 		. $$
 		$d = Get-MdbcData $query -Update $update -Add -New -ResultVariable r
-		assert ("$d" -eq '{ "_id" : 1, "x" : 42 }')
+		equals "$d" '{ "_id" : 1, "x" : 42 }'
 		$d = Get-MdbcData
-		assert ("$d" -eq '{ "_id" : 1, "x" : 42 }')
-		assert ($r.DocumentsAffected -eq 1)
-		assert ($r.UpdatedExisting -eq 0)
+		equals "$d" '{ "_id" : 1, "x" : 42 }'
+		equals $r.DocumentsAffected 1L
+		equals $r.UpdatedExisting $false
 	}{
 		$$ = { Connect-Mdbc -NewCollection }
 	}{
@@ -340,8 +343,8 @@ task IncludeFields {
 		@{_id=1; p1=1; p2=2} | Add-MdbcData
 
 		$r = Get-MdbcData 1 -Property p2, p3
-		assert ($r._id -eq 1)
-		assert ($r.p2 -eq 2)
+		equals $r._id 1
+		equals $r.p2 2
 	}{
 		Connect-Mdbc -NewCollection
 	}{
@@ -357,9 +360,9 @@ task ExcludeFields {
 		$ff = $ff.Exclude('p1', 'p3')
 
 		$r = Get-MdbcData 1 -Property $ff
-		assert ($r.Count -eq 2)
-		assert ($r._id -eq 1)
-		assert ($r.p2 -eq 2)
+		equals $r.Count 2
+		equals $r._id 1
+		equals $r.p2 2
 	}{
 		Connect-Mdbc -NewCollection
 	}{
@@ -374,9 +377,9 @@ task SortByMissing {
 		@{_id=2; p1=0; p2=2} | Add-MdbcData
 
 		$r = Get-MdbcData -SortBy p1, p3
-		assert ($r.Count -eq 2)
-		assert ($r[0]._id -eq 2)
-		assert ($r[1]._id -eq 1)
+		equals $r.Count 2
+		equals $r[0]._id 2
+		equals $r[1]._id 1
 	}{
 		Connect-Mdbc -NewCollection
 	}{

@@ -35,7 +35,7 @@ task Meta -Inputs Release-Notes.md -Outputs Module\$ModuleName.psd1, Src\Assembl
 	$Version = Get-Version
 	$Project = 'https://github.com/nightroman/Mdbc'
 	$Summary = 'Mdbc module - MongoDB Cmdlets for PowerShell'
-	$Copyright = 'Copyright (c) 2011-2015 Roman Kuzmin'
+	$Copyright = 'Copyright (c) 2011-2016 Roman Kuzmin'
 
 	Set-Content Module\$ModuleName.psd1 @"
 @{
@@ -244,9 +244,9 @@ task Test {
 CleanTest
 
 # Synopsis: Test v2.
-task TestV2 {
+task Test2 {
 	exec {PowerShell.exe -Version 2 Invoke-Build Test}
 }
 
 # Synopsis: Build, test and clean all.
-task . Build, TestHelp, Test, TestV2, Clean, CheckFiles
+task . Build, TestHelp, Test, Test2, Clean, CheckFiles

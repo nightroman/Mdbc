@@ -6,16 +6,19 @@ Set-StrictMode -Version Latest
 task Constructors {
 	# default
 	$r = New-Object Mdbc.Dictionary
-	assert ($r.Count -eq 0 -and $null -ne $r.ToBsonDocument())
+	equals $r.Count 0
+	assert $r.ToBsonDocument()
 
 	# from an object as _id
 	$r = [Mdbc.Dictionary]42
-	assert ($r.Count -eq 1 -and $r._id -eq 42)
+	equals $r.Count 1
+	equals $r._id '42'
 
 	# from an existing document
 	$d = New-Object MongoDB.Bson.BsonDocument
 	$r = [Mdbc.Dictionary]$d.Add('name', 'name1') # `Add` gets the document
-	assert ($r.Count -eq 1 -and $r.name -eq 'name1')
+	equals $r.Count 1
+	equals $r.name name1
 
 	# from a bad object
 	Test-Error { [Mdbc.Dictionary]$Host } '*cannot be mapped to a BsonValue.*'
@@ -26,7 +29,7 @@ task GetMissing {
 	$d = New-MdbcData
 
 	# get missing as null by []
-	assert ($null -eq $d['missing'])
+	equals $d['missing']
 
 	# dot notation fails in strict mode
 	$$ = try { $d.missing } catch {$_}
@@ -39,7 +42,8 @@ task GetMissing {
 task SetNull {
 	$d = New-MdbcData @{x = 1; y = 2}
 	$d.x = $null
-	assert ($d.Count -eq 2 -and $d.x -eq $null)
+	equals $d.Count 2
+	equals $d.x
 }
 
 task RawBson {

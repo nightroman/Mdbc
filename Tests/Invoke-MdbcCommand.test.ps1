@@ -21,8 +21,8 @@ task ErrorControl {
 	Test-Error { Invoke-MdbcCommand $command -ErrorAction Stop } $pattern
 
 	$r = Invoke-MdbcCommand $command -ErrorAction 0 -ErrorVariable e
-	assert ($null -eq $r) # Driver 1.10
-	assert ($e.Count -eq 1)
+	equals $r # Driver 1.10
+	equals $e.Count 1
 	assert ($e[0] -like $pattern)
 }
 
@@ -41,6 +41,6 @@ task findAndModify {
 	#! fixed Get-Date -> BsonValue
 	$r = Invoke-MdbcCommand $command
 	$r.value
-	assert ($r.ok) # success
-	assert ($r.value.Count -eq 3) # modified document
+	assert $r.ok # success
+	equals $r.value.Count 3 # modified document
 }

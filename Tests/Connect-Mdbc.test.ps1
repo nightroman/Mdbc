@@ -19,8 +19,8 @@ task Parameterless {
 	Test-Type $Server MongoDB.Driver.MongoServer
 	Test-Type $Database MongoDB.Driver.MongoDatabase
 	Test-Type $Collection MongoDB.Driver.MongoCollection
-	assert ($Database.Name -ceq 'test')
-	assert ($Collection.Name -ceq 'test')
+	equals $Database.Name test
+	equals $Collection.Name test
 }
 
 # By the convention, Connect-Mdbc .. * gets database objects.

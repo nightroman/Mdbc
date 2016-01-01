@@ -1100,7 +1100,7 @@ The argument value required by a command with one argument.
 				$Collection = $Database['test']
 
 				# add 10 documents
-				1..10 | %{ @{_id = $_} } | Add-MdbcData
+				1..10 | .{process{ @{_id = $_} }} | Add-MdbcData
 
 				# get 5 documents
 				Get-MdbcData

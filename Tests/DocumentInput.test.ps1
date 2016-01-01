@@ -43,17 +43,17 @@ task IdParameters {
 
 		# Create with value
 		$d = test -Id 'value'
-		assert ($d.Count -eq 3)
-		assert ($d._id -eq 'value')
+		equals $d.Count 3
+		equals $d._id 'value'
 
 		# Create with script
 		$d = test -Id {$_.Id}
-		assert ($d.Count -eq 3)
-		assert ($d._id -eq 'id1')
+		equals $d.Count 3
+		equals $d._id 'id1'
 
 		# Generate _id
 		$d = test -NewId
-		assert ($d.Count -eq 3)
+		equals $d.Count 3
 		assert ($d._id -is [MongoDB.Bson.ObjectId])
 	}{
 		function test([switch]$NewId, $Id, $ErrorAction) {
@@ -79,16 +79,16 @@ task IdParameters {
 task DocumentAsInput {
 	$mdbc = New-MdbcData @{x = 42; y = 0;}
 	$bson = $mdbc.ToBsonDocument()
-	assert ($mdbc.Count -eq 2)
+	equals $mdbc.Count 2
 
 	# new, even if it is a copy
 	$mdbc1 = $mdbc | New-MdbcData
-	assert ($mdbc1.Count -eq 2)
+	equals $mdbc1.Count 2
 	assert (![object]::ReferenceEquals($mdbc1.ToBsonDocument(), $bson))
 
 	# new and only x is there
 	$mdbc2 = $mdbc | New-MdbcData -Property x
-	assert ($mdbc2.Count -eq 1)
+	equals $mdbc2.Count 1
 	assert (![object]::ReferenceEquals($mdbc2.ToBsonDocument(), $bson))
 
 	# new and only x is there
@@ -98,14 +98,14 @@ task DocumentAsInput {
 
 	# new and _id is added
 	$mdbc3 = $mdbc | New-MdbcData -Id 3
-	assert ($mdbc3.Count -eq 3)
-	assert ($mdbc3._id -eq 3)
+	equals $mdbc3.Count 3
+	equals $mdbc3._id 3
 	assert (![object]::ReferenceEquals($mdbc3.ToBsonDocument(), $bson))
 
 	# new and _id is added
 	$mdbc4 = , $bson | New-MdbcData -Id 4
-	assert ($mdbc4.Count -eq 3)
-	assert ($mdbc4._id -eq 4)
+	equals $mdbc4.Count 3
+	equals $mdbc4._id 4
 	assert (![object]::ReferenceEquals($mdbc4.ToBsonDocument(), $bson))
 
 	# terminating error on duplicate _id

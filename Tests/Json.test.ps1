@@ -72,7 +72,8 @@ task JsonAsPS {
 
 '@
 	$r1, $r2 = Import-MdbcData $json -As PS
-	assert ($r1._id -eq 1 -and $r2._id -eq 2)
+	equals $r1._id 1
+	equals $r2._id 2
 }
 
 task FlexibleJson {
@@ -105,7 +106,7 @@ task FlexibleJson {
 '@
 
 	$r = Import-MdbcData $json
-	assert ("$r" -ceq '{ "x" : 1 } { "x" : 2 } { "x" : 3 } { "x" : 4 } { "x" : 5 }')
+	equals "$r" '{ "x" : 1 } { "x" : 2 } { "x" : 3 } { "x" : 4 } { "x" : 5 }'
 }
 
 task BadJson {

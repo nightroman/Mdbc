@@ -9,13 +9,13 @@ task Capped {
 	Add-MdbcCollection test -MaxSize 1mb -MaxDocuments 10
 
 	# add 20 documents
-	1..20 | %{@{Value=$_}} | Add-MdbcData
+	1..20 | .{process{ @{Value=$_}} } | Add-MdbcData
 
 	# test: expected 10 last documents
 	$data = Get-MdbcData
-	assert ($data.Count -eq 10)
-	assert ($data[0].Value -eq 11)
-	assert ($data[9].Value -eq 20)
+	equals $data.Count 10
+	equals $data[0].Value 11
+	equals $data[9].Value 20
 
 	# try to add again, test the error
 	Test-Error {Add-MdbcCollection test -MaxSize 1mb -MaxDocuments 10} "Command 'create' failed: collection already exists*"
@@ -31,7 +31,7 @@ task AutoIndexId {
 	$d = Get-MdbcData
 	assert ($d._id)
 	$i = @($Collection.GetIndexes())
-	assert ($i.Count -eq 0) # was 1, fixed https://jira.mongodb.org/browse/CSHARP-841
+	equals $i.Count 0 # was 1, fixed https://jira.mongodb.org/browse/CSHARP-841
 
 	# default collection
 	Connect-Mdbc -NewCollection
@@ -42,6 +42,5 @@ task AutoIndexId {
 	$d = Get-MdbcData
 	assert ($d._id)
 	$i = @($Collection.GetIndexes())
-	assert ($i.Count -eq 1)
-
+	equals $i.Count 1
 }

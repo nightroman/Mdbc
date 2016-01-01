@@ -26,9 +26,9 @@ task AddToSet {
 		Update-MdbcData (New-MdbcUpdate -AddToSet @{array = $null}) 1310110108
 		$d = Get-MdbcData
 
-		assert ($d.array.Count -eq 2)
-		assert ($d.array[0] -eq 1310110108)
-		assert ($d.array[1] -eq $null)
+		equals $d.array.Count 2
+		equals $d.array[0] 1310110108
+		equals $d.array[1]
 	}{
 		Connect-Mdbc -NewCollection
 		$1310110108 = '*Cannot apply $addToSet to a non-array field.*'
@@ -41,46 +41,46 @@ task AddToSet {
 task Set {
 	Invoke-Test {
 		# add data
-		$$ = New-MdbcData -Id 1
-		$$.p1 = 1
-		$$.p2 = 1
-		$$.p3 = 1
-		$$ | Add-MdbcData
+		$r = New-MdbcData -Id 1
+		$r.p1 = 1
+		$r.p2 = 1
+		$r.p3 = 1
+		$r | Add-MdbcData
 
 		# update 3 fields and get back
-		$$ | Update-MdbcData @(
+		$r | Update-MdbcData @(
 			New-MdbcUpdate @{
 				p1 = 2
 				p2 = 2
 				p3 = 2
 			}
 		)
-		$$ = Get-MdbcData
+		$r = Get-MdbcData
 
 		# test: 2, 2, 2
-		assert ($$.p1 -eq 2)
-		assert ($$.p2 -eq 2)
-		assert ($$.p3 -eq 2)
+		equals $r.p1 2
+		equals $r.p2 2
+		equals $r.p3 2
 
 		# update 2 fields and get back
 		$something = $false
-		$$ | Update-MdbcData @(
+		$r | Update-MdbcData @(
 			New-MdbcUpdate @{p1 = 3}
 			if ($something) {
 				New-MdbcUpdate @{p2 = 3}
 			}
 			New-MdbcUpdate @{p3 = 3}
 		)
-		$$ = Get-MdbcData
+		$r = Get-MdbcData
 
 		# update 1 field and get back
-		$$ | Update-MdbcData (New-MdbcUpdate @{p2 = 3})
-		$$ = Get-MdbcData
+		$r | Update-MdbcData (New-MdbcUpdate @{p2 = 3})
+		$r = Get-MdbcData
 
 		# test: 3, 3, 3
-		assert ($$.p1 -eq 3)
-		assert ($$.p2 -eq 3)
-		assert ($$.p3 -eq 3)
+		equals $r.p1 3
+		equals $r.p2 3
+		equals $r.p3 3
 	}{
 		Connect-Mdbc -NewCollection
 	}{
@@ -91,26 +91,26 @@ task Set {
 task Pop {
 	Invoke-Test {
 		# make a document
-		$$ = New-MdbcData -Id 1
-		$$.Array = 1, 2, 3
-		$$ | Add-MdbcData
+		$r = New-MdbcData -Id 1
+		$r.Array = 1, 2, 3
+		$r | Add-MdbcData
 
 		# update (PopLast) and get back
-		$$ | Update-MdbcData (New-MdbcUpdate -PopLast Array)
-		$$ = Get-MdbcData
+		$r | Update-MdbcData (New-MdbcUpdate -PopLast Array)
+		$r = Get-MdbcData
 
 		# test: 3 is removed; 1, 2 are there
-		assert ($$.Array.Count -eq 2)
-		assert ($$.Array[0] -eq 1)
-		assert ($$.Array[1] -eq 2)
+		equals $r.Array.Count 2
+		equals $r.Array[0] 1
+		equals $r.Array[1] 2
 
 		# update (PopFirst) and get back
-		$$ | Update-MdbcData (New-MdbcUpdate -PopFirst Array)
-		$$ = Get-MdbcData
+		$r | Update-MdbcData (New-MdbcUpdate -PopFirst Array)
+		$r = Get-MdbcData
 
 		# test: 1 is removed; 2 is there
-		assert ($$.Array.Count -eq 1)
-		assert ($$.Array[0] -eq 2)
+		equals $r.Array.Count 1
+		equals $r.Array[0] 2
 	}{
 		Connect-Mdbc -NewCollection
 	}{
@@ -121,32 +121,32 @@ task Pop {
 task Pull {
 	Invoke-Test {
 		# make a document with arrays
-		$$ = New-MdbcData
-		$$._id = 1234
-		$$.Array1 = @(
+		$r = New-MdbcData
+		$r._id = 1234
+		$r.Array1 = @(
 			, @(1, 2)
 			, @(3, 4)
 		)
-		$$.Array2 = 1..4
+		$r.Array2 = 1..4
 
 		# test document data
-		assert ("$$" -eq '{ "_id" : 1234, "Array1" : [[1, 2], [3, 4]], "Array2" : [1, 2, 3, 4] }') "$$"
-		assert ($$.Array1.Count -eq 2)
-		assert ($$.Array2.Count -eq 4)
+		assert ("$r" -eq '{ "_id" : 1234, "Array1" : [[1, 2], [3, 4]], "Array2" : [1, 2, 3, 4] }') "$r"
+		equals $r.Array1.Count 2
+		equals $r.Array2.Count 4
 
 		# add the document
-		$$ | Add-MdbcData
+		$r | Add-MdbcData
 
 		# Pull expression
 		#_110727_194907 "Array1" : [1, 2] -- argument is a single (!) item which is array (not two arguments!)
 		$updates = (New-MdbcUpdate -Pull @{Array1 = 1, 2}), (New-MdbcUpdate -Pull @{Array2 = 1, 2})
 
 		# update and get back
-		$$ | Update-MdbcData $updates
-		$$ = Get-MdbcData
+		$r | Update-MdbcData $updates
+		$r = Get-MdbcData
 
 		# test: removed from Array1 and not removed from Array2
-		Test-Table -Force $$ @{_id=1234; Array1=@(,@(3, 4)); Array2=1, 2, 3, 4}
+		Test-Table -Force $r @{_id=1234; Array1=@(,@(3, 4)); Array2=1, 2, 3, 4}
 	}{
 		Connect-Mdbc -NewCollection
 	}{
@@ -159,9 +159,9 @@ task Pull.Null {
 		@{_id = 131011; array = 1, $null, 2, $null} | Add-MdbcData
 		Update-MdbcData (New-MdbcUpdate -Pull @{array = $null}) 131011
 		$d = Get-MdbcData
-		assert ($d.array.Count -eq 2)
-		assert ($d.array[0] -eq 1)
-		assert ($d.array[1] -eq 2)
+		equals $d.array.Count 2
+		equals $d.array[0] 1
+		equals $d.array[1] 2
 	}{
 		Connect-Mdbc -NewCollection
 	}{
@@ -172,29 +172,29 @@ task Pull.Null {
 task PullAll {
 	Invoke-Test {
 		# make and add a document
-		$$ = New-MdbcData -Id 1
-		$$.Array = 1, 2, 3, 4, 1, 2, 3, 4
-		$$ | Add-MdbcData
+		$r = New-MdbcData -Id 1
+		$r.Array = 1, 2, 3, 4, 1, 2, 3, 4
+		$r | Add-MdbcData
 
 		# update (PullAll) and get back
-		$$ | Update-MdbcData (New-MdbcUpdate -PullAll @{Array = 1, 2})
-		$$ = Get-MdbcData
+		$r | Update-MdbcData (New-MdbcUpdate -PullAll @{Array = 1, 2})
+		$r = Get-MdbcData
 
 		# test: 1, 2 are removed; 3, 4 are there
-		assert ($$.Array.Count -eq 4)
-		assert ($$.Array[0] -eq 3)
-		assert ($$.Array[1] -eq 4)
-		assert ($$.Array[2] -eq 3)
-		assert ($$.Array[3] -eq 4)
+		equals $r.Array.Count 4
+		equals $r.Array[0] 3
+		equals $r.Array[1] 4
+		equals $r.Array[2] 3
+		equals $r.Array[3] 4
 
 		# update (Pull) and get back
-		$$ | Update-MdbcData (New-MdbcUpdate -Pull @{Array = 3})
-		$$ = Get-MdbcData
+		$r | Update-MdbcData (New-MdbcUpdate -Pull @{Array = 3})
+		$r = Get-MdbcData
 
 		# test: 3 is removed; 4 is there
-		assert ($$.Array.Count -eq 2)
-		assert ($$.Array[0] -eq 4)
-		assert ($$.Array[1] -eq 4)
+		equals $r.Array.Count 2
+		equals $r.Array[0] 4
+		equals $r.Array[1] 4
 	}{
 		Connect-Mdbc -NewCollection
 	}{
@@ -214,9 +214,9 @@ task Push {
 		Update-MdbcData (New-MdbcUpdate -Push @{array = $null}) 1310110138
 		$d = Get-MdbcData
 
-		assert ($d.array.Count -eq 2)
-		assert ($d.array[0] -eq 1310110138)
-		assert ($d.array[1] -eq $null)
+		equals $d.array.Count 2
+		equals $d.array[0] 1310110138
+		equals $d.array[1] $null
 	}{
 		Connect-Mdbc -NewCollection
 		$1310110138 = "*The field 'value' must be an array*"
@@ -229,16 +229,16 @@ task Push {
 task Rename {
 	Invoke-Test {
 		# add a document with Name1
-		$$ = New-MdbcData -Id 1
-		$$.Name1 = 42
-		$$ | Add-MdbcData
+		$r = New-MdbcData -Id 1
+		$r.Name1 = 42
+		$r | Add-MdbcData
 
 		# update (rename Name1 to Name2) and get back
-		$$ | Update-MdbcData (New-MdbcUpdate -Rename @{Name1 = 'Name2'})
-		$$ = Get-MdbcData
+		$r | Update-MdbcData (New-MdbcUpdate -Rename @{Name1 = 'Name2'})
+		$r = Get-MdbcData
 
 		# test: Name2 gets 42, i.e. renamed
-		assert ($$.Name2 -eq 42)
+		equals $r.Name2 42
 	}{
 		Connect-Mdbc -NewCollection
 	}{
@@ -251,7 +251,8 @@ task JSON-like {
 		@{_id = 42 } | Add-MdbcData
 		Update-MdbcData @{'$set' = @{ p1 = 123; p2 = 456}} @{_id = 42}
 		$d = Get-MdbcData
-		assert ($d.p1 -eq 123 -and $d.p2 -eq 456)
+		equals $d.p1 123
+		equals $d.p2 456
 
 		#_131102_084424 Fixed PSObject cannot be mapped to a BsonValue
 		Update-MdbcData @{x=Get-Date} -Query @{} #_131103_204607
@@ -287,7 +288,8 @@ task ChangeId {
 	Test-Error { Update-MdbcData (New-MdbcUpdate -Set @{_id = 42; x = 1}) @{} } "*the (immutable) field '_id' was found*"
 	Test-Error { Update-MdbcData (New-MdbcUpdate -Unset _id) @{} } "*the (immutable) field '_id' was found*"
 	$r = Get-MdbcData
-	assert ($r.Count -eq 1 -and $r._id -eq 1)
+	equals $r.Count 1
+	equals $r._id 1
 
 	# Normal data deny _id changes
 
@@ -296,7 +298,8 @@ task ChangeId {
 	Test-Error { Update-MdbcData (New-MdbcUpdate -Set @{_id = 42; x = 1}) @{} } '*Modification of _id is not allowed.'
 	Test-Error { Update-MdbcData (New-MdbcUpdate -Unset _id) @{} } '*Modification of _id is not allowed.'
 	$r = Get-MdbcData
-	assert ($r.Count -eq 1 -and $r._id -eq 1)
+	equals $r.Count 1
+	equals $r._id 1
 
 	# Simple data allow _id changes
 
@@ -305,11 +308,12 @@ task ChangeId {
 
 	Update-MdbcData (New-MdbcUpdate -Set @{_id = 42}) @{}
 	$r = Get-MdbcData
-	assert ($r.Count -eq 1 -and $r._id -eq 42)
+	equals $r.Count 1
+	equals $r._id 42
 
 	Update-MdbcData (New-MdbcUpdate -Unset _id) @{}
 	$r = Get-MdbcData
-	assert ($r.Count -eq 0)
+	equals $r.Count 0
 }
 
 task Errors {
@@ -329,8 +333,8 @@ task Errors {
 	$test = {
 		$d = Get-MdbcData -SortBy _id
 		"$d"
-		assert ($d[0].n -eq 1) # changed
-		assert ($d[2].n -eq 0) # not changed
+		equals $d[0].n 1 # changed
+		equals $d[2].n 0 # not changed
 	}
 
 	# update which causes an error in the middle of data
@@ -339,21 +343,23 @@ task Errors {
 
 	. $init 'Acknowledged, ErrorAction Continue'
 	$r = Update-MdbcData $update @{} -All -Result -ErrorAction 0 -ErrorVariable e
-	assert ($null -eq $r) # Driver 1.10
-	assert ($e.Count -eq 1) # error
+	equals $r # Driver 1.10
+	equals $e.Count 1 # error
 	$e[0].ToString()
 	. $test
 
 	. $init 'Acknowledged, ErrorAction Stop'
-	$r = .{ try { Update-MdbcData $update @{} -All -Result -ErrorAction Stop -ErrorVariable $e } catch {} }
-	assert ($null -eq $e) # no error due to exception
-	assert ($null -eq $r) # no result
+	$x = $null
+	$r = .{ try { Update-MdbcData $update @{} -All -Result -ErrorAction Stop -ErrorVariable $e } catch { $x = $_ } }
+	equals $e # no error due to exception
+	equals $r # no result
+	assert $x # exception
 	. $test
 
 	. $init 'Unacknowledged, ErrorAction Stop (irrelevant)'
 	$r = Update-MdbcData $update @{} -All -Result -WriteConcern ([MongoDB.Driver.WriteConcern]::Unacknowledged) -ErrorAction Stop -ErrorVariable e
-	assert ($e.Count -eq 0) # no error
-	assert ($null -eq $r) # no result
+	equals $e.Count 0 # no error
+	equals $r # no result
 	. $test
 }
 
@@ -376,22 +382,30 @@ task All {
 	}
 	Invoke-Test {
 		# Default - one is changed
-		. $$
+		. $init
 		Update-MdbcData (New-MdbcUpdate -Set @{x=42}) @{}
 		$r1, $r2 = Get-MdbcData
-		assert ($r1._id -eq 1 -and $r1.x -eq 42) # changed
-		assert ($r2._id -eq 2 -and $r2.x -eq 1) # not changed
+		# changed
+		equals $r1._id 1
+		equals $r1.x 42
+		# not changed
+		equals $r2._id 2
+		equals $r2.x 1
 
 		# All - two are changed
-		. $$
+		. $init
 		Update-MdbcData (New-MdbcUpdate -Set @{x=42}) @{} -All
 		$r1, $r2 = Get-MdbcData
-		assert ($r1._id -eq 1 -and $r1.x -eq 42) # changed
-		assert ($r2._id -eq 2 -and $r2.x -eq 42) # changed
+		# changed
+		equals $r1._id 1
+		equals $r1.x 42
+		# changed
+		equals $r2._id 2
+		equals $r2.x 42
 	}{
-		$$ = { Connect-Mdbc -NewCollection; . $data }
+		$init = { Connect-Mdbc -NewCollection; . $data }
 	}{
-		$$ = { Open-MdbcFile; . $data }
+		$init = { Open-MdbcFile; . $data }
 	}
 }
 
@@ -401,35 +415,35 @@ task WriteConcernResult {
 	}
 	Invoke-Test {
 		# One changed
-		. $$
+		. $init
 		$r = Update-MdbcData (New-MdbcUpdate -Set @{x=42}) @{} -Result
-		assert ($r.DocumentsAffected -eq 1)
-		assert ($r.UpdatedExisting)
-		assert ($r.Ok)
+		equals $r.DocumentsAffected 1L
+		assert $r.UpdatedExisting
+		assert $r.Ok
 
 		# Two changed
-		. $$
+		. $init
 		$r = Update-MdbcData (New-MdbcUpdate -Set @{x=42}) @{} -Result -All
-		assert ($r.DocumentsAffected -eq 2)
-		assert ($r.UpdatedExisting)
-		assert ($r.Ok)
+		equals $r.DocumentsAffected 2L
+		assert $r.UpdatedExisting
+		assert $r.Ok
 
 		# None changed, one added
-		. $$
+		. $init
 		$r = Update-MdbcData (New-MdbcUpdate -Set @{x=42}) @{miss=1} -Result -Add -All
-		assert ($r.DocumentsAffected -eq 1)
+		equals $r.DocumentsAffected 1L
 		assert (!$r.UpdatedExisting)
-		assert ($r.Ok)
+		assert $r.Ok
 
 		# Error, data do not fit the update
-		. $$
+		. $init
 		$r = Update-MdbcData (New-MdbcUpdate -Push @{x=42}) @{_id=1} -Result -ErrorAction 0 -ErrorVariable e
-		assert ($null -eq $r) # Driver 1.10
+		equals $r # Driver 1.10
 		$m = if ('test.test' -eq $Collection) {"*The field 'x' must be an array but*"} else {'*Value "x" must be array.*'}
 		assert ($e[0] -like $m)
 	}{
-		$$ = { Connect-Mdbc -NewCollection; . $data }
+		$init = { Connect-Mdbc -NewCollection; . $data }
 	}{
-		$$ = { Open-MdbcFile; . $data }
+		$init = { Open-MdbcFile; . $data }
 	}
 }

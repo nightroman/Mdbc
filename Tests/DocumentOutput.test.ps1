@@ -26,7 +26,7 @@ task As {
 	$data | Export-MdbcData z.bson
 
 	$testMembers = $true
-	function Test-Memebers {
+	function Test-Member {
 		if ($testMembers) {
 			Test-Type $r.document Mdbc.Dictionary
 			Test-Type $r.document.array Mdbc.Collection
@@ -39,24 +39,24 @@ task As {
 		'Default 1'
 		$r = test
 		Test-Type $r Mdbc.Dictionary
-		Test-Memebers
+		Test-Member
 
 		'Default 2'
 		$r = test -As Default
 		Test-Type $r Mdbc.Dictionary
-		Test-Memebers
+		Test-Member
 
 		'Lazy'
 		$r = test -As Lazy
 		Test-Type $r Mdbc.LazyDictionary
 		Test-Type $r.ToBsonDocument() MongoDB.Bson.LazyBsonDocument
-		Test-Memebers
+		Test-Member
 
 		'Raw'
 		$r = test -As Raw
 		Test-Type $r Mdbc.RawDictionary
 		Test-Type $r.ToBsonDocument() MongoDB.Bson.RawBsonDocument
-		Test-Memebers
+		Test-Member
 
 		'PS'
 		$r = test -As PS

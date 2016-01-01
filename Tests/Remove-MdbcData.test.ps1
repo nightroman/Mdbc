@@ -10,34 +10,45 @@ task Result {
 		. $$
 		$r = Remove-MdbcData (New-MdbcQuery x 3) -Result
 		assert ('1 2 3' -eq (Get-MdbcData -Distinct _id))
-		assert ($r.DocumentsAffected -eq 0 -and !$r.UpdatedExisting -and $r.Ok)
+		equals $r.DocumentsAffected 0L
+		equals $r.UpdatedExisting $false
+		assert $r.Ok
 
 		# 1 removed
 		. $$
 		$r = Remove-MdbcData (New-MdbcQuery x 2) -One -Result
 		assert ('1 3' -eq (Get-MdbcData -Distinct _id))
-		assert ($r.DocumentsAffected -eq 1 -and !$r.UpdatedExisting -and $r.Ok)
+		equals $r.DocumentsAffected 1L
+		equals $r.UpdatedExisting $false
+		assert $r.Ok
 
 		# 2 removed
 		. $$
 		$r = Remove-MdbcData (New-MdbcQuery x 2) -Result
-		assert (1 -eq (Get-MdbcData -Distinct _id))
-		assert ($r.DocumentsAffected -eq 2 -and !$r.UpdatedExisting -and $r.Ok)
+		equals 1 (Get-MdbcData -Distinct _id)
+		equals $r.DocumentsAffected 2L
+		equals $r.UpdatedExisting $false
+		assert $r.Ok
 
 		# pipeline with _id's
 		. $$
 		$1, $2 = 1, 3 | Remove-MdbcData -Result
-		assert (2 -eq (Get-MdbcData -Distinct _id))
-		assert ($1.DocumentsAffected -eq 1 -and !$1.UpdatedExisting)
-		assert ($2.DocumentsAffected -eq 1 -and !$2.UpdatedExisting)
+		equals 2 (Get-MdbcData -Distinct _id)
+		equals $1.DocumentsAffected 1L
+		equals $1.UpdatedExisting $false
+		equals $2.DocumentsAffected 1L
+		equals $2.UpdatedExisting $false
 
 		# pipeline with queries
 		. $$
 		$0, $1, $2 = @{x='miss'}, @{x=2}, @{x=1} | Remove-MdbcData -Result
-		assert (!$Collection.Count())
-		assert ($0.DocumentsAffected -eq 0 -and !$0.UpdatedExisting)
-		assert ($1.DocumentsAffected -eq 2 -and !$1.UpdatedExisting)
-		assert ($2.DocumentsAffected -eq 1 -and !$2.UpdatedExisting)
+		equals $Collection.Count() 0L
+		equals $0.DocumentsAffected 0L
+		equals $0.UpdatedExisting $false
+		equals $1.DocumentsAffected 2L
+		equals $1.UpdatedExisting $false
+		equals $2.DocumentsAffected 1L
+		equals $2.UpdatedExisting $false
 	}{
 		$$ = { Connect-Mdbc -NewCollection; . $init }
 	}{
@@ -63,12 +74,14 @@ task NoQuery {
 		# empty query is for all
 		. $$
 		$r = Remove-MdbcData @{} -Result
-		assert ($r.DocumentsAffected -eq 2 -and $Collection.Count() -eq 0)
+		equals $r.DocumentsAffected 2L
+		equals $Collection.Count() 0L
 
 		# empty string is for _id ''
 		. $$
 		$r = Remove-MdbcData '' -Result
-		assert ($r.DocumentsAffected -eq 1 -and $Collection.Count() -eq 1)
+		equals $r.DocumentsAffected 1L
+		equals $Collection.Count() 1L
 	}{
 		$$ = { Connect-Mdbc -NewCollection; . $init }
 	}{

@@ -41,13 +41,13 @@ _id @{count=3}
 	# get inline output and other results as $result
 	$data = Invoke-MdbcMapReduce $map, $reduce -ResultVariable result
 
-	assert ($data.Count -eq 5)
-	assert ($data[1]._id -eq 'B')
-	assert ($data[1].value.count -eq 3)
+	equals $data.Count 5
+	equals $data[1]._id 'B'
+	equals $data[1].value.count 3.0
 
-	assert ($result.EmitCount -eq 9)
-	assert ($result.InputCount -eq 3)
-	assert ($result.OutputCount -eq 5)
+	equals $result.EmitCount 9L
+	equals $result.InputCount 3L
+	equals $result.OutputCount 5L
 
 	### inline with query
 	<#
@@ -61,7 +61,7 @@ _id @{count=1}
 	# -SortBy and -First, just for testing
 	$null = $Collection.CreateIndex('A') #! https://jira.mongodb.org/browse/CSHARP-472
 	$data = Invoke-MdbcMapReduce $map, $reduce (New-MdbcQuery A -Exists) -SortBy A -First 10
-	assert ($data.Count -eq 3)
+	equals $data.Count 3
 
 	### collection output, Replace
 
@@ -70,18 +70,18 @@ _id @{count=1}
 
 	# add a dummy; it should be removed by MR
 	@{_id = 'dummy'} | Add-MdbcData -Collection $mz
-	assert ($mz.Count() -eq 1)
+	equals $mz.Count() 1L
 
 	# do replace
 	$data = Invoke-MdbcMapReduce $map, $reduce -OutCollection z
 
 	# 5, i.e. the dummy was removed
-	assert ($null -eq $data)
-	assert ($mz.Count() -eq 5)
+	equals $data
+	equals $mz.Count() 5L
 
 	# check the value
 	$data = Get-MdbcData -Collection $mz B
-	assert ($data.value.count -eq 3)
+	equals $data.value.count 3.0
 
 	### collection output, Reduce
 
@@ -89,29 +89,29 @@ _id @{count=1}
 	$data = Invoke-MdbcMapReduce $map, $reduce -OutCollection z -OutDatabase test -OutMode Reduce
 
 	# still 5
-	assert ($null -eq $data)
-	assert ($mz.Count() -eq 5)
+	equals $data
+	equals $mz.Count() 5L
 
 	# the value is doubled
 	$data = Get-MdbcData -Collection $mz B
-	assert ($data.value.count -eq 6)
+	equals $data.value.count 6.0
 
 	### collection output, Merge
 
 	# add a dummy; it should survive
 	@{_id = 'dummy'} | Add-MdbcData -Collection $mz
-	assert ($mz.Count() -eq 6)
+	equals $mz.Count() 6L
 
 	# do merge
 	$data = Invoke-MdbcMapReduce $map, $reduce -OutCollection z -OutDatabase test -OutMode Merge
 
 	# 6, i.e. the dummy survived
-	assert ($null -eq $data)
-	assert ($mz.Count() -eq 6)
+	equals $data
+	equals $mz.Count() 6L
 
 	# the value is replaced
 	$data = Get-MdbcData -Collection $mz B
-	assert ($data.value.count -eq 3)
+	equals $data.value.count 3.0
 
 	# end
 	$null = $mz.Drop()

@@ -3,12 +3,6 @@
 Import-Module Mdbc
 Set-Alias test Test-Expression
 
-# DateTime value as PSObject for tests
-$date = [PSObject][DateTime]'2011-11-11'
-
-# Guid value as PSObject for tests
-$guid = [PSObject][Guid]'12345678-1234-1234-1234-123456789012'
-
 # BsonArray value for tests
 $bsonArray = New-MdbcData -Value 1, 2, 3
 Test-Type $bsonArray MongoDB.Bson.BsonArray

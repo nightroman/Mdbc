@@ -50,7 +50,7 @@ task Basics {
 	# the same file size
 	$file1 = Get-Item dump\test\test.bson
 	$file2 = Get-Item test2.bson
-	assert ($file1.Length -eq $file2.Length)
+	equals $file1.Length $file2.Length
 
 	# import both data for comparison
 	$data1 = Import-MdbcData dump\test\test.bson
@@ -59,7 +59,7 @@ task Basics {
 
 	# restore from our dump
 	Connect-Mdbc -NewCollection
-	assert ($collection.Count() -eq 0)
+	equals $collection.Count() 0L
 	Set-Alias mongorestore ([IO.Path]::GetDirectoryName((Get-Process mongod).Path) + '\mongorestore.exe')
 	exec { $ErrorActionPreference = 0; mongorestore -d test -c test test2.bson }
 	$data2 = Get-MdbcData
@@ -87,7 +87,7 @@ task Retry {
 
 		# all data are there
 		$r = Import-MdbcData $file -As PS
-		assert ($r.Count -eq $dataCount)
+		equals $r.Count $dataCount
 
 		# all writers are there
 		$r = $r | Group-Object data

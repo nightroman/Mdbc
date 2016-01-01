@@ -8,7 +8,7 @@ $json = "$env:TEMP\test.json"
 
 task NoLeakedPublicMembers {
 	Open-MdbcFile
-	$r = $Collection | Get-Member | %{$_.Name} | Out-String
+	$r = $Collection | Get-Member | .{process{ $_.Name }} | Out-String
 	assert ($r -eq @'
 Count
 Distinct
@@ -37,33 +37,33 @@ task Basics {
 		# open as new collection
 		Open-MdbcFile $file -NewCollection
 		assert (Test-Path $file) # file still exists
-		assert ((Get-MdbcData -Count) -eq 0) # empty
+		equals (Get-MdbcData -Count) 0L # empty
 
 		# add data
 		@{x=1; y=1}, @{x=2; y=2} | Add-MdbcData
-		assert (2 -eq (Get-MdbcData -Count))
+		equals 2L (Get-MdbcData -Count)
 
 		# save
 		Save-MdbcFile
 		assert (Test-Path $file)
-		assert (2 -eq (Get-MdbcData -Count))
+		equals 2L (Get-MdbcData -Count)
 
 		# test
 		$r = @(Import-MdbcData $file)
-		assert ($r.Count -eq 2)
-		assert ($r[0].x -eq 1)
-		assert ($r[1].x -eq 2)
+		equals $r.Count 2
+		equals $r[0].x 1
+		equals $r[1].x 2
 
 		# remove
 		Remove-MdbcData @{x=1}
-		assert (1 -eq (Get-MdbcData -Count))
+		equals 1L (Get-MdbcData -Count)
 
 		# save, test
 		Save-MdbcFile
-		assert (1 -eq (Get-MdbcData -Count))
+		equals 1L (Get-MdbcData -Count)
 		$r = @(Import-MdbcData $file)
-		assert ($r.Count -eq 1)
-		assert ($r[0].x -eq 2)
+		equals $r.Count 1
+		equals $r[0].x 2
 	}{
 		$file = $bson
 	}{
@@ -104,14 +104,16 @@ task OpenWithInvalidElementNames {
 
 	# and get all data
 	$r = Get-MdbcData
-	assert ($r.Count -eq 2 -and $r[0]['$it'] -eq 1 -and $r[1]['it.name'] -eq 1)
+	equals $r.Count 2
+	equals $r[0]['$it'] 1
+	equals $r[1]['it.name'] 1
 
 	# but some queries either fail
 	Test-Error { Get-MdbcData (New-MdbcQuery '$it' 1) } 'Not implemented operator $it'
 
 	# or do not work
 	$r = Get-MdbcData (New-MdbcQuery 'it.name' 1)
-	assert ($null -eq $r)
+	equals $r
 }
 
 task NormalData {
@@ -131,11 +133,11 @@ task _idQuery {
 	assert (!$r)
 
 	$r = Get-MdbcData 1.0 #! double
-	assert ("$r" -ceq '{ "_id" : 1 }')
+	equals "$r" '{ "_id" : 1 }'
 
 	$r = Get-MdbcData @{_id=@{x=2.0}} #! double
-	assert ("$r" -ceq '{ "_id" : { "x" : 2 } }')
+	equals "$r" '{ "_id" : { "x" : 2 } }'
 
 	$r = Get-MdbcData ([regex]'e')
-	assert ("$r" -ceq '{ "_id" : "apple" } { "_id" : "orange" }')
+	equals "$r" '{ "_id" : "apple" } { "_id" : "orange" }'
 }

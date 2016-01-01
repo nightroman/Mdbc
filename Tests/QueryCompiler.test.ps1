@@ -339,7 +339,7 @@ task In {
 	query @{int=@{'$nin'=42}} -QError '*$nin needs an array*' -EError '*$in/$nin argument must be array.*'
 
 	# $nin is just a negation of $in, so does Mdbc
-	assert ((New-MdbcQuery -Not (New-MdbcQuery x -In 1)).ToString() -eq '{ "x" : { "$nin" : [1] } }')
+	equals (New-MdbcQuery -Not (New-MdbcQuery x -In 1)).ToString() '{ "x" : { "$nin" : [1] } }'
 
 	query (New-MdbcQuery null -In @($null)) 1 '{ "null" : { "$in" : [null] } }' 'In(data, "null", [BsonNull])'
 	query (New-MdbcQuery null -NotIn @($null)) 0 '{ "null" : { "$nin" : [null] } }' 'Not(In(data, "null", [BsonNull]))'

@@ -101,15 +101,15 @@ task SetDollar {
 	'original' | .{process{
 		# Id
 		$null = New-MdbcData @{name = 'name1'} -Id {log $_.name; 42}
-		assert ($_ -eq 'original')
+		equals $_ 'original'
 
 		# Select
 		$null = New-MdbcData @{name = 'name2'} -Property @{name2 = {log $_.name; 42}}
-		assert ($_ -eq 'original')
+		equals $_ 'original'
 
 		# Convert
 		$null = New-MdbcData $host -Property Version -Convert {log $_.GetType().Name}
-		assert ($_ -eq 'original')
+		equals $_ 'original'
 	}}
 
 	$log
