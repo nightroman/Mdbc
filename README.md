@@ -2,7 +2,7 @@
 MongoDB Cmdlets for PowerShell
 ==============================
 
-Mdbc is the Windows PowerShell module based on the official
+Mdbc is the Windows PowerShell v2.0+ module based on the official
 [MongoDB C# driver](https://github.com/mongodb/mongo-csharp-driver).
 Mdbc makes MongoDB scripting in PowerShell easier and provides some extra
 features like bson/json file collections which do not even require MongoDB.
@@ -13,11 +13,10 @@ features like bson/json file collections which do not even require MongoDB.
 Mdbc is distributed as the NuGet package [Mdbc](https://www.nuget.org/packages/Mdbc).
 Download it to the current location as the directory *"Mdbc"* by this PowerShell command:
 
-    Invoke-Expression (New-Object Net.WebClient).DownloadString('https://raw.github.com/nightroman/Mdbc/master/Download.ps1')
+    Invoke-Expression "& {$((New-Object Net.WebClient).DownloadString('https://github.com/nightroman/PowerShelf/raw/master/Save-NuGetTool.ps1'))} Mdbc"
 
 Alternatively, download it by NuGet tools or [directly](http://nuget.org/api/v2/package/Mdbc).
-In the latter case rename the package to *".zip"* and unzip. Use the package
-subdirectory *"tools/Mdbc"*.
+In the latter case save it as *".zip"* and unzip. Use the package subdirectory *"tools/Mdbc"*.
 
 Copy the directory *Mdbc* to a PowerShell module directory, see
 `$env:PSModulePath`, normally like this:

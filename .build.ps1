@@ -149,7 +149,7 @@ task Package Markdown, (job UpdateScript -Safe), {
 # Synopsis: Make NuGet package.
 task NuGet Package, Version, {
 	$text = @'
-Mdbc is the Windows PowerShell module based on the official MongoDB C# driver.
+Windows PowerShell v2.0+ module based on the official MongoDB C# driver.
 It makes MongoDB scripting in PowerShell easier and provides some extra
 features like bson/json file collections which do not require MongoDB.
 '@
