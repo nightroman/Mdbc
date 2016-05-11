@@ -230,8 +230,9 @@ specified then they are assumed to be ., test, test respectively.
 
 	"." is used for the default driver connection.
 
-	Example:
-	mongodb://localhost:27017
+	Examples:
+		mongodb://localhost:27017
+		mongodb://myaccount:mypass@remotehost.example.com/mydatabase
 '@
 		DatabaseName = 'Database name. * is used in order to get all database objects.'
 		CollectionName = 'Collection name. * is used in order to get all collection objects.'
