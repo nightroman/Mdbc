@@ -27,23 +27,27 @@ task CollectionName {
 	assert ($r -ccontains 'test')
 }
 
-#! completer variable conflict ($data)
-#TODO TabExpansionPlusPlus works as a script but gets nothing as a task
-task Property -If ($BuildFile -notlike '*\TabExpansionPlusPlus.build.ps1') {
-	$data = @{Dictionary=1}, $Host
+<#
+	1. Inner completer variable $data conflicts with this test $data. Fixed by
+	declaring the inner variable private.
 
-	($r = Invoke-Complete '$data | Add-MdbcData -Property dic')
+	2. If we use `$data = ...` and pipe $data then TE++ works as a script but
+	gets nothing as a task. Not fixed but it is not a real case. In reality
+	TE++ is called from a prompt.
+#>
+task Property {
+	($r = Invoke-Complete '@{Dictionary=1}, $Host | Add-MdbcData -Property dic')
 	equals $r Dictionary
-	($r = Invoke-Complete '$data | Add-MdbcData -Property na')
+	($r = Invoke-Complete '@{Dictionary=1}, $Host | Add-MdbcData -Property na')
 	equals $r Name
 
-	($r = Invoke-Complete '$data | New-MdbcData -Property dic')
+	($r = Invoke-Complete '@{Dictionary=1}, $Host | New-MdbcData -Property dic')
 	equals $r Dictionary
-	($r = Invoke-Complete '$data | New-MdbcData -Property na')
+	($r = Invoke-Complete '@{Dictionary=1}, $Host | New-MdbcData -Property na')
 	equals $r Name
 
-	($r = Invoke-Complete '$data | Export-MdbcData -Property dic')
+	($r = Invoke-Complete '@{Dictionary=1}, $Host | Export-MdbcData -Property dic')
 	equals $r Dictionary
-	($r = Invoke-Complete '$data | Export-MdbcData -Property na')
+	($r = Invoke-Complete '@{Dictionary=1}, $Host | Export-MdbcData -Property na')
 	equals $r Name
 }
