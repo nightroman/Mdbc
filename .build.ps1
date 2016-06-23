@@ -143,7 +143,7 @@ task Package Markdown, (job UpdateScript -Safe), {
 	.\Scripts\Mdbc.ps1,
 	.\Scripts\Get-MongoFile.ps1,
 	.\Scripts\Update-MongoFiles.ps1,
-	.\Scripts\TabExpansionProfile.Mdbc.ps1
+	.\Scripts\Mdbc.ArgumentCompleters.ps1
 }
 
 # Synopsis: Make NuGet package.
@@ -187,7 +187,7 @@ task PushRelease Version, {
 
 # Synopsis: Make and push the NuGet package.
 task PushNuGet NuGet, {
-	exec { NuGet push "$ModuleName.$Version.nupkg" }
+	exec { NuGet push "$ModuleName.$Version.nupkg" -Source nuget.org }
 },
 Clean
 
@@ -217,7 +217,7 @@ task TestHelp Help, TestHelpExample, TestHelpSynopsis
 $UpdateScriptInputs = @(
 	'Get-MongoFile.ps1'
 	'Mdbc.ps1'
-	'TabExpansionProfile.Mdbc.ps1'
+	'Mdbc.ArgumentCompleters.ps1'
 	'Update-MongoFiles.ps1'
 )
 
@@ -239,13 +239,12 @@ task CheckFiles {
 # Synopsis: Call tests and test the expected count.
 task Test {
 	Invoke-Build ** Tests -Result result
-	assert (160 -eq $result.Tasks.Count) "Unexpected test count: $($result.Tasks.Count)."
 },
 CleanTest
 
 # Synopsis: Test v2.
 task Test2 {
-	exec {PowerShell.exe -Version 2 Invoke-Build Test}
+	exec {PowerShell.exe -Version 2 -NoProfile Invoke-Build Test}
 }
 
 # Synopsis: Build, test and clean all.

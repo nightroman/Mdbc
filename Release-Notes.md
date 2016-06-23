@@ -1,6 +1,11 @@
 
-Mdbc Release Notes
-==================
+# Mdbc Release Notes
+
+## v4.8.7
+
+New `Mdbc.ArgumentCompleters.ps1` for v5 native, TabExpansionPlusPlus, and the
+latest TabExpansion2.ps1. It replaces `TabExpansion.Mdbc.ps1` which works with
+TabExpansion2.ps1 only.
 
 ## v4.8.6
 
