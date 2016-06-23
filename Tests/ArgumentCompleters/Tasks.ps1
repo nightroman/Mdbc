@@ -51,3 +51,23 @@ task Property {
 	($r = Invoke-Complete '@{Dictionary=1}, $Host | Export-MdbcData -Property na')
 	equals $r Name
 }
+
+#! skip TE++, it cannot see variables in this test scenario
+task Conflicts -If ($BuildFile -notlike '*\TabExpansionPlusPlus.build.ps1') {
+	$commandName = $parameterName = $wordToComplete = $commandAst = $boundParameters =$Host
+
+	($r = Invoke-Complete '$commandName | New-MdbcData -Property na')
+	equals $r Name
+
+	($r = Invoke-Complete '$parameterName | New-MdbcData -Property na')
+	equals $r Name
+
+	($r = Invoke-Complete '$wordToComplete | New-MdbcData -Property na')
+	equals $r Name
+
+	($r = Invoke-Complete '$commandAst | New-MdbcData -Property na')
+	equals $r Name
+
+	($r = Invoke-Complete '$boundParameters | New-MdbcData -Property na')
+	equals $r Name
+}

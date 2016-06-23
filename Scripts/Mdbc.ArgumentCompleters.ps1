@@ -52,7 +52,7 @@ Register-ArgumentCompleter -CommandName Connect-Mdbc -ParameterName CollectionNa
 }
 
 Register-ArgumentCompleter -CommandName Add-MdbcData, New-MdbcData, Export-MdbcData -ParameterName Property -ScriptBlock {
-	param($commandName, $parameterName, $wordToComplete, $commandAst, $boundParameters)
+	$private:commandName, $private:parameterName, $private:wordToComplete, $private:commandAst, $private:boundParameters = $args
 
 	$private:data = $boundParameters['InputObject']
 	if (!$data) {
