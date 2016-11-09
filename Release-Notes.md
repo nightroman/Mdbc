@@ -3,6 +3,8 @@
 
 ## v4.8.8
 
+Packaged and published as PSGallery module.
+
 Fixed potential variable conflicts in `Mdbc.ArgumentCompleters.ps1`.
 
 ## v4.8.7

@@ -10,7 +10,13 @@ features like bson/json file collections which do not even require MongoDB.
 ## Quick Start
 
 **Step 1:** Get and install.
-Mdbc is distributed as the NuGet package [Mdbc](https://www.nuget.org/packages/Mdbc).
+
+Mdbc is distributed as the PowerShell Gallery module [Mdbc](https://www.powershellgallery.com/packages/Mdbc).
+In PowerShell 5.0 or with PowerShellGet you can install it by this command:
+
+    Install-Module Mdbc
+
+Mdbc is also distributed as the NuGet package [Mdbc](https://www.nuget.org/packages/Mdbc).
 Download it to the current location as the directory *"Mdbc"* by this PowerShell command:
 
     Invoke-Expression "& {$((New-Object Net.WebClient).DownloadString('https://github.com/nightroman/PowerShelf/raw/master/Save-NuGetTool.ps1'))} Mdbc"

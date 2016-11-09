@@ -50,6 +50,15 @@ task Meta -Inputs Release-Notes.md -Outputs Module\$ModuleName.psd1, Src\Assembl
 
 	PowerShellVersion = '2.0'
 	GUID = '12c81cd8-bde3-4c91-a292-e6c4f868106a'
+
+	PrivateData = @{
+		PSData = @{
+			Tags = 'Mongo', 'MongoDB', 'Database'
+			LicenseUri = 'http://www.apache.org/licenses/LICENSE-2.0'
+			ProjectUri = 'https://github.com/nightroman/Mdbc'
+			ReleaseNotes = 'https://github.com/nightroman/Mdbc/blob/master/Release-Notes.md'
+		}
+	}
 }
 "@
 
