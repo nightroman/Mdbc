@@ -1,14 +1,14 @@
 
+Enter-Build {
+	Import-Module Mdbc
+	Connect-Mdbc -NewCollection
+	@{a=1} | Add-MdbcData
+}
+
 function Invoke-Complete([Parameter()]$line, $caret=$line.Length) {
 	foreach($_ in (TabExpansion2 $line $caret).CompletionMatches) {
 		$_.CompletionText
 	}
-}
-
-function Enter-Build {
-	Import-Module Mdbc
-	Connect-Mdbc -NewCollection
-	@{a=1} | Add-MdbcData
 }
 
 task DatabaseName {

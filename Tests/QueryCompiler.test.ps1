@@ -1,28 +1,34 @@
 
-. .\Zoo.ps1
-Import-Module Mdbc
-Set-StrictMode -Version Latest
+Enter-Build {
+	. .\Zoo.ps1
+	Import-Module Mdbc
+	Set-StrictMode -Version Latest
 
-$date = [DateTime]'2000-01-01'
-$guid = [Guid]'94a30dd6-6451-49fb-9c48-18e3f1509877'
-$document = New-MdbcData -NewId @{
-	null = $null
-	text = 'text'
-	int = 42
-	intn = -42
-	pi = 3.14
-	date = $date
-	guid = $guid
-	empty = @()
-	three = 1, 2, 3
-	doc0 = @{}
-	doc1 = @{x=1; y=2; deep=@{x=9}; '1'=@{n=42}}
-	doc2 = @{x=1; y=2}, @{x=3; y=4; deep=@{x=9}}
-	arr1 = 0, 42, @{x=33}
-	arr2 = @(@{x=1}, @{x=9}), @(1, 2)
+	$date = [DateTime]'2000-01-01'
+	$guid = [Guid]'94a30dd6-6451-49fb-9c48-18e3f1509877'
+	$document = New-MdbcData -NewId @{
+		null = $null
+		text = 'text'
+		int = 42
+		intn = -42
+		pi = 3.14
+		date = $date
+		guid = $guid
+		empty = @()
+		three = 1, 2, 3
+		doc0 = @{}
+		doc1 = @{x=1; y=2; deep=@{x=9}; '1'=@{n=42}}
+		doc2 = @{x=1; y=2}, @{x=3; y=4; deep=@{x=9}}
+		arr1 = 0, 42, @{x=33}
+		arr2 = @(@{x=1}, @{x=9}), @(1, 2)
+	}
+
+	$CLRVersion3 = $PSVersionTable.CLRVersion.Major -lt 4
+
+	Connect-Mdbc -NewCollection
+	$document | Add-MdbcData
 }
 
-$CLRVersion3 = $PSVersionTable.CLRVersion.Major -lt 4
 function query(
 	$query, # query to be tested
 	$count, # sample query result count
@@ -94,11 +100,6 @@ function query(
 			else { Write-Error "`n Expression sample : $expressionText`n Expression result : $expressionText2" }
 		}
 	}
-}
-
-function Enter-Build {
-	Connect-Mdbc -NewCollection
-	$document | Add-MdbcData
 }
 
 task EQ {
