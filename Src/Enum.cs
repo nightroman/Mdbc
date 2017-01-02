@@ -1,5 +1,5 @@
 ﻿
-// Copyright (c) 2011-2016 Roman Kuzmin
+// Copyright (c) Roman Kuzmin
 // http://www.apache.org/licenses/LICENSE-2.0
 
 namespace Mdbc

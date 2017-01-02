@@ -30,12 +30,17 @@ function Get-Version {
 	switch -Regex -File Release-Notes.md {'##\s+v(\d+\.\d+\.\d+)' {return $Matches[1]} }
 }
 
+$MetaParam = @{
+	Inputs = '.build.ps1', 'Release-Notes.md'
+	Outputs = "Module\$ModuleName.psd1", 'Src\AssemblyInfo.cs'
+}
+
 # Synopsis: Generate or update meta files.
-task Meta -Inputs Release-Notes.md -Outputs Module\$ModuleName.psd1, Src\AssemblyInfo.cs {
+task Meta @MetaParam {
 	$Version = Get-Version
 	$Project = 'https://github.com/nightroman/Mdbc'
 	$Summary = 'Mdbc module - MongoDB Cmdlets for PowerShell'
-	$Copyright = 'Copyright (c) 2011-2016 Roman Kuzmin'
+	$Copyright = 'Copyright (c) 2011-2017 Roman Kuzmin'
 
 	Set-Content Module\$ModuleName.psd1 @"
 @{
