@@ -254,13 +254,12 @@ namespace Mdbc
 		{
 			double size;
 			if (args.IsNumeric)
+			{
 				size = args.ToDouble();
-			else if (args.IsString)
-				size = 0;
-			else
-				throw new ArgumentException("Invalid $size argument.");
-
-			return Expression.Call(GetMethod("Size"), Data, field, Expression.Constant(size, typeof(double)));
+				if (size == args.ToInt64())
+					return Expression.Call(GetMethod("Size"), Data, field, Expression.Constant(size, typeof(double)));
+			}
+			throw new ArgumentException("Invalid $size argument.");
 		}
 		// If missing or not a number then false.
 		// If value is not a number then size 0 is used instead.

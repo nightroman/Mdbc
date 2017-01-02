@@ -4,6 +4,15 @@
 	Common tools used by tests.
 #>
 
+function Get-ServerVersion {
+	Connect-Mdbc . test
+	$command = New-MdbcData
+	$command.buildInfo = ''
+	$version = (Invoke-MdbcCommand $command).version
+	assert ($version -match '^\d+\.\d+\.\d+$')
+	[version]$version
+}
+
 # Invokes the test repeatedly with the specified contexts.
 # Args: the test script block and context script blocks.
 function Invoke-Test($Test)

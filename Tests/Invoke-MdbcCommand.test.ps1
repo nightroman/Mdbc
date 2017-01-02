@@ -8,6 +8,10 @@ task Invalid {
 	Test-Error { Invoke-MdbcCommand 1 } '*Exception setting "Command": "Invalid command object type."'
 }
 
+task GetVersion {
+	Get-ServerVersion
+}
+
 task ErrorControl {
 	Connect-Mdbc -NewCollection
 	@{_id=1; n=1} | Add-MdbcData

@@ -1,5 +1,4 @@
-﻿
-TOPIC
+﻿TOPIC
     about_Mdbc
 
 SHORT DESCRIPTION

@@ -649,13 +649,15 @@ task Push {
 
 # v2.6 $position
 task PushPosition {
-	# negative bug minor https://jira.mongodb.org/browse/SERVER-12959
+	# negative :: minor issue https://jira.mongodb.org/browse/SERVER-12959
+	# message fixed in 3.4.1
 	update @{'$push'=@{a=@{'$each'=@(3,4); '$position'=-1}}} @{a=1,2} `
-	-UError '*The $position value in $push must be positive.*' -EError '*$position must not be negative.*'
+	-UError '*The $position value in $push must be *' -EError '*$position must not be negative.*'
 
 	# bad type
+	# message fixed in 3.4.1
 	update @{'$push'=@{a=@{'$each'=@(3,4); '$position'=$null}}} @{a=1,2} `
-	-UError '*The value for $position must be a positive numeric value not a NULL*' -EError '*$position must be a numeric value.*'
+	-UError '*The value for $position must be *' -EError '*$position must be a numeric value.*'
 
 	# too big
 	update @{'$push'=@{a=@{'$each'=@(3,4); '$position'=9}}} @{a=1,2} @{a=1,2,3,4} '.PushAll(data, "a", [3, 4], 9)'

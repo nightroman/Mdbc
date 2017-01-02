@@ -18,7 +18,9 @@ task Capped {
 	equals $data[9].Value 20
 
 	# try to add again, test the error
-	Test-Error {Add-MdbcCollection test -MaxSize 1mb -MaxDocuments 10} "Command 'create' failed: collection already exists*"
+	# mongo 3.2.11 :: failed: collection already exists
+	# mongo 3.4.1  :: failed: a collection 'test.test' already exists
+	Test-Error {Add-MdbcCollection test -MaxSize 1mb -MaxDocuments 10} "Command 'create' failed: *collection *already exists*"
 }
 
 task AutoIndexId {

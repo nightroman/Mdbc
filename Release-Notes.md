@@ -1,6 +1,10 @@
 
 # Mdbc Release Notes
 
+## v4.8.9
+
+Adjust QueryCompiler $size invalid cases to Mongo 3.4.1
+
 ## v4.8.8
 
 Packaged and published as PSGallery module.

@@ -323,15 +323,19 @@ task Size {
 	query @{empty=@{'$size'=@{}}} -QError '*$size needs a number*' -EError '*Invalid $size argument.*'
 	query @{empty=@{'$size'=[regex]''}} -QError '*$size needs a number*' -EError '*Invalid $size argument.*'
 
-	# BUT Mongo treats strings as 0
-	query @{empty=@{'$size'='text'}} 1 '{ "empty" : { "$size" : "text" } }' 'Size(data, "empty", 0)'
-	query @{three=@{'$size'='text'}} 0 '{ "three" : { "$size" : "text" } }' 'Size(data, "three", 0)'
-	query @{empty=@{'$size'='3'}} 1 '{ "empty" : { "$size" : "3" } }' 'Size(data, "empty", 0)'
-	query @{three=@{'$size'='3'}} 0 '{ "three" : { "$size" : "3" } }' 'Size(data, "three", 0)'
-
 	query @{three=@{'$size'=3L}} 1 '{ "three" : { "$size" : NumberLong(3) } }' 'Size(data, "three", 3)'
 	query @{three=@{'$size'=3.0}} 1 '{ "three" : { "$size" : 3.0 } }' 'Size(data, "three", 3)'
-	query @{three=@{'$size'=3.14}} 0 '{ "three" : { "$size" : 3.14 } }' 'Size(data, "three", 3.14)'
+
+	$version = Get-ServerVersion
+	if ($version -lt ([version]'3.4.1')) {
+		Write-Warning 'Skip old v3.2 query tests.'
+		return
+	}
+
+	# Mongo treated strings as 0 and 3.14 as 3. Fixed in v3.4.1
+	query @{empty=@{'$size'='text'}} -QError '*$size needs a number*' -EError '*Invalid $size argument.*'
+	query @{empty=@{'$size'='3'}} -QError '*$size needs a number*' -EError '*Invalid $size argument.*'
+	query @{three=@{'$size'=3.14}} -QError '*$size must be a whole number*' -EError '*Invalid $size argument.*'
 }
 
 task In {
