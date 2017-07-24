@@ -2,22 +2,11 @@
 <#
 .Synopsis
 	Build script (https://github.com/nightroman/Invoke-Build)
-
-.Description
-	HOW TO USE THIS SCRIPT AND BUILD THE MODULE
-
-	Get and copy MongoDB.Bson.dll and MongoDB.Driver.dll to Module.
-
-	Get the utility script Invoke-Build.ps1:
-	https://github.com/nightroman/Invoke-Build
-
-	Copy it to the path. Set location to here. Build:
-	PS> Invoke-Build Build
 #>
 
 param(
 	$Configuration = 'Release',
-	$TargetFrameworkVersion = 'v3.5'
+	$TargetFrameworkVersion = 'v4.5'
 )
 
 $ModuleName = 'Mdbc'
@@ -28,6 +17,10 @@ $ModuleRoot = Join-Path ([Environment]::GetFolderPath('MyDocuments')) WindowsPow
 # Get version from release notes.
 function Get-Version {
 	switch -Regex -File Release-Notes.md {'##\s+v(\d+\.\d+\.\d+)' {return $Matches[1]} }
+}
+
+task Init Meta, {
+	exec {paket.exe install}
 }
 
 $MetaParam = @{
@@ -51,7 +44,7 @@ task Meta @MetaParam {
 	Copyright = '$Copyright'
 
 	ModuleToProcess = '$ModuleName.dll'
-	RequiredAssemblies = 'MongoDB.Driver.dll', 'MongoDB.Bson.dll'
+	RequiredAssemblies = 'System.Runtime.InteropServices.RuntimeInformation.dll', 'MongoDB.Bson.dll', 'MongoDB.Driver.Core.dll', 'MongoDB.Driver.dll', 'MongoDB.Driver.Legacy.dll'
 
 	PowerShellVersion = '2.0'
 	GUID = '12c81cd8-bde3-4c91-a292-e6c4f868106a'
@@ -93,7 +86,14 @@ task Build Meta, {
 # It is called from the post build event.
 task PostBuild {
 	exec { robocopy Module $ModuleRoot /s /np /r:0 /xf *-Help.ps1 } (0..3)
-	Copy-Item Src\Bin\$Configuration\$ModuleName.dll $ModuleRoot
+	Copy-Item -Destination $ModuleRoot -LiteralPath @(
+		"Src\Bin\$Configuration\$ModuleName.dll"
+		'packages\mongocsharpdriver\lib\net45\MongoDB.Driver.Legacy.dll'
+		'packages\MongoDB.Bson\lib\net45\MongoDB.Bson.dll'
+		'packages\MongoDB.Driver\lib\net45\MongoDB.Driver.dll'
+		'packages\MongoDB.Driver.Core\lib\net45\MongoDB.Driver.Core.dll'
+		'packages\System.Runtime.InteropServices.RuntimeInformation\lib\net45\System.Runtime.InteropServices.RuntimeInformation.dll'
+	)
 }
 
 # Synopsis: Remove temp files.
@@ -146,8 +146,11 @@ task Package Markdown, (job UpdateScript -Safe), {
 	Release-Notes.htm,
 	$ModuleRoot\$ModuleName.dll,
 	$ModuleRoot\$ModuleName.psd1,
+	$ModuleRoot\MongoDB.Driver.Legacy.dll,
 	$ModuleRoot\MongoDB.Bson.dll,
-	$ModuleRoot\MongoDB.Driver.dll
+	$ModuleRoot\MongoDB.Driver.dll,
+	$ModuleRoot\MongoDB.Driver.Core.dll,
+	$ModuleRoot\System.Runtime.InteropServices.RuntimeInformation.dll
 
 	Copy-Item -Destination z\tools\$ModuleName\en-US `
 	$ModuleRoot\en-US\about_$ModuleName.help.txt,
@@ -163,7 +166,7 @@ task Package Markdown, (job UpdateScript -Safe), {
 # Synopsis: Make NuGet package.
 task NuGet Package, Version, {
 	$text = @'
-Windows PowerShell v2.0+ module based on the official MongoDB C# driver.
+Windows PowerShell module based on the official MongoDB C# driver v2.x
 It makes MongoDB scripting in PowerShell easier and provides some extra
 features like bson/json file collections which do not require MongoDB.
 '@
@@ -256,10 +259,5 @@ task Test {
 },
 CleanTest
 
-# Synopsis: Test v2.
-task Test2 {
-	exec {PowerShell.exe -Version 2 -NoProfile Invoke-Build Test}
-}
-
 # Synopsis: Build, test and clean all.
-task . Build, TestHelp, Test, Test2, Clean, CheckFiles
+task . Build, TestHelp, Test, Clean, CheckFiles

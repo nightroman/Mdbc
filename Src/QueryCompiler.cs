@@ -452,12 +452,26 @@ namespace Mdbc
 			return r;
 		}
 		// public for tests
-		public static Expression GetExpression(IConvertibleToBsonDocument query)
+		public static Expression GetExpression(object query)
 		{
 			if (query == null)
 				return Expression.Constant(true, typeof(bool));
 
-			var document = query.ToBsonDocument();
+            BsonDocument document;
+            var convertible = query as IConvertibleToBsonDocument;
+            if (convertible != null)
+            {
+                document = convertible.ToBsonDocument();
+            }
+            else
+            {
+                var mongoQuery = query as IMongoQuery;
+                if (mongoQuery != null)
+                    document = mongoQuery.ToBsonDocument();
+                else
+                    throw new ArgumentException("Unexpected query type " + query.GetType().FullName, "query");
+            }
+
 			switch (document.ElementCount)
 			{
 				case 1:
@@ -468,7 +482,7 @@ namespace Mdbc
 					return DocumentExpression(document);
 			}
 		}
-		internal static Func<BsonDocument, bool> GetFunction(IConvertibleToBsonDocument query)
+		internal static Func<BsonDocument, bool> GetFunction(object query)
 		{
 			return Expression.Lambda<Func<BsonDocument, bool>>(GetExpression(query), Data).Compile();
 		}
@@ -504,7 +518,7 @@ namespace Mdbc
 		}
 		internal static IEnumerable<BsonDocument> Query(IEnumerable<BsonDocument> documents, IDictionary<BsonValue, BsonDocument> dictionary, IMongoQuery query, IMongoSortBy sortBy, int skip, int first)
 		{
-			var queryDocument = (BsonDocument)query;
+			var queryDocument = query.ToBsonDocument();
 
 			BsonValue idSelector;
 			if (dictionary != null && queryDocument != null && queryDocument.TryGetValue(MyValue.Id, out idSelector))

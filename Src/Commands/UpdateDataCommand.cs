@@ -56,6 +56,10 @@ namespace Mdbc.Commands
 			{
 				WriteException(ex, _Input);
 			}
-		}
-	}
+            catch (FileWriteConcernException ex)
+            {
+                WriteException(ex, _Input);
+            }
+        }
+    }
 }

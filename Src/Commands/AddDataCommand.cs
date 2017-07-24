@@ -52,10 +52,14 @@ namespace Mdbc.Commands
 			{
 				WriteError(DocumentInput.NewErrorRecordBsonValue(ex, InputObject));
 			}
-			catch (MongoException ex)
-			{
-				WriteException(ex, InputObject);
-			}
-		}
-	}
+            catch (MongoException ex)
+            {
+                WriteException(ex, InputObject);
+            }
+            catch (FileWriteConcernException ex)
+            {
+                WriteException(ex, InputObject);
+            }
+        }
+    }
 }

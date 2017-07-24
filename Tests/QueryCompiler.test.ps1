@@ -303,8 +303,8 @@ task Mod {
 	# long and double
 	query @{int=@{'$mod'=2L, 0}} 1 '{ "int" : { "$mod" : [NumberLong(2), 0] } }' 'Mod(data, "int", 2, 0)'
 	query @{int=@{'$mod'=2, 0L}} 1 '{ "int" : { "$mod" : [2, NumberLong(0)] } }' 'Mod(data, "int", 2, 0)'
-	query @{int=@{'$mod'=2.1, 0.1}} 1 '{ "int" : { "$mod" : [2.1, 0.1] } }' 'Mod(data, "int", 2, 0)'
-	query @{pi=@{'$mod'=2.1, 1.1}} 1 '{ "pi" : { "$mod" : [2.1, 1.1] } }' 'Mod(data, "pi", 2, 1)'
+	query @{int=@{'$mod'=2.1, 0.1}} 1 '{ "int" : { "$mod" : [2.1000000000000001, 0.10000000000000001] } }' 'Mod(data, "int", 2, 0)'
+	query @{pi=@{'$mod'=2.1, 1.1}} 1 '{ "pi" : { "$mod" : [2.1000000000000001, 1.1000000000000001] } }' 'Mod(data, "pi", 2, 1)'
 }
 
 task Size {

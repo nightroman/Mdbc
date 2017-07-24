@@ -83,24 +83,20 @@ task FlexibleJson {
     "x":  1
 }
 
-[
 	{
 	    "x":  2
 	}
-]
 
 {
     "x":  3
 }
 
-[
 	{
 	    "x":  4
-	},
+	}
 	{
 	    "x":  5
 	}
-]
 
 
 '@
@@ -111,17 +107,17 @@ task FlexibleJson {
 
 task BadJson {
 	JsonFile 'x'
-	Test-Error { Import-MdbcData $json } "Unexpected character 'x' at position 0."
+	Test-Error { Import-MdbcData $json } "JSON reader was expecting a value but found 'x'."
 
 	JsonFile ','
-	Test-Error { Import-MdbcData $json } "Unexpected character ',' at position 0."
+	Test-Error { Import-MdbcData $json } "JSON reader was expecting a value but found ','."
 
 	JsonFile ' ]'
-	Test-Error { Import-MdbcData $json } "Unexpected character ']' at position 1."
+	Test-Error { Import-MdbcData $json } "JSON reader was expecting a value but found ']'."
 
 	JsonFile ' [['
-	Test-Error { Import-MdbcData $json } "Unexpected character '``[' at position 2."
+	Test-Error { Import-MdbcData $json } "Cannot deserialize a 'BsonDocument' from BsonType 'Array'."
 
 	JsonFile '{x=1}'
-	Test-Error { Import-MdbcData $json } "Invalid JSON input '=1}'."
+	Test-Error { Import-MdbcData $json } "Invalid JSON input ''."
 }

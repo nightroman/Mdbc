@@ -53,14 +53,14 @@ task MinMax {
 task Inc {
 	test { New-MdbcUpdate -Inc @{Name = 1} } '{ "$inc" : { "Name" : 1 } }'
 	test { New-MdbcUpdate -Inc @{Name = 1L} } '{ "$inc" : { "Name" : NumberLong(1) } }'
-	test { New-MdbcUpdate -Inc @{Name = 1.1} } '{ "$inc" : { "Name" : 1.1 } }'
+	test { New-MdbcUpdate -Inc @{Name = 1.1} } '{ "$inc" : { "Name" : 1.1000000000000001 } }'
 	test { New-MdbcUpdate -Inc @{a = 1; b = 2}, @{c = 3} } '{ "$inc" : { "a" : 1, "b" : 2, "c" : 3 } }'
 }
 
 task Mul {
 	test { New-MdbcUpdate -Mul @{Name = 1} } '{ "$mul" : { "Name" : 1 } }'
 	test { New-MdbcUpdate -Mul @{Name = 1L} } '{ "$mul" : { "Name" : NumberLong(1) } }'
-	test { New-MdbcUpdate -Mul @{Name = 1.1} } '{ "$mul" : { "Name" : 1.1 } }'
+	test { New-MdbcUpdate -Mul @{Name = 1.1} } '{ "$mul" : { "Name" : 1.1000000000000001 } }'
 	test { New-MdbcUpdate -Mul @{a = 1; b = 2}, @{c = 3} } '{ "$mul" : { "a" : 1, "b" : 2, "c" : 3 } }'
 }
 

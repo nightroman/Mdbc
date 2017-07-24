@@ -1,0 +1,16 @@
+REFERENCES: STRICT
+RESTRICTION: == net45
+NUGET
+  remote: https://www.nuget.org/api/v2
+    mongocsharpdriver (2.4.4)
+      MongoDB.Bson (>= 2.4.4)
+      MongoDB.Driver (>= 2.4.4)
+      MongoDB.Driver.Core (>= 2.4.4)
+    MongoDB.Bson (2.4.4)
+    MongoDB.Driver (2.4.4)
+      MongoDB.Bson (>= 2.4.4)
+      MongoDB.Driver.Core (>= 2.4.4)
+    MongoDB.Driver.Core (2.4.4)
+      MongoDB.Bson (>= 2.4.4)
+      System.Runtime.InteropServices.RuntimeInformation (>= 4.0)
+    System.Runtime.InteropServices.RuntimeInformation (4.0)

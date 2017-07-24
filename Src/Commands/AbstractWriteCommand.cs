@@ -16,10 +16,10 @@ namespace Mdbc.Commands
 		[Parameter]
 		public SwitchParameter Result { get; set; }
 
-		protected void WriteResult(CommandResult result)
-		{
-			if (Result && result != null)
-				WriteObject(result);
-		}
-	}
+        protected void WriteResult(WriteConcernResult result)
+        {
+            if (Result && result != null)
+                WriteObject(result);
+        }
+    }
 }

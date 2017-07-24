@@ -1,6 +1,10 @@
 
 # Mdbc Release Notes
 
+## v5.0.0
+
+C# driver 2.4.4 and .NET Framework 4.5
+
 ## v4.8.9
 
 Adjust QueryCompiler $size invalid cases to Mongo 3.4.1

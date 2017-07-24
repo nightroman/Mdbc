@@ -12,9 +12,9 @@ using MongoDB.Bson.Serialization.Serializers;
 
 namespace Mdbc
 {
-	sealed class PSObjectSerializer : BsonBaseSerializer
+	sealed class PSObjectSerializer : SealedClassSerializerBase<PSObject>
 	{
-		static IList ReadArray(BsonReader bsonReader)
+		static IList ReadArray(IBsonReader bsonReader)
 		{
 			var array = new ArrayList();
 
@@ -25,7 +25,7 @@ namespace Mdbc
 
 			return array;
 		}
-		static object ReadObject(BsonReader bsonReader) //_120509_173140 keep consistent
+		static object ReadObject(IBsonReader bsonReader) //_120509_173140 keep consistent
 		{
 			switch (bsonReader.GetCurrentBsonType())
 			{
@@ -43,7 +43,7 @@ namespace Mdbc
 				default: return BsonSerializer.Deserialize<BsonValue>(bsonReader);
 			}
 		}
-		static PSObject ReadCustomObject(BsonReader bsonReader)
+		static PSObject ReadCustomObject(IBsonReader bsonReader)
 		{
 			var ps = new PSObject();
 			var properties = ps.Properties;
@@ -59,30 +59,31 @@ namespace Mdbc
 
 			return ps;
 		}
-		public override object Deserialize(BsonReader bsonReader, Type nominalType, Type actualType, IBsonSerializationOptions options)
+		public override PSObject Deserialize(BsonDeserializationContext context, BsonDeserializationArgs args)
 		{
-			return ReadCustomObject(bsonReader);
+			return ReadCustomObject(context.Reader);
 		}
 	}
-	sealed class DictionarySerializer : BsonDocumentSerializer
+	sealed class DictionarySerializer : SealedClassSerializerBase<Dictionary>
 	{
-		public override object Deserialize(BsonReader bsonReader, Type nominalType, Type actualType, IBsonSerializationOptions options)
+		public override Dictionary Deserialize(BsonDeserializationContext context, BsonDeserializationArgs args)
 		{
-			return new Dictionary((BsonDocument)base.Deserialize(bsonReader, typeof(BsonDocument), typeof(BsonDocument), options));
+			return new Dictionary(BsonDocumentSerializer.Instance.Deserialize(context, args));
 		}
 	}
-	sealed class LazyDictionarySerializer : LazyBsonDocumentSerializer
+	sealed class LazyDictionarySerializer : SealedClassSerializerBase<LazyDictionary>
 	{
-		public override object Deserialize(BsonReader bsonReader, Type nominalType, Type actualType, IBsonSerializationOptions options)
-		{
-			return new LazyDictionary((LazyBsonDocument)base.Deserialize(bsonReader, typeof(LazyBsonDocument), typeof(LazyBsonDocument), options));
+		public override LazyDictionary Deserialize(BsonDeserializationContext context, BsonDeserializationArgs args)
+        {
+            var serialiazer = new LazyBsonDocumentSerializer();
+            return new LazyDictionary(serialiazer.Deserialize(context, args));
 		}
 	}
-	sealed class RawDictionarySerializer : RawBsonDocumentSerializer
-	{
-		public override object Deserialize(BsonReader bsonReader, Type nominalType, Type actualType, IBsonSerializationOptions options)
+	sealed class RawDictionarySerializer : SealedClassSerializerBase<RawDictionary>
+    {
+		public override RawDictionary Deserialize(BsonDeserializationContext context, BsonDeserializationArgs args)
 		{
-			return new RawDictionary((RawBsonDocument)base.Deserialize(bsonReader, typeof(RawBsonDocument), typeof(RawBsonDocument), options));
+            return new RawDictionary(RawBsonDocumentSerializer.Instance.Deserialize(context, args));
 		}
 	}
 }

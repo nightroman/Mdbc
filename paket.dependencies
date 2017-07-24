@@ -1,0 +1,9 @@
+framework: net45
+references: strict
+
+source https://www.nuget.org/api/v2
+nuget mongocsharpdriver
+nuget MongoDB.Bson
+nuget MongoDB.Driver
+nuget MongoDB.Driver.Core
+nuget System.Runtime.InteropServices.RuntimeInformation = 4.0.0

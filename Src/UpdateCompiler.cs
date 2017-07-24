@@ -262,7 +262,7 @@ namespace Mdbc
 				//_131130_103226 Created in Update.Pull(query)
 				var wrapper = value as BsonDocumentWrapper;
 				if (wrapper != null)
-					value = (BsonValue)wrapper.WrappedObject;
+					value = wrapper.Clone();
 
 				var predicate = QueryCompiler.GetFunction(value.AsBsonDocument);
 				for (int i = array.Count; --i >= 0; )

@@ -71,18 +71,21 @@ task Basics {
 	}
 }
 
-# Test invalid names with Add-MdbcData and Add-MdbcData -Update for normal and simple files
+<#
+	Mdbc 5.0.0, driver 2.4.4
+	No built-in way to check for mongo-bad names.
+	We can Add-MdbcData and Add-MdbcData -Update with bad names.
+#>
 task ValidateElementNamesAndSimpleData {
-	$errorLike = "Element name '*' is not valid because it * a '?'."
 	Invoke-Test {
 		# insert
-		Test-Error { @{'$it'=1} | Add-MdbcData } $errorLike
-		Test-Error { @{'it.name'=1} | Add-MdbcData } $errorLike
+		@{'$it'=1} | Add-MdbcData
+		@{'it.name'=1} | Add-MdbcData
 
 		# upsert
 		if ($Collection.GetType().Name -eq 'NormalFileCollection') {
-			Test-Error { @{'$it'=1} | Add-MdbcData -Update } $errorLike
-			Test-Error { @{'it.name'=1} | Add-MdbcData -Update } $errorLike
+			@{'$it'=1} | Add-MdbcData -Update
+			@{'it.name'=1} | Add-MdbcData -Update
 		}
 		else {
 			Test-Error { @{} | Add-MdbcData -Update } 'Update-or-insert is not supported by simple collections.'

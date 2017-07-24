@@ -156,14 +156,14 @@ task Set {
 	# errors
 	update (New-MdbcUpdate -Set @{'x.y.z'=1}) @{x=@{y=1}} -UError '* 16837,*' -EError '*"Field (y) in (x.y.z) is not a document."'
 	update (New-MdbcUpdate -Set @{'a.x'=1}) @{a=@{x=1},@{x=1}} -UError '* 16837,*' -EError '*"Field (a) in (a.x) is not a document."'
-	update @{x=1; '$inc'=@{y=2}} @{} -UError "*'Unknown modifier: x'.*" -EError '*Update cannot mix operators and fields.*' #_131103_204607
+	update @{x=1; '$inc'=@{y=2}} @{} -UError "*Element name 'x' is not valid*" -EError '*Update cannot mix operators and fields.*' #_131103_204607
 
 	# v2.6 error
 	update @{x=@{'$bad'=1}} @{} @{x=@{'$bad'=1}} `
-	-UError '*The dollar ($) prefixed field * is not valid for storage.*' -EError '*Invalid document element name: "$bad".*'
+	-UError '*Element name ''$bad'' is not valid*' -EError '*Invalid document element name: "$bad".*'
 	# ditto, nested
 	update @{x=@{'$bad'=1}} @{} @{x=@{x=@{'$bad'=1}}} `
-	-UError '*The dollar ($) prefixed field * is not valid for storage.*' -EError '*Invalid document element name: "$bad".*'
+	-UError '*Element name ''$bad'' is not valid*' -EError '*Invalid document element name: "$bad".*'
 
 	#_131103_204607 simple form
 	update @{x=1; y=2} @{} @{x=1; y=2} '.Set(data, "y", 2).Set(data, "x", 1)'
@@ -277,7 +277,7 @@ task Inc {
 
 	# int += double -> double
 	update (New-MdbcUpdate -Inc @{x=1.0}) @{x=1} @{x=2.0} '.Inc(data, "x", 1)'
-	update (New-MdbcUpdate -Inc @{x=1.1}) @{x=1} @{x=2.1} '.Inc(data, "x", 1.1)'
+	update (New-MdbcUpdate -Inc @{x=1.1}) @{x=1} @{x=2.1} '.Inc(data, "x", 1.1000000000000001)'
 
 	# long += int -> long
 	update (New-MdbcUpdate -Inc @{x=1}) @{x=1L} @{x=2L} '.Inc(data, "x", 1)'
@@ -343,7 +343,7 @@ task Mul {
 
 	# int *= double -> double
 	update (New-MdbcUpdate -Mul @{x=2.0}) @{x=3} @{x=6.0} '.Mul(data, "x", 2)'
-	update (New-MdbcUpdate -Mul @{x=2.2}) @{x=3} @{x=6.6000000000000005} '.Mul(data, "x", 2.2)'
+	update (New-MdbcUpdate -Mul @{x=2.2}) @{x=3} @{x=6.6000000000000005} '.Mul(data, "x", 2.2000000000000002)'
 
 	# long *= int -> long
 	update (New-MdbcUpdate -Mul @{x=2}) @{x=3L} @{x=6L} '.Mul(data, "x", 2)'

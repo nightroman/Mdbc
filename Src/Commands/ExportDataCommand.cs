@@ -89,7 +89,7 @@ namespace Mdbc.Commands
 					else
 					{
 						_fileStream = File.Open(Path, (Append ? FileMode.Append : FileMode.Create));
-						_bsonWriter = BsonWriter.Create(_fileStream);
+						_bsonWriter = new BsonBinaryWriter(_fileStream);
 					}
 					break;
 				}
@@ -124,9 +124,9 @@ namespace Mdbc.Commands
 				if (FileFormat == FileFormat.Json)
 				{
 					using (var stringWriter = new StringWriter(CultureInfo.InvariantCulture))
-					using (var bsonWriter = BsonWriter.Create(stringWriter, Actor.DefaultJsonWriterSettings))
+					using (var jsonWriter = new JsonWriter(stringWriter, Actor.DefaultJsonWriterSettings))
 					{
-						BsonSerializer.Serialize(bsonWriter, document);
+						BsonSerializer.Serialize(jsonWriter, document);
 						_streamWriter.WriteLine(stringWriter.ToString());
 					}
 				}

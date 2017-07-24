@@ -419,21 +419,21 @@ task WriteConcernResult {
 		$r = Update-MdbcData (New-MdbcUpdate -Set @{x=42}) @{} -Result
 		equals $r.DocumentsAffected 1L
 		assert $r.UpdatedExisting
-		assert $r.Ok
+		equals $r.HasLastErrorMessage $false
 
 		# Two changed
 		. $init
 		$r = Update-MdbcData (New-MdbcUpdate -Set @{x=42}) @{} -Result -All
 		equals $r.DocumentsAffected 2L
 		assert $r.UpdatedExisting
-		assert $r.Ok
+		equals $r.HasLastErrorMessage $false
 
 		# None changed, one added
 		. $init
 		$r = Update-MdbcData (New-MdbcUpdate -Set @{x=42}) @{miss=1} -Result -Add -All
 		equals $r.DocumentsAffected 1L
 		assert (!$r.UpdatedExisting)
-		assert $r.Ok
+		equals $r.HasLastErrorMessage $false
 
 		# Error, data do not fit the update
 		. $init

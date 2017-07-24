@@ -90,14 +90,16 @@ task Update-MongoFiles {
 }
 
 task Get-MongoFile Update-MongoFiles, {
-	$r = @(Get-MongoFile -CollectionName test 'readme|license' | Sort-Object)
-	equals 2 $r.Count
-	assert ($r[0] -clike '*\Mdbc\LICENSE.txt')
-	assert ($r[1] -clike '*\Mdbc\README.md')
+	$r = @(Get-MongoFile -CollectionName test 'collectionhost|querycompiler' | Sort-Object)
+	$r
+	equals 3 $r.Count
+	assert ($r[0] -clike '*\Mdbc\Src\CollectionHost.cs')
+	assert ($r[1] -clike '*\Mdbc\Src\QueryCompiler.cs')
+	assert ($r[2] -clike '*\Mdbc\Tests\QueryCompiler.test.ps1')
 
-	$r = @(Get-MongoFile -CollectionName test 'readme.md' -Name)
+	$r = @(Get-MongoFile -CollectionName test 'CollectionHost.cs' -Name)
 	equals 1 $r.Count
-	assert ($r[0] -clike '*\Mdbc\README.md')
+	assert ($r[0] -clike '*\Mdbc\Src\CollectionHost.cs')
 }
 
 task Test-MongoFiles Update-MongoFiles, {

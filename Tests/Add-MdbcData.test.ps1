@@ -121,8 +121,7 @@ task WriteConcernResult {
 		equals $r.DocumentsAffected 0L
 		assert (!$r.UpdatedExisting)
 		equals $r.LastErrorMessage
-		equals $r.ErrorMessage
-		assert $r.Ok
+		equals $r.HasLastErrorMessage $false
 
 		# 2 added, 2 results
 		$r = @{_id=4; x=4}, @{_id=5; x=5} | Add-MdbcData -Result
@@ -132,8 +131,7 @@ task WriteConcernResult {
 			equals $r.DocumentsAffected 0L
 			assert (!$r.UpdatedExisting)
 			equals $r.LastErrorMessage
-			equals $r.ErrorMessage
-			assert $r.Ok
+			equals $r.HasLastErrorMessage $false
 		}
 
 		# 1 added with -Update
@@ -142,8 +140,7 @@ task WriteConcernResult {
 		equals $r.DocumentsAffected 1L
 		assert (!$r.UpdatedExisting)
 		equals $r.LastErrorMessage
-		equals $r.ErrorMessage
-		assert $r.Ok
+		equals $r.HasLastErrorMessage $false
 
 		# 1 updated with -Update
 		$r = @{_id=1; x=1} | Add-MdbcData -Result -Update
@@ -151,8 +148,7 @@ task WriteConcernResult {
 		equals $r.DocumentsAffected 1L
 		assert ($r.UpdatedExisting)
 		equals $r.LastErrorMessage
-		equals $r.ErrorMessage
-		assert $r.Ok
+		equals $r.HasLastErrorMessage $false
 	}{
 		Connect-Mdbc -NewCollection
 	}{

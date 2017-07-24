@@ -115,5 +115,5 @@ _id @{count=1}
 
 	# end
 	$null = $mz.Drop()
-	$Database.DropCollection('z')
+	$null = $Database.DropCollection('z')
 }

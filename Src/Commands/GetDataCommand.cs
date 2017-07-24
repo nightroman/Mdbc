@@ -167,6 +167,10 @@ namespace Mdbc.Commands
 			{
 				WriteException(ex, null);
 			}
-		}
-	}
+            catch (FileWriteConcernException ex)
+            {
+                WriteException(ex, null);
+            }
+        }
+    }
 }

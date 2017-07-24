@@ -12,7 +12,7 @@ task Result {
 		assert ('1 2 3' -eq (Get-MdbcData -Distinct _id))
 		equals $r.DocumentsAffected 0L
 		equals $r.UpdatedExisting $false
-		assert $r.Ok
+		equals $r.HasLastErrorMessage $false
 
 		# 1 removed
 		. $$
@@ -20,7 +20,7 @@ task Result {
 		assert ('1 3' -eq (Get-MdbcData -Distinct _id))
 		equals $r.DocumentsAffected 1L
 		equals $r.UpdatedExisting $false
-		assert $r.Ok
+		equals $r.HasLastErrorMessage $false
 
 		# 2 removed
 		. $$
@@ -28,7 +28,7 @@ task Result {
 		equals 1 (Get-MdbcData -Distinct _id)
 		equals $r.DocumentsAffected 2L
 		equals $r.UpdatedExisting $false
-		assert $r.Ok
+		equals $r.HasLastErrorMessage $false
 
 		# pipeline with _id's
 		. $$

@@ -50,8 +50,10 @@ namespace Mdbc.Commands
 			}
 
 			var client = ConnectionString == "." ? new MongoClient() : new MongoClient(ConnectionString);
-			var server = client.GetServer();
-			if (Timeout.Ticks > 0)
+#pragma warning disable CS0618
+            var server = client.GetServer();
+#pragma warning restore CS0618
+            if (Timeout.Ticks > 0)
 			{
 				// In some cases the actual time may be larger than the specified.
 				// This is not just about the timeout on connection to a running server.
