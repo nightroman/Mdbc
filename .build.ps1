@@ -43,10 +43,10 @@ task Meta @MetaParam {
 	CompanyName = '$Project'
 	Copyright = '$Copyright'
 
-	ModuleToProcess = '$ModuleName.dll'
+	RootModule = '$ModuleName.dll'
 	RequiredAssemblies = 'System.Runtime.InteropServices.RuntimeInformation.dll', 'MongoDB.Bson.dll', 'MongoDB.Driver.Core.dll', 'MongoDB.Driver.dll', 'MongoDB.Driver.Legacy.dll'
 
-	PowerShellVersion = '2.0'
+	PowerShellVersion = '3.0'
 	GUID = '12c81cd8-bde3-4c91-a292-e6c4f868106a'
 
 	PrivateData = @{
