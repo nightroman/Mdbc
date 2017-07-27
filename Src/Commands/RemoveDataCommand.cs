@@ -2,12 +2,12 @@
 // Copyright (c) Roman Kuzmin
 // http://www.apache.org/licenses/LICENSE-2.0
 
-using System.Management.Automation;
 using MongoDB.Driver;
+using System.Management.Automation;
 
 namespace Mdbc.Commands
 {
-	[Cmdlet(VerbsCommon.Remove, "MdbcData")]
+    [Cmdlet(VerbsCommon.Remove, "MdbcData")]
 	public sealed class RemoveDataCommand : AbstractWriteCommand
 	{
 		//_131121_104038 Not mandatory to avoid prompts. Manual null check is used instead for consistent messages.
@@ -39,10 +39,6 @@ namespace Mdbc.Commands
 			{
 				WriteException(ex, null);
 			}
-            catch (FileWriteConcernException ex)
-            {
-                WriteException(ex, null);
-            }
         }
     }
 }

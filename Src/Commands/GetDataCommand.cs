@@ -2,13 +2,13 @@
 // Copyright (c) Roman Kuzmin
 // http://www.apache.org/licenses/LICENSE-2.0
 
+using MongoDB.Driver;
 using System;
 using System.Management.Automation;
-using MongoDB.Driver;
 
 namespace Mdbc.Commands
 {
-	[Cmdlet(VerbsCommon.Get, "MdbcData", DefaultParameterSetName = nsAll)]
+    [Cmdlet(VerbsCommon.Get, "MdbcData", DefaultParameterSetName = nsAll)]
 	public sealed class GetDataCommand : AbstractCollectionCommand
 	{
 		const string nsAll = "All";
@@ -167,10 +167,6 @@ namespace Mdbc.Commands
 			{
 				WriteException(ex, null);
 			}
-            catch (FileWriteConcernException ex)
-            {
-                WriteException(ex, null);
-            }
         }
     }
 }

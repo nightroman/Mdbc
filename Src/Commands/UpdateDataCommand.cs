@@ -2,12 +2,12 @@
 // Copyright (c) Roman Kuzmin
 // http://www.apache.org/licenses/LICENSE-2.0
 
-using System.Management.Automation;
 using MongoDB.Driver;
+using System.Management.Automation;
 
 namespace Mdbc.Commands
 {
-	[Cmdlet(VerbsData.Update, "MdbcData")]
+    [Cmdlet(VerbsData.Update, "MdbcData")]
 	public sealed class UpdateDataCommand : AbstractWriteCommand
 	{
 		//_131121_104038
@@ -56,10 +56,6 @@ namespace Mdbc.Commands
 			{
 				WriteException(ex, _Input);
 			}
-            catch (FileWriteConcernException ex)
-            {
-                WriteException(ex, _Input);
-            }
         }
     }
 }

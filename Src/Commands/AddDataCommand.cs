@@ -2,14 +2,14 @@
 // Copyright (c) Roman Kuzmin
 // http://www.apache.org/licenses/LICENSE-2.0
 
+using MongoDB.Driver;
 using System;
 using System.Collections.Generic;
 using System.Management.Automation;
-using MongoDB.Driver;
 
 namespace Mdbc.Commands
 {
-	[Cmdlet(VerbsCommon.Add, "MdbcData")]
+    [Cmdlet(VerbsCommon.Add, "MdbcData")]
 	public sealed class AddDataCommand : AbstractWriteCommand
 	{
 		[Parameter(Position = 0, ValueFromPipeline = true)]
@@ -53,10 +53,6 @@ namespace Mdbc.Commands
 				WriteError(DocumentInput.NewErrorRecordBsonValue(ex, InputObject));
 			}
             catch (MongoException ex)
-            {
-                WriteException(ex, InputObject);
-            }
-            catch (FileWriteConcernException ex)
             {
                 WriteException(ex, InputObject);
             }

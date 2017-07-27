@@ -2,17 +2,20 @@
 // Copyright (c) Roman Kuzmin
 // http://www.apache.org/licenses/LICENSE-2.0
 
+using MongoDB.Bson;
+using MongoDB.Bson.IO;
+using MongoDB.Bson.Serialization;
+using MongoDB.Bson.Serialization.Serializers;
+using MongoDB.Driver;
+using MongoDB.Driver.Core.Clusters;
+using MongoDB.Driver.Core.Connections;
+using MongoDB.Driver.Core.Servers;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using MongoDB.Bson;
-using MongoDB.Bson.IO;
-using MongoDB.Bson.Serialization;
-using MongoDB.Bson.Serialization.Options;
-using MongoDB.Bson.Serialization.Serializers;
-using MongoDB.Driver;
+using System.Net;
 
 namespace Mdbc
 {
@@ -218,10 +221,7 @@ namespace Mdbc
         {
             var internalDocument = new BsonDocument();
             using (var writer = new BsonDocumentWriter(internalDocument))
-            {
-                //??writer.CheckElementNames = true;
                 BsonSerializer.Serialize(writer, externalDocument);
-            }
             return internalDocument;
         }
         IEnumerable<BsonDocument> QueryDocuments(IMongoQuery query)
@@ -286,18 +286,14 @@ namespace Mdbc
 
             if (format == FileFormat.Json)
             {
-                //?? try loop inside out
                 using (var streamWriter = new StreamWriter(tmp))
+                using (var jsonWriter = new JsonWriter(streamWriter, Actor.DefaultJsonWriterSettings))
                 {
+                    var context = BsonSerializationContext.CreateRoot(jsonWriter);
                     foreach (var document in Documents)
                     {
-                        using (var stringWriter = new StringWriter(CultureInfo.InvariantCulture))
-                        using (var jsonWriter = new JsonWriter(stringWriter, Actor.DefaultJsonWriterSettings))
-                        {
-                            var context = BsonSerializationContext.CreateRoot(jsonWriter);
-                            serializer.Serialize(context, args, document);
-                            streamWriter.WriteLine(stringWriter.ToString());
-                        }
+                        serializer.Serialize(context, args, document);
+                        streamWriter.WriteLine();
                     }
                 }
             }
@@ -315,14 +311,21 @@ namespace Mdbc
             if (!object.ReferenceEquals(tmp, saveAs))
                 File.Replace(tmp, saveAs, null);
         }
-    }
-
-    class FileWriteConcernException : Exception //??
-    {
-        public WriteConcernResult WriteConcernResult { get; private set; }
-        public FileWriteConcernException(string message, WriteConcernResult writeConcernResult) : base(message)
+        class FileWriteConcernException : MongoWriteConcernException
         {
-            WriteConcernResult = writeConcernResult;
+            public FileWriteConcernException(string message, WriteConcernResult writeConcernResult) : base(DummyConnectionId(), message, writeConcernResult) { }
+            static ConnectionId _ConnectionId_;
+            static ConnectionId DummyConnectionId()
+            {
+                if (_ConnectionId_ == null)
+                {
+                    var clusterId = new ClusterId(0);
+                    var endPoint = new IPEndPoint(0, 0);
+                    var serverId = new ServerId(clusterId, endPoint);
+                    _ConnectionId_ = new ConnectionId(serverId);
+                }
+                return _ConnectionId_;
+            }
         }
     }
 }

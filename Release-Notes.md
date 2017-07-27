@@ -1,6 +1,12 @@
 
 # Mdbc Release Notes
 
+## v5.0.1
+
+- Require PS 3.0 in the module manifest.
+- Add missing */Scripts* to the package.
+- Tidy up after moving to new driver.
+
 ## v5.0.0
 
 C# driver 2.4.4 and .NET Framework 4.5

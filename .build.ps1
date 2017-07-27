@@ -10,9 +10,7 @@ param(
 )
 
 $ModuleName = 'Mdbc'
-
-# Module directory.
-$ModuleRoot = Join-Path ([Environment]::GetFolderPath('MyDocuments')) WindowsPowerShell\Modules\$ModuleName
+$ModuleRoot = "$env:ProgramFiles\WindowsPowerShell\Modules\$ModuleName"
 
 # Get version from release notes.
 function Get-Version {
