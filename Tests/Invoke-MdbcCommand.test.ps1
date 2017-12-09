@@ -16,7 +16,7 @@ task ErrorControl {
 	Connect-Mdbc -NewCollection
 	@{_id=1; n=1} | Add-MdbcData
 
-	$pattern = '*Can only $pop from arrays.*'
+	$pattern = "*Command findAndModify failed: Path 'n' contains an element of non-array type 'int'.*"
 
 	$command = New-MdbcData
 	$command.findAndModify = 'test'

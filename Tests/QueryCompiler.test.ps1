@@ -267,8 +267,8 @@ task Type {
 	query @{int=@{'$type'='int'}} 1 '{ "int" : { "$type" : "int" } }' 'Type(data, "int", Int32)'
 	query @{int=@{'$type'='number'}} 1 '{ "int" : { "$type" : "number" } }' 'TypeNumber(data, "int")'
 
-	query @{int=@{'$type'=$null}} -QError '*$type is not a number or a string*' -EError '*$type argument must be number or string.*'
-	query @{int=@{'$type'='16'}} -QError '*unknown string alias for $type*' -EError '*Unknown string alias of $type argument.*'
+	query @{int=@{'$type'=$null}} -QError '*type must be represented as a number or a string.*' -EError '*$type argument must be number or string.*'
+	query @{int=@{'$type'='16'}} -QError '*Unknown type name alias: 16.*' -EError '*Unknown string alias of $type argument.*'
 }
 
 task Mod {

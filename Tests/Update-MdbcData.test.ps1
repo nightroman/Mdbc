@@ -31,7 +31,7 @@ task AddToSet {
 		equals $d.array[1]
 	}{
 		Connect-Mdbc -NewCollection
-		$1310110108 = '*Cannot apply $addToSet to a non-array field.*'
+		$1310110108 = '*Cannot apply $addToSet to non-array field.*'
 	}{
 		Open-MdbcFile
 		$1310110108 = 'Value "value" must be array.'
@@ -285,8 +285,8 @@ task ChangeId {
 
 	Connect-Mdbc -NewCollection
 	@{_id = 1} | Add-MdbcData
-	Test-Error { Update-MdbcData (New-MdbcUpdate -Set @{_id = 42; x = 1}) @{} } "*the (immutable) field '_id' was found*"
-	Test-Error { Update-MdbcData (New-MdbcUpdate -Unset _id) @{} } "*the (immutable) field '_id' was found*"
+	Test-Error { Update-MdbcData (New-MdbcUpdate -Set @{_id = 42; x = 1}) @{} } "*the immutable field '_id'*"
+	Test-Error { Update-MdbcData (New-MdbcUpdate -Unset _id) @{} } "*the immutable field '_id'*"
 	$r = Get-MdbcData
 	equals $r.Count 1
 	equals $r._id 1

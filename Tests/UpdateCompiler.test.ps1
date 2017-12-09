@@ -79,8 +79,8 @@ function update (
 }
 
 task Conflict {
-	update (New-MdbcUpdate -Unset a.1 -Pull @{a=1}) @{a=1,2} -UError "*Cannot update 'a.1' and 'a'*" -EError '*Conflicting fields "a.1" and "a".*'
-	update (New-MdbcUpdate -Unset a -Pull @{'a.1'=1}) @{a=1,2} -UError "*Cannot update 'a' and 'a.1'*" -EError '*Conflicting fields "a" and "a.1".*'
+	update (New-MdbcUpdate -Unset a.1 -Pull @{a=1}) @{a=1,2} -UError "*Updating the path 'a' would*" -EError '*Conflicting fields "a.1" and "a".*'
+	update (New-MdbcUpdate -Unset a -Pull @{'a.1'=1}) @{a=1,2} -UError "*Updating the path 'a.1' would*" -EError '*Conflicting fields "a" and "a.1".*'
 }
 
 task Unset {
@@ -122,7 +122,7 @@ task CurrentDate {
 	update (New-MdbcUpdate -CurrentDate miss) @{} @{miss=$now} '.CurrentDate(data, "miss")'
 
 	# array.less
-	update (New-MdbcUpdate -CurrentDate a.-1) @{a=1,2} -UError '*cannot use the part (a of a.-1)*' -EError '*Cannot insert at index (-1).*'
+	update (New-MdbcUpdate -CurrentDate a.-1) @{a=1,2} -UError "*Cannot create field '-1'*" -EError '*Cannot insert at index (-1).*'
 
 	# array.more
 	update (New-MdbcUpdate -CurrentDate a.3) @{a=1,2} @{a=1,2,$null,$now} '.CurrentDate(data, "a.3")'
@@ -154,8 +154,8 @@ task Rename {
 
 task Set {
 	# errors
-	update (New-MdbcUpdate -Set @{'x.y.z'=1}) @{x=@{y=1}} -UError '* 16837,*' -EError '*"Field (y) in (x.y.z) is not a document."'
-	update (New-MdbcUpdate -Set @{'a.x'=1}) @{a=@{x=1},@{x=1}} -UError '* 16837,*' -EError '*"Field (a) in (a.x) is not a document."'
+	update (New-MdbcUpdate -Set @{'x.y.z'=1}) @{x=@{y=1}} -UError "*Cannot create field 'z'*" -EError '*"Field (y) in (x.y.z) is not a document."'
+	update (New-MdbcUpdate -Set @{'a.x'=1}) @{a=@{x=1},@{x=1}} -UError "*Cannot create field 'x'*" -EError '*"Field (a) in (a.x) is not a document."'
 	update @{x=1; '$inc'=@{y=2}} @{} -UError "*Element name 'x' is not valid*" -EError '*Update cannot mix operators and fields.*' #_131103_204607
 
 	# v2.6 error
@@ -181,7 +181,7 @@ task Set {
 	update (New-MdbcUpdate -Set @{'a.1'=42}) @{a=1,2} @{a=1,42} '.Set(data, "a.1", 42)'
 
 	# set a.<less>
-	update (New-MdbcUpdate -Set @{'a.-1'=42}) @{a=1,2} -UError '*cannot use the part (a of a.-1)*' -EError '*Cannot insert at index (-1).*'
+	update (New-MdbcUpdate -Set @{'a.-1'=42}) @{a=1,2} -UError "*Cannot create field '-1'*" -EError '*Cannot insert at index (-1).*'
 
 	# set a.<more>
 	update (New-MdbcUpdate -Set @{'a.3'=42}) @{a=1,2} @{a=1,2,$null,42} '.Set(data, "a.3", 42)'
@@ -190,10 +190,10 @@ task Set {
 	update (New-MdbcUpdate -Set @{'a.1.x'=42}) @{a=0,@{x=1;y=1}} @{a=0,@{x=42;y=1}} '.Set(data, "a.1.x", 42)'
 
 	# set a.1.x, error [1] is not document
-	update (New-MdbcUpdate -Set @{'a.1.x'=42}) @{a=0,1} -UError '* 16837,*' -EError '*"Array item at (1) in (a.1.x) is not a document."'
+	update (New-MdbcUpdate -Set @{'a.1.x'=42}) @{a=0,1} -UError "*'Cannot create field 'x'*" -EError '*"Array item at (1) in (a.1.x) is not a document."'
 
 	# set a.<less>.x
-	update (New-MdbcUpdate -Set @{'a.-2.x'=42}) @{a=0,@{x=1}} -UError '*cannot use the part (a of a.-2.x)*' -EError '*Cannot insert at index (-2).*'
+	update (New-MdbcUpdate -Set @{'a.-2.x'=42}) @{a=0,@{x=1}} -UError "*Cannot create field '-2'*" -EError '*Cannot insert at index (-2).*'
 
 	# set a.<more>.x
 	update (New-MdbcUpdate -Set @{'a.3.x'=42}) @{a=0,@{x=1}} @{a=0,@{x=1},$null,@{x=42}} '.Set(data, "a.3.x", 42)'
@@ -219,8 +219,9 @@ task SetOnInsert {
 	-UError '*The dollar ($) prefixed field * is not valid for storage.*' -EError '*Invalid document element name: "$bad".*'
 
 	# fixed v2.6 https://jira.mongodb.org/browse/SERVER-12852
+	#?? v3.6 dotted names are "OK" https://jira.mongodb.org/browse/SERVER-32250
 	update (New-MdbcUpdate -SetOnInsert @{x=42}) @{} -Query @{y=@{'bad.1'=1}} `
-	-UError '*The dotted field * is not valid for storage.*' -EError '*Invalid document element name: "bad.1".*'
+	@{y=@{'bad.1'=1 }; x=42} -EError '*Invalid document element name: "bad.1".*'
 
 	# v2.6 fails
 	update (New-MdbcUpdate -SetOnInsert @{x=42}) @{} -Query @{'$exists'=@{m=1}} `
@@ -247,7 +248,7 @@ task MinMax {
 	update (New-MdbcUpdate -Max @{x=2}) @{x=3} @{x=3} '.Max(data, "x", 2)'
 
 	# array.less
-	$a = @{Document=@{a=2,2}; UError='*cannot use the part (a of a.-1)*'; EError='*Cannot insert at index (-1).*'}
+	$a = @{Document=@{a=2,2}; UError="*Cannot create field '-1'*"; EError='*Cannot insert at index (-1).*'}
 	update (New-MdbcUpdate -Min @{'a.-1'=1}) @a
 	update (New-MdbcUpdate -Max @{'a.-1'=1}) @a
 
@@ -314,7 +315,7 @@ task Inc {
 	update (New-MdbcUpdate -Inc @{'a.1'=1}) @{a=1,2,3} @{a=1,3,3} '.Inc(data, "a.1", 1)'
 
 	# a.<less>
-	update (New-MdbcUpdate -Inc @{'a.-2'=42}) @{a=1,2} -UError '*cannot use the part (a of a.-2)*' -EError '*Cannot insert at index (-2).*'
+	update (New-MdbcUpdate -Inc @{'a.-2'=42}) @{a=1,2} -UError "*Cannot create field '-2'*" -EError '*Cannot insert at index (-2).*'
 
 	# a.<more>
 	update (New-MdbcUpdate -Inc @{'a.3'=42}) @{a=1,2} @{a=1,2,$null,42} '.Inc(data, "a.3", 42)'
@@ -323,7 +324,7 @@ task Inc {
 	update (New-MdbcUpdate -Inc @{'a.1.x'=1}) @{a=1,@{x=2},3} @{a=1,@{x=3},3} '.Inc(data, "a.1.x", 1)'
 
 	# a.<less>.x
-	update (New-MdbcUpdate -Inc @{'a.-2.x'=1}) @{a=1,2} -UError '*cannot use the part (a of a.-2.x)*' -EError '*Cannot insert at index (-2).*'
+	update (New-MdbcUpdate -Inc @{'a.-2.x'=1}) @{a=1,2} -UError "*Cannot create field '-2'*" -EError '*Cannot insert at index (-2).*'
 
 	# a.<more>.x
 	update (New-MdbcUpdate -Inc @{'a.3.x'=1}) @{a=1,2} @{a=1,2,$null,@{x=1}} '.Inc(data, "a.3.x", 1)'
@@ -382,7 +383,7 @@ task Mul {
 	update (New-MdbcUpdate -Mul @{'a.1'=2}) @{a=1,2,3} @{a=1,4,3} '.Mul(data, "a.1", 2)'
 
 	# a.<less>
-	update (New-MdbcUpdate -Mul @{'a.-2'=42}) @{a=1,2} -UError '*cannot use the part (a of a.-2)*' -EError '*Cannot insert at index (-2).*'
+	update (New-MdbcUpdate -Mul @{'a.-2'=42}) @{a=1,2} -UError "*Cannot create field '-2'*" -EError '*Cannot insert at index (-2).*'
 
 	# a.<more>
 	update (New-MdbcUpdate -Mul @{'a.3'=42}) @{a=1,2} @{a=1,2,$null,0} '.Mul(data, "a.3", 42)'
@@ -393,7 +394,7 @@ task Mul {
 	update (New-MdbcUpdate -Mul @{'a.1.x'=2}) @{a=1,@{x=2},3} @{a=1,@{x=4},3} '.Mul(data, "a.1.x", 2)'
 
 	# a.<less>.x
-	update (New-MdbcUpdate -Mul @{'a.-2.x'=2}) @{a=1,2} -UError '*cannot use the part (a of a.-2.x)*' -EError '*Cannot insert at index (-2).*'
+	update (New-MdbcUpdate -Mul @{'a.-2.x'=2}) @{a=1,2} -UError "*Cannot create field '-2'*" -EError '*Cannot insert at index (-2).*'
 
 	# a.<more>.x
 	update (New-MdbcUpdate -Mul @{'a.3.x'=2}) @{a=1,2} @{a=1,2,$null,@{x=0}} '.Mul(data, "a.3.x", 2)'
@@ -439,7 +440,7 @@ task Bitwise {
 
 	# array item
 
-	$a = @{Document=@{a=3,'3'}; UError='*cannot use the part (a of a.-1)*'; EError='*Cannot insert at index (-1).*'}
+	$a = @{Document=@{a=3,'3'}; UError="*Cannot create field '-1'*"; EError='*Cannot insert at index (-1).*'}
 	update (New-MdbcUpdate -BitwiseAnd @{'a.-1'=2}) @a
 	update (New-MdbcUpdate -BitwiseOr @{'a.-1'=2}) @a
 	update (New-MdbcUpdate -BitwiseXor @{'a.-1'=2}) @a
@@ -459,10 +460,12 @@ task Bitwise {
 
 task AddToSet {
 	# v2.6 error
+	#?? v3.6 dotted names are "OK" https://jira.mongodb.org/browse/SERVER-32250
 	update (New-MdbcUpdate -AddToSet @{a=@{'bad.1'=1}}) @{a=@()} `
-	-UError '*bad.1 is not valid for storage.*' -EError '*Invalid document element name: "bad.1".*'
+	@{a = @(@{'bad.1' = 1})} -EError '*Invalid document element name: "bad.1".*'
+	#?? same
 	update (New-MdbcUpdate -AddToSetEach @{a=@{'bad.1'=1}}) @{a=@()} `
-	-UError '*bad.1 is not valid for storage.*' -EError '*Invalid document element name: "bad.1".*'
+	@{a = @(@{'bad.1' = 1})} -EError '*Invalid document element name: "bad.1".*'
 
 	# AddToSet vs. AddToSetEach
 	update (New-MdbcUpdate -AddToSet @{a=1,2}) @{a=@()} @{a=@(,@(1,2))} '.AddToSet(data, "a", [1, 2], False)'
@@ -483,7 +486,7 @@ task AddToSet {
 
 	# miss or out or range
 	update (New-MdbcUpdate -AddToSet @{miss=1}) @{} @{miss=@(1)} '.AddToSet(data, "miss", 1, False)'
-	update (New-MdbcUpdate -AddToSet @{'a.-2'=1}) @{a=1,2} -UError '*cannot use the part (a of a.-2)*' -EError '*Cannot insert at index (-2).*'
+	update (New-MdbcUpdate -AddToSet @{'a.-2'=1}) @{a=1,2} -UError "*Cannot create field '-2'*" -EError '*Cannot insert at index (-2).*'
 	# fixed v2.6 https://jira.mongodb.org/browse/SERVER-12848
 	update (New-MdbcUpdate -AddToSet @{'a.3'=1}) @{a=1,2} @{a=1,2,$null,@(1)} '.AddToSet(data, "a.3", 1, False)'
 
@@ -495,18 +498,18 @@ task AddToSet {
 	update (New-MdbcUpdate -AddToSet @{'a.1.m'=42}) @{a=@()} @{a=$null,@{m=@(42)}} '.AddToSet(data, "a.1.m", 42, False)'
 
 	# not array
-	update (New-MdbcUpdate -AddToSet @{a=1}) @{a=1} -UError '*Cannot apply $addToSet to a non-array field.*' -EError '*Value "a" must be array.*'
-	update (New-MdbcUpdate -AddToSet @{'a.1'=1}) @{a=1,2} -UError '*Cannot apply $addToSet to a non-array field.*' -EError '*Value "a.1" must be array.*'
+	update (New-MdbcUpdate -AddToSet @{a=1}) @{a=1} -UError '*Cannot apply $addToSet*' -EError '*Value "a" must be array.*'
+	update (New-MdbcUpdate -AddToSet @{'a.1'=1}) @{a=1,2} -UError '*Cannot apply $addToSet*' -EError '*Value "a.1" must be array.*'
 }
 
 task Pop {
 	# pop 0|null|bad ~ Last
-	update @{'$pop'=@{a=0}} @{a=1,2,3} @{a=1,2} '.Pop(data, "a", 0)'
-	update @{'$pop'=@{a=$null}} @{a=1,2,3} @{a=1,2} '.Pop(data, "a", 0)'
-	update @{'$pop'=@{a='bad'}} @{a=1,2,3} @{a=1,2} '.Pop(data, "a", 0)'
+	update @{'$pop'=@{a=0}} @{a=1,2,3} -UError '*$pop expects 1 or -1*' -EError '*Value "0" must be 1 or -1.*'
+	update @{'$pop'=@{a=$null}} @{a=1,2,3} -UError '*Expected a number in: a: null*' -EError '*Value "BsonNull" must be 1 or -1.*'
+	update @{'$pop'=@{a='bad'}} @{a=1,2,3} -UError '*Expected a number in: a: "bad"*' -EError '*Value "bad" must be 1 or -1.*'
 
 	# pop -2
-	update @{'$pop'=@{a=-2}} @{a=1,2,3} @{a=2,3} '.Pop(data, "a", -2)'
+	update @{'$pop'=@{a=-2}} @{a=1,2,3} -UError '*$pop expects 1 or -1*' -EError '*Value "-2" must be 1 or -1.*'
 
 	# empty
 	update (New-MdbcUpdate -PopFirst a) @{a=@()} @{a=@()} '.Pop(data, "a", -1)'
@@ -514,16 +517,16 @@ task Pop {
 
 	# miss, bad
 	update (New-MdbcUpdate -PopFirst miss) @{a=1,2,3} @{a=1,2,3} '.Pop(data, "miss", -1)'
-	update (New-MdbcUpdate -PopFirst bad) @{bad=1} -UError '*Can only $pop from arrays.*' -EError '*Value "bad" must be array.*'
+	update (New-MdbcUpdate -PopFirst bad) @{bad=1} -UError '*contains an element of non-array type*' -EError '*Value "bad" must be array.*'
 
 	# a.index
 	update (New-MdbcUpdate -PopLast a.1) @{a=1,@(1,2)} @{a=1,@(1)} '.Pop(data, "a.1", 1)'
 	#_140322_065506
 	update (New-MdbcUpdate -PopLast a.-2) @{a=1,2} `
-	-UError '*cannot use the part (a of a.-2)*' -EError '*Invalid negative array index in (a.-2).*'
+	-UError '*Cannot use the part (-2)*' -EError '*Invalid negative array index in (a.-2).*'
 	#fixed _140322_064404 v2.6 https://jira.mongodb.org/browse/SERVER-12846
 	update (New-MdbcUpdate -PopLast a.3) @{a=1,2} @{a=1,2} '.Pop(data, "a.3", 1)'
-	update (New-MdbcUpdate -PopLast a.1) @{a=1,'bad'} -UError '*Can only $pop from arrays.*' -EError '*Value "a.1" must be array.*'
+	update (New-MdbcUpdate -PopLast a.1) @{a=1,'bad'} -UError '*contains an element of non-array type*' -EError '*Value "a.1" must be array.*'
 }
 
 task Pull {
@@ -551,7 +554,7 @@ task Pull {
 	update (New-MdbcUpdate -Pull @{'a.1'=1}) @{a=1,@(1,2)} @{a=1,@(2)} '.Pull(data, "a.1", 1)'
 	#_140322_065506
 	update (New-MdbcUpdate -Pull @{'a.-2'=1}) @{a=1,2} `
-	-UError '*cannot use the part (a of a.-2)*' -EError '*Invalid negative array index in (a.-2).*'
+	-UError '*Cannot use the part (-2)*' -EError '*Invalid negative array index in (a.-2).*'
 	#_140322_065637 v2.6 https://jira.mongodb.org/browse/SERVER-12847
 	update (New-MdbcUpdate -Pull @{'a.3'=1}) @{a=1,2} @{a=1,2} '.Pull(data, "a.3", 1)'
 
@@ -570,20 +573,20 @@ task Push {
 	update @{'$push'=@{b=@{'$each'=@(42)}}} @{b=1} -UError "*The field 'b' must be an array but*" -EError '*Value "b" must be array.*'
 
 	# bad argument (but not for New-MdbcUpdate)
-	update (New-MdbcUpdate -PushAll @{a=42}) @{a=1,2} @{a=1,2,42} '.PushAll(data, "a", [42], -1)'
-	update @{'$pushAll'=@{a=42}} @{} -UError '*$pushAll requires an array of values but*' -EError '*Push all/each value must be array.*'
+	update (New-MdbcUpdate -PushAll @{a=42}) @{a=1,2} @{a=1,2,42} '.PushAll(data, "a", [42], 2147483647)' #todo
+	update @{'$pushAll'=@{a=42}} @{} -UError '*Unknown modifier: $pushAll*' -EError '*Push all/each value must be array.*' #todo
 	update @{'$push'=@{a=@{'$each'=42}}} @{} -UError '*The argument to $each in $push must be an array but*' -EError '*Push all/each value must be array.*'
 
 	# a.1
 	update (New-MdbcUpdate -Push @{'a.1'=41,42}) @{a=1,@(1,2)} @{a=1,@(1,2,@(41,42))} '.Push(data, "a.1", [41, 42])'
-	update (New-MdbcUpdate -PushAll @{'a.1'=41,42}) @{a=1,@(1,2)} @{a=1,@(1,2,41,42)} '.PushAll(data, "a.1", [41, 42], -1)'
+	update (New-MdbcUpdate -PushAll @{'a.1'=41,42}) @{a=1,@(1,2)} @{a=1,@(1,2,41,42)} '.PushAll(data, "a.1", [41, 42], 2147483647)'
 
 	# miss
 	update (New-MdbcUpdate -Push @{'a'=41,42}) @{} @{a=@(,@(41,42))} '.Push(data, "a", [41, 42])'
-	update (New-MdbcUpdate -PushAll @{'a'=41,42}) @{} @{a=41,42} '.PushAll(data, "a", [41, 42], -1)'
+	update (New-MdbcUpdate -PushAll @{'a'=41,42}) @{} @{a=41,42} '.PushAll(data, "a", [41, 42], 2147483647)'
 
 	# a.less, a.more
-	update (New-MdbcUpdate -Push @{'a.-2'=42}) @{a=1,2} -UError '*cannot use the part (a of a.-2)*' -EError '*Cannot insert at index (-2).*' #!v2.4
+	update (New-MdbcUpdate -Push @{'a.-2'=42}) @{a=1,2} -UError "*Cannot create field '-2'*" -EError '*Cannot insert at index (-2).*' #!v2.4
 	update (New-MdbcUpdate -Push @{'a.3'=42}) @{a=1,2} @{a=1,2,$null,@(42)} '.Push(data, "a.3", 42)' #!
 	update (New-MdbcUpdate -Push @{'a.3.x'=42}) @{a=1,2} @{a=1,2,$null,@{x=@(42)}} '.Push(data, "a.3.x", 42)' #!
 
@@ -617,12 +620,12 @@ task Push {
 	### slice
 
 	update @{'$push'=@{a=@{'$each'=1,2; '$slice'='bad'}}} @{a=@()} `
-	-UError '*The value for $slice must be a numeric value*' -EError '*$slice must be a numeric value.*'
+	-UError '*must be an integer value*' -EError '*$slice must be a numeric value.*'
 
 	# v2.6 slice can be >0
-	update @{'$push'=@{a=@{'$each'=1,2; '$slice'=1}}} @{a=@()} @{a=@(1)} '.PushAll(data, "a", [1], -1)'
+	update @{'$push'=@{a=@{'$each'=1,2; '$slice'=1}}} @{a=@()} @{a=@(1)} '.PushAll(data, "a", [1], 2147483647)'
 
-	update @{'$push'=@{a=@{'$each'=1,2; '$slice'=-1}}} @{a=@()} @{a=@(2)} '.PushAll(data, "a", [2], -1)'
+	update @{'$push'=@{a=@{'$each'=1,2; '$slice'=-1}}} @{a=@()} @{a=@(2)} '.PushAll(data, "a", [2], 2147483647)'
 
 	### sort
 
@@ -638,21 +641,23 @@ task Push {
 
 	# v2.6 can have $sort without $slice
 	update @{'$push'=@{a=@{'$each'=@{x=2},@{x=1}; '$sort'=@{x=1}}}} @{a=@()} @{a=@{x=1},@{x=2}} `
-	'.PushAll(data, "a", [{ "x" : 1 }, { "x" : 2 }], -1)'
+	'.PushAll(data, "a", [{ "x" : 1 }, { "x" : 2 }], 2147483647)'
 
 	update @{'$push'=@{a=@{'$each'=@{x=2},@{x=1}; '$sort'=@{x=1}; '$slice'='bad'}}} @{a=@()} `
-	-UError '*$slice must be a numeric value*' -EError '*$slice must be a numeric value.*'
+	-UError '*must be an integer value*' -EError '*$slice must be a numeric value.*'
 
 	update @{'$push'=@{a=@{'$each'=@{x=2},@{x=1}; '$sort'=@{x=1}; '$slice'=-1}}} @{a=@()} @{a=@(@{x=2})} `
-	'.PushAll(data, "a", [{ "x" : 2 }], -1)'
+	'.PushAll(data, "a", [{ "x" : 2 }], 2147483647)'
 }
 
 # v2.6 $position
 task PushPosition {
 	# negative :: minor issue https://jira.mongodb.org/browse/SERVER-12959
 	# message fixed in 3.4.1
-	update @{'$push'=@{a=@{'$each'=@(3,4); '$position'=-1}}} @{a=1,2} `
-	-UError '*The $position value in $push must be *' -EError '*$position must not be negative.*'
+	# v3.6: negative counts from the end
+	update @{'$push'=@{a=@{'$each'=@(3,4); '$position'=-1}}} @{a=1,2} @{a=1,3,4,2} '.PushAll(data, "a", [3, 4], -1)'
+	# if it is too far, insert at 0
+	update @{'$push'=@{a=@{'$each'=@(3,4); '$position'=-10}}} @{a=1,2} @{a=3,4,1,2} '.PushAll(data, "a", [3, 4], -10)'
 
 	# bad type
 	# message fixed in 3.4.1

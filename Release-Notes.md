@@ -1,6 +1,21 @@
 
 # Mdbc Release Notes
 
+## v5.1.0
+
+MongoDB 3.6 and .NET driver 2.5.0
+
+**Potentially incompatible change:** `GuidRepresentation.Standard` is used for
+GUID's as the default value instead of `CSharpLegacy`. In order to use the old
+default value, set the environment variable `Mdbc_GuidRepresentation` to
+`CSharpLegacy` before using Mdbc.
+
+Updates in expressions:
+
+- retired `$pushAll` is still supported in Mdbc but internally uses `$push $each`.
+- `$push` supports negative positions as counted from the end.
+- `$pop` accepts 1 and -1.
+
 ## v5.0.1
 
 - Require PS 3.0 in the module manifest.

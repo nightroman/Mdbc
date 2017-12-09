@@ -230,7 +230,11 @@ namespace Mdbc.Commands
 			{
 				_PushAll = new UpdateBuilder();
 				foreach (var e in Convert(value, Actor.ToEnumerableBsonValue))
-					_PushAll.Combine(Update.PushAll(e.Key, e.Value));
+				{
+					var doc = new BsonDocument();
+					doc.Add("$each", new BsonArray(e.Value));
+					_PushAll.Combine(Update.Push(e.Key, doc));
+				}
 			}
 		}
 		UpdateBuilder _PushAll;

@@ -10,7 +10,8 @@ param(
 )
 
 $ModuleName = 'Mdbc'
-$ModuleRoot = "$env:ProgramFiles\WindowsPowerShell\Modules\$ModuleName"
+$ModuleRoot = if ($env:ProgramW6432) {$env:ProgramW6432} else {$env:ProgramFiles}
+$ModuleRoot = "$ModuleRoot\WindowsPowerShell\Modules\$ModuleName"
 
 # Get version from release notes.
 function Get-Version {
@@ -19,6 +20,7 @@ function Get-Version {
 
 task Init Meta, {
 	exec {paket.exe install}
+	Remove-Item paket-files
 }
 
 $MetaParam = @{
@@ -31,7 +33,7 @@ task Meta @MetaParam {
 	$Version = Get-Version
 	$Project = 'https://github.com/nightroman/Mdbc'
 	$Summary = 'Mdbc module - MongoDB Cmdlets for PowerShell'
-	$Copyright = 'Copyright (c) 2011-2017 Roman Kuzmin'
+	$Copyright = 'Copyright (c) 2011-2018 Roman Kuzmin'
 
 	Set-Content Module\$ModuleName.psd1 @"
 @{
@@ -120,8 +122,9 @@ task TestHelpExample {
 # Synopsis: Convert markdown files to HTML.
 # <http://johnmacfarlane.net/pandoc/>
 task Markdown {
-	exec { pandoc.exe --standalone --from=markdown_strict --output=README.htm README.md }
-	exec { pandoc.exe --standalone --from=markdown_strict --output=Release-Notes.htm Release-Notes.md }
+	function Convert-Markdown($Name) {pandoc.exe --standalone --from=gfm "--output=$Name.htm" "--metadata=pagetitle=$Name" "$Name.md"}
+	exec { Convert-Markdown README }
+	exec { Convert-Markdown Release-Notes }
 }
 
 # Synopsis: Set $script:Version.
@@ -134,7 +137,7 @@ task Version {
 }
 
 # Synopsis: Make the package in z\tools.
-task Package Markdown, (job UpdateScript -Safe), {
+task Package Markdown, ?UpdateScript, {
 	Remove-Item [z] -Force -Recurse
 	$null = mkdir z\tools\$ModuleName\en-US, z\tools\$ModuleName\Scripts
 

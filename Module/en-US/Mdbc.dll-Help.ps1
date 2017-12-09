@@ -770,7 +770,7 @@ Mongo: { `$pull: { field: <value>|<query> } }
 "@
 		PullAll = @'
 Removes multiple values from an existing array. PullAll provides the inverse
-operation of the PushAll operator.
+operation of PushAll.
 
 Mongo: { $pullAll: { field: [ value1, value2, ... ] } }
 '@

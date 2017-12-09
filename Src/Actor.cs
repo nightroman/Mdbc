@@ -37,6 +37,20 @@ namespace Mdbc
 			BsonSerializer.RegisterSerializer(typeof(PSObject), new PSObjectSerializer());
 
 			BsonTypeMapper.RegisterCustomTypeMapper(typeof(PSObject), new PSObjectTypeMapper());
+
+			var strGuidRepresentation = Environment.GetEnvironmentVariable("Mdbc_GuidRepresentation");
+			if (strGuidRepresentation == null)
+			{
+				BsonDefaults.GuidRepresentation = GuidRepresentation.Standard;
+			}
+			else
+			{
+				GuidRepresentation valGuidRepresentation;
+				if (Enum.TryParse(strGuidRepresentation, out valGuidRepresentation))
+					BsonDefaults.GuidRepresentation = valGuidRepresentation;
+				else
+					throw new InvalidOperationException(String.Format(null, "Invalid environment variable Mdbc_GuidRepresentation = {0}", strGuidRepresentation));
+			}
 		}
 		// NB: Change of the global defaults affects ToString().
 		// `Strict` (like mongoexport) is tempting, other tools may read it.
@@ -329,6 +343,13 @@ namespace Mdbc
 
 			return Query.EQ(MyValue.Id, value);
 		}
+		//TODO PSCustomObject
+		// We can get data as MdbcDictionary or as PSCustomObject. The first
+		// can be used as a query, the second cannot. This is not "symmetric".
+		// Think. NB New-MdbcData converts PSCustomObject to MdbcDictionary.
+		//var custom = value as PSCustomObject;
+		//if (custom != null)
+		//	return new QueryDocument(ToBsonDocument(custom));
 		public static IMongoQuery ObjectToQuery(object value)
 		{
 			if (value == null)

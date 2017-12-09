@@ -131,17 +131,17 @@ task Pull {
 
 task Push {
 	test { New-MdbcUpdate -Push @{Name = 1} } '{ "$push" : { "Name" : 1 } }'
-	test { New-MdbcUpdate -PushAll @{Name = 1} } '{ "$pushAll" : { "Name" : [1] } }'
+	test { New-MdbcUpdate -PushAll @{Name = 1} } '{ "$push" : { "Name" : { "$each" : [1] } } }'
 
 	test { New-MdbcUpdate -Push @{Name = 1, 2} } '{ "$push" : { "Name" : [1, 2] } }'
-	test { New-MdbcUpdate -PushAll @{Name = 1, 2} } '{ "$pushAll" : { "Name" : [1, 2] } }'
+	test { New-MdbcUpdate -PushAll @{Name = 1, 2} } '{ "$push" : { "Name" : { "$each" : [1, 2] } } }'
 
 	test { New-MdbcUpdate -Push @{Name = $mdbcArray} } '{ "$push" : { "Name" : [1, 2, 3] } }'
-	test { New-MdbcUpdate -PushAll @{Name = $mdbcArray} } '{ "$pushAll" : { "Name" : [1, 2, 3] } }'
+	test { New-MdbcUpdate -PushAll @{Name = $mdbcArray} } '{ "$push" : { "Name" : { "$each" : [1, 2, 3] } } }'
 
 	test { New-MdbcUpdate -Push @{Name = $bsonArray} } '{ "$push" : { "Name" : [1, 2, 3] } }'
-	test { New-MdbcUpdate -PushAll @{Name = $bsonArray} } '{ "$pushAll" : { "Name" : [1, 2, 3] } }'
+	test { New-MdbcUpdate -PushAll @{Name = $bsonArray} } '{ "$push" : { "Name" : { "$each" : [1, 2, 3] } } }'
 
 	test { New-MdbcUpdate -Push @{a = 1; b = 2}, @{c = 3} } '{ "$push" : { "a" : 1, "b" : 2, "c" : 3 } }'
-	test { New-MdbcUpdate -PushAll @{a = 1; b = 2}, @{c = 3} } '{ "$pushAll" : { "a" : [1], "b" : [2], "c" : [3] } }'
+	test { New-MdbcUpdate -PushAll @{a = 1; b = 2}, @{c = 3} } '{ "$push" : { "a" : { "$each" : [1] }, "b" : { "$each" : [2] }, "c" : { "$each" : [3] } } }'
 }

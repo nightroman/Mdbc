@@ -209,6 +209,9 @@ namespace Mdbc
 		static Expression PopExpression(Expression that, Expression field, BsonValue value)
 		{
 			int pop = value.IsNumeric ? value.ToInt32() : 0;
+			if (pop != 1 && pop != -1)
+				throw new MongoException(string.Format(null, @"Value ""{0}"" must be 1 or -1.", value));
+
 			return Expression.Call(that, GetMethod("Pop"), Data, field, Expression.Constant(pop, typeof(int)));
 		}
 		UpdateCompiler Pop(BsonDocument document, string name, int value)
@@ -265,7 +268,7 @@ namespace Mdbc
 					value = wrapper.Clone();
 
 				var predicate = QueryCompiler.GetFunction(value.AsBsonDocument);
-				for (int i = array.Count; --i >= 0; )
+				for (int i = array.Count; --i >= 0;)
 				{
 					var v = array[i];
 					if (v.BsonType == BsonType.Document && predicate(v.AsBsonDocument))
@@ -275,7 +278,7 @@ namespace Mdbc
 			else
 			{
 				BsonArray values = all ? value.AsBsonArray : null;
-				for (int i = array.Count; --i >= 0; )
+				for (int i = array.Count; --i >= 0;)
 				{
 					if (values == null)
 					{
@@ -333,24 +336,29 @@ namespace Mdbc
 			var array = v2.AsBsonArray;
 			if (all)
 			{
-				if (position < 0 || position >= array.Count)
+				// Mongo 3.6 deals with negative, counts from the end
+				if (position < 0)
+				{
+					position = array.Count + position;
+					if (position < 0)
+						position = 0;
+				}
+
+				if (position >= array.Count)
 				{
 					array.AddRange(value.AsBsonArray);
 				}
 				else
 				{
 					var array2 = value.AsBsonArray;
-					for (int i = array2.Count; --i >= 0; )
+					for (int i = array2.Count; --i >= 0;)
 						array.Insert(position, array2[i]);
 				}
 			}
 			else
 			{
-				//TODO is position actually used in this case?
-				if (position < 0 || position >= array.Count)
-					array.Add(value);
-				else
-					array.Insert(position, value);
+				// position is not used in this case
+				array.Add(value);
 			}
 		}
 		static Expression PushExpression(Expression that, Expression field, BsonValue value)
@@ -371,7 +379,7 @@ namespace Mdbc
 		[System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Maintainability", "CA1502:AvoidExcessiveComplexity")]
 		static Expression PushEachExpression(Expression that, Expression field, BsonDocument document)
 		{
-			int position = -1;
+			int position = int.MaxValue;
 			BsonArray each = null;
 			BsonValue sort = null, slice = null;
 			foreach (var e in document.Elements)
@@ -396,8 +404,6 @@ namespace Mdbc
 						if (!e.Value.IsNumeric)
 							throw new ArgumentException("$position must be a numeric value.");
 						position = e.Value.ToInt32();
-						if (position < 0)
-							throw new ArgumentException("$position must not be negative.");
 						break;
 					default:
 						throw new ArgumentException(string.Format(null, "Unrecognized clause in $push: ({0}).", e.Name));
@@ -441,7 +447,7 @@ namespace Mdbc
 		UpdateCompiler Push(BsonDocument document, string name, BsonValue value)
 		{
 
-			Push(document, name, value, false, -1);
+			Push(document, name, value, false, int.MaxValue);
 			return this;
 		}
 		static Expression PushAllExpression(Expression that, Expression field, BsonValue value)
@@ -450,7 +456,7 @@ namespace Mdbc
 				throw new ArgumentException("Push all/each value must be array.");
 
 			return Expression.Call(that, GetMethod("PushAll"), Data, field,
-				Expression.Constant(value, typeof(BsonValue)), Expression.Constant(-1, typeof(int)));
+				Expression.Constant(value, typeof(BsonValue)), Expression.Constant(int.MaxValue, typeof(int)));
 		}
 		UpdateCompiler PushAll(BsonDocument document, string name, BsonValue value, int position)
 		{
