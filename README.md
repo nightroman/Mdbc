@@ -19,11 +19,7 @@ In PowerShell 5.0 or with PowerShellGet you can install it by this command:
     Install-Module Mdbc
 
 Mdbc is also distributed as the NuGet package [Mdbc](https://www.nuget.org/packages/Mdbc).
-Download it to the current location as the directory *"Mdbc"* by this PowerShell command:
-
-    Invoke-Expression "& {$((New-Object Net.WebClient).DownloadString('https://github.com/nightroman/PowerShelf/raw/master/Save-NuGetTool.ps1'))} Mdbc"
-
-Alternatively, download it by NuGet tools or [directly](http://nuget.org/api/v2/package/Mdbc).
+Download it by NuGet tools or [directly](http://nuget.org/api/v2/package/Mdbc).
 In the latter case save it as *".zip"* and unzip. Use the package subdirectory *"tools/Mdbc"*.
 
 Copy the directory *Mdbc* to a PowerShell module directory, see
