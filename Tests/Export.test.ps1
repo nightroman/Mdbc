@@ -78,7 +78,7 @@ task Retry {
 	$pipeCount = 3
 
 	Invoke-Test {
-		Remove-Item -LiteralPath $file -ErrorAction 0
+		remove $file
 
 		1..$dataCount | Split-Pipeline -Verbose -Count $pipeCount -Variable file -Module Mdbc {process{
 			@{_id=$_; data=[runspace]::DefaultRunspace.InstanceId} |

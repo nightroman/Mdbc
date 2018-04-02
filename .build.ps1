@@ -78,8 +78,8 @@ using System.Runtime.InteropServices;
 
 # Synopsis: Build and trigger PostBuild.
 task Build Meta, {
-	use * MSBuild.exe
-	exec { MSBuild.exe Src\$ModuleName.csproj /t:Build /p:Configuration=$Configuration /p:TargetFrameworkVersion=$TargetFrameworkVersion}
+	Set-Alias MSBuild (Resolve-MSBuild)
+	exec {MSBuild Src\$ModuleName.csproj /t:Build /p:Configuration=$Configuration /p:TargetFrameworkVersion=$TargetFrameworkVersion}
 }
 
 # Synopsis: Copy files to the module root.
@@ -98,9 +98,7 @@ task PostBuild {
 
 # Synopsis: Remove temp files.
 task Clean {
-	Remove-Item -Force -Recurse -ErrorAction 0 `
-	"$ModuleName.*.nupkg",
-	z, Src\bin, Src\obj, README.htm, Release-Notes.htm
+	remove "$ModuleName.*.nupkg", z, Src\bin, Src\obj, README.htm, Release-Notes.htm
 }
 
 # Synopsis: Build help by Helps (https://github.com/nightroman/Helps).
@@ -138,7 +136,7 @@ task Version {
 
 # Synopsis: Make the package in z\tools.
 task Package Markdown, ?UpdateScript, {
-	Remove-Item [z] -Force -Recurse
+	remove z
 	$null = mkdir z\tools\$ModuleName\en-US, z\tools\$ModuleName\Scripts
 
 	Copy-Item -Destination z\tools\$ModuleName `

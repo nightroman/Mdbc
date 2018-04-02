@@ -1,6 +1,10 @@
 
 # Mdbc Release Notes
 
+## v5.1.1
+
+Fix #19, `New-MdbcData` with `Id` as script block.
+
 ## v5.1.0
 
 MongoDB 3.6 and .NET driver 2.5.0

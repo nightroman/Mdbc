@@ -52,29 +52,6 @@ namespace Mdbc
 				throw new InvalidCastException("Invalid type. Expected types: int, long, double.");
 		}
 	}
-	class SetDollar : IDisposable
-	{
-		PSVariable Variable;
-		object OldValue;
-		public SetDollar(SessionState session, object value)
-		{
-			Variable = session.PSVariable.Get("_");
-			if (Variable == null)
-			{
-				session.PSVariable.Set("_", value);
-			}
-			else
-			{
-				OldValue = Variable.Value;
-				Variable.Value = value;
-			}
-		}
-		public void Dispose()
-		{
-			if (Variable != null)
-				Variable.Value = OldValue;
-		}
-	}
 	class ParameterAs
 	{
 		internal readonly Type Type;

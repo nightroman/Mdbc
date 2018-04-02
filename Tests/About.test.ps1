@@ -93,34 +93,6 @@ task Invoke-Test {
 	)
 }
 
-# Variable $_ is restored on invoking scripts
-task SetDollar {
-	$log = [Collections.ArrayList]@(); function log {$null = $log.AddRange($args)}
-
-	# loop make the $_
-	'original' | .{process{
-		# Id
-		$null = New-MdbcData @{name = 'name1'} -Id {log $_.name; 42}
-		equals $_ 'original'
-
-		# Select
-		$null = New-MdbcData @{name = 'name2'} -Property @{name2 = {log $_.name; 42}}
-		equals $_ 'original'
-
-		# Convert
-		$null = New-MdbcData $host -Property Version -Convert {log $_.GetType().Name}
-		equals $_ 'original'
-	}}
-
-	$log
-
-	Test-List $log @(
-		'name1'
-		'name2'
-		'Version'
-	)
-}
-
 # Only these types are exposed
 task PublicTypes {
 	$types = [Reflection.Assembly]::GetAssembly(([Mdbc.Dictionary])).GetTypes() | .{process{ if ($_.IsPublic) {$_.Name} }} | Sort-Object

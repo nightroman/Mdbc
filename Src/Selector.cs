@@ -26,8 +26,14 @@ namespace Mdbc
 		}
 		internal object GetValue(object value)
 		{
-			using (new SetDollar(_Cmdlet.SessionState, value))
-				return _ScriptBlock.InvokeReturnAsIs();
+			var vars = new List<PSVariable>() { new PSVariable("_", value) };
+			var r = _ScriptBlock.InvokeWithContext(null, vars);
+			switch(r.Count)
+			{
+				case 1: { return r[0]; }
+				case 0: { return null; }
+				default: { return r; }
+			}
 		}
 		void SetExpression(object value)
 		{

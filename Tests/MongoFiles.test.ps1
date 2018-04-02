@@ -12,7 +12,7 @@ task Update-MongoFiles {
 	Connect-Mdbc -NewCollection
 	$log = $Database.GetCollection('test_log')
 	$null = $log.Drop()
-	Remove-Item [z] -Force -Recurse
+	remove z
 
 	# add alien data
 	@{Name = 'alien'} | Add-MdbcData
@@ -69,7 +69,7 @@ task Update-MongoFiles {
 	equals $2.Log[1].Op 1
 
 	# remove directory and file
-	Remove-Item [z] -Force -Recurse
+	remove z
 
 	# update
 	$r = Update-MongoFiles . -CollectionName test -Log

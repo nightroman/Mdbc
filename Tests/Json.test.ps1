@@ -30,7 +30,7 @@ task PreserveTypes {
 
 	$data = $1, $2
 
-	Remove-Item -LiteralPath $json -ErrorAction 0
+	remove $json
 	$data | Export-MdbcData $json
 	$r = Import-MdbcData $json
 	Test-List $data $r
@@ -39,7 +39,7 @@ task PreserveTypes {
 	$r = Get-MdbcData
 	Test-List $data $r
 
-	Remove-Item -LiteralPath $json -ErrorAction 0
+	remove $json
 	Open-MdbcFile
 	$data | Add-MdbcData
 	Save-MdbcFile $json

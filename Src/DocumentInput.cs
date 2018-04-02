@@ -27,17 +27,15 @@ namespace Mdbc
 			if (Convert == null)
 				return null;
 
-			using (new SetDollar(Session, value))
+			var vars = new List<PSVariable>() { new PSVariable("_", value) };
+			var result = Convert.InvokeWithContext(null, vars);
+			if (result.Count == 1)
 			{
-				var result = Convert.Invoke();
-				if (result.Count == 1)
-				{
-					var ps = result[0];
-					return ps == null ? BsonNull.Value : ps.BaseObject;
-				}
-
-				return result.Count == 0 ? BsonNull.Value : null;
+				var ps = result[0];
+				return ps == null ? BsonNull.Value : ps.BaseObject;
 			}
+
+			return result.Count == 0 ? BsonNull.Value : null;
 		}
 		public static BsonDocument NewDocumentWithId(bool newId, PSObject id, PSObject input, SessionState session)
 		{
@@ -53,14 +51,11 @@ namespace Mdbc
 			if (sb == null)
 				return new BsonDocument().Add(MyValue.Id, BsonValue.Create(id.BaseObject));
 
-			using (new SetDollar(session, input))
-			{
-				var arr = sb.Invoke();
-				if (arr.Count != 1)
-					throw new ArgumentException("-Id script must return a single object."); //! use this type
-
-				return new BsonDocument().Add(MyValue.Id, BsonValue.Create(arr[0].BaseObject));
-			}
+			var vars = new List<PSVariable>() { new PSVariable("_", input) };
+			var arr = sb.InvokeWithContext(null, vars);
+			if (arr.Count != 1)
+				throw new ArgumentException("-Id script must return a single object."); //! use this type
+			return new BsonDocument().Add(MyValue.Id, BsonValue.Create(arr[0].BaseObject));
 		}
 		public static ErrorRecord NewErrorRecordBsonValue(Exception value, object targetObject)
 		{

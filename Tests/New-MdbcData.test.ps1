@@ -238,3 +238,36 @@ task Cyclic {
 	$d = @{array = $d, $d} | New-MdbcData
 	equals $d.array.Count 2
 }
+
+<#
+	Variable $_ is restored on invoking scripts
+	+ 180402 https://github.com/nightroman/Mdbc/issues/19
+		but it is not easy to make a test to cover #19,
+		looks like it happens in interactive only
+#>
+task SetDollar {
+	$log = [Collections.ArrayList]@(); function log {$null = $log.AddRange($args)}
+
+	# loop make the $_
+	'original' | .{process{
+		# Id
+		$null = New-MdbcData @{name = 'name1'} -Id {log $_.name; 42}
+		equals $_ 'original'
+
+		# Select
+		$null = New-MdbcData @{name = 'name2'} -Property @{name2 = {log $_.name; 42}}
+		equals $_ 'original'
+
+		# Convert
+		$null = New-MdbcData $host -Property Version -Convert {log $_.GetType().Name}
+		equals $_ 'original'
+	}}
+
+	$log
+
+	Test-List $log @(
+		'name1'
+		'name2'
+		'Version'
+	)
+}
