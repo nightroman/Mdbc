@@ -1,6 +1,11 @@
 
 # Mdbc Release Notes
 
+## v5.1.2
+
+- .NET driver 2.6.1
+- Convert the project to .NET SDK
+
 ## v5.1.1
 
 Fix #19, `New-MdbcData` with `Id` as script block.

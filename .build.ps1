@@ -6,7 +6,7 @@
 
 param(
 	$Configuration = 'Release',
-	$TargetFrameworkVersion = 'v4.5'
+	$TargetFramework = 'net45'
 )
 
 $ModuleName = 'Mdbc'
@@ -16,11 +16,6 @@ $ModuleRoot = "$ModuleRoot\WindowsPowerShell\Modules\$ModuleName"
 # Get version from release notes.
 function Get-Version {
 	switch -Regex -File Release-Notes.md {'##\s+v(\d+\.\d+\.\d+)' {return $Matches[1]} }
-}
-
-task Init Meta, {
-	exec {paket.exe install}
-	Remove-Item paket-files
 }
 
 $MetaParam = @{
@@ -76,24 +71,17 @@ using System.Runtime.InteropServices;
 "@
 }
 
-# Synopsis: Build and trigger PostBuild.
+# Synopsis: Build and PostBuild.
 task Build Meta, {
-	Set-Alias MSBuild (Resolve-MSBuild)
-	exec {MSBuild Src\$ModuleName.csproj /t:Build /p:Configuration=$Configuration /p:TargetFrameworkVersion=$TargetFrameworkVersion}
+	exec { dotnet build Src\$ModuleName.csproj -c $Configuration }
 }
 
 # Synopsis: Copy files to the module root.
 # It is called from the post build event.
 task PostBuild {
+	remove $ModuleRoot
 	exec { robocopy Module $ModuleRoot /s /np /r:0 /xf *-Help.ps1 } (0..3)
-	Copy-Item -Destination $ModuleRoot -LiteralPath @(
-		"Src\Bin\$Configuration\$ModuleName.dll"
-		'packages\mongocsharpdriver\lib\net45\MongoDB.Driver.Legacy.dll'
-		'packages\MongoDB.Bson\lib\net45\MongoDB.Bson.dll'
-		'packages\MongoDB.Driver\lib\net45\MongoDB.Driver.dll'
-		'packages\MongoDB.Driver.Core\lib\net45\MongoDB.Driver.Core.dll'
-		'packages\System.Runtime.InteropServices.RuntimeInformation\lib\net45\System.Runtime.InteropServices.RuntimeInformation.dll'
-	)
+	exec { robocopy Src\bin\$Configuration\net45 $ModuleRoot /s /np /r:0 } (0..3)
 }
 
 # Synopsis: Remove temp files.
@@ -137,23 +125,13 @@ task Version {
 # Synopsis: Make the package in z\tools.
 task Package Markdown, ?UpdateScript, {
 	remove z
-	$null = mkdir z\tools\$ModuleName\en-US, z\tools\$ModuleName\Scripts
+	$null = mkdir z\tools\$ModuleName\Scripts
 
-	Copy-Item -Destination z\tools\$ModuleName `
+	Copy-Item -Recurse -Destination z\tools\$ModuleName `
 	LICENSE.txt,
 	README.htm,
 	Release-Notes.htm,
-	$ModuleRoot\$ModuleName.dll,
-	$ModuleRoot\$ModuleName.psd1,
-	$ModuleRoot\MongoDB.Driver.Legacy.dll,
-	$ModuleRoot\MongoDB.Bson.dll,
-	$ModuleRoot\MongoDB.Driver.dll,
-	$ModuleRoot\MongoDB.Driver.Core.dll,
-	$ModuleRoot\System.Runtime.InteropServices.RuntimeInformation.dll
-
-	Copy-Item -Destination z\tools\$ModuleName\en-US `
-	$ModuleRoot\en-US\about_$ModuleName.help.txt,
-	$ModuleRoot\en-US\$ModuleName.dll-Help.xml
+	$ModuleRoot\*
 
 	Copy-Item -Destination z\tools\$ModuleName\Scripts `
 	.\Scripts\Mdbc.ps1,
@@ -246,7 +224,7 @@ task UpdateScript -Partial `
 
 # Synopsis: Check expected files.
 task CheckFiles {
-	$Pattern = '\.(cs|csproj|md|ps1|psd1|psm1|ps1xml|sln|txt|xml|gitignore)$'
+	$Pattern = '\.(cs|csproj|lock|md|ps1|psd1|psm1|ps1xml|sln|txt|xml|gitignore)$'
 	foreach ($file in git status -s) { if ($file -notmatch $Pattern) {
 		Write-Warning "Illegal file: '$file'."
 	}}
