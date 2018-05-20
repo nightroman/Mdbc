@@ -1,23 +1,25 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net45</TargetFramework>
+    <TargetFrameworks>net45; netstandard2.0</TargetFrameworks>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
   <ItemGroup>
     <CodeAnalysisDictionary Include="CodeAnalysisDictionary.xml" />
   </ItemGroup>
-  <ItemGroup>
+  <ItemGroup Condition="$(TargetFramework) == 'net45'">
     <Reference Include="System.Management.Automation">
       <HintPath>$(MSBuildProgramFiles32)\Reference Assemblies\Microsoft\WindowsPowerShell\3.0\System.Management.Automation.dll</HintPath>
       <Private>false</Private>
     </Reference>
+  </ItemGroup>
+  <ItemGroup Condition="$(TargetFramework) == 'netstandard2.0'">
+    <PackageReference Include="PowerShellStandard.Library" Version="5.1.0-preview-03" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="mongocsharpdriver" Version="2.6.1" />
     <PackageReference Include="MongoDB.Bson" Version="2.6.1" />
     <PackageReference Include="MongoDB.Driver" Version="2.6.1" />
     <PackageReference Include="MongoDB.Driver.Core" Version="2.6.1" />
   </ItemGroup>
-  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="ib PostBuild ..\.build.ps1 -Configuration $(Configuration)" />
-  </Target>
 </Project>

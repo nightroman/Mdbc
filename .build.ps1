@@ -6,12 +6,20 @@
 
 param(
 	$Configuration = 'Release',
+
+	[ValidateSet('net45', 'netstandard2.0')]
 	$TargetFramework = 'net45'
 )
 
 $ModuleName = 'Mdbc'
-$ModuleRoot = if ($env:ProgramW6432) {$env:ProgramW6432} else {$env:ProgramFiles}
-$ModuleRoot = "$ModuleRoot\WindowsPowerShell\Modules\$ModuleName"
+
+if ($TargetFramework -eq 'net45') {
+	$ModuleRoot = if ($env:ProgramW6432) {$env:ProgramW6432} else {$env:ProgramFiles}
+	$ModuleRoot = "$ModuleRoot\WindowsPowerShell\Modules\$ModuleName"
+}
+else {
+	$ModuleRoot = Join-Path ([Environment]::GetFolderPath('MyDocuments')) PowerShell\Modules\$ModuleName
+}
 
 # Get version from release notes.
 function Get-Version {
@@ -71,17 +79,25 @@ using System.Runtime.InteropServices;
 "@
 }
 
-# Synopsis: Build and PostBuild.
+# Synopsis: Build the project.
 task Build Meta, {
-	exec { dotnet build Src\$ModuleName.csproj -c $Configuration }
-}
+	exec { dotnet build Src\$ModuleName.csproj -c $Configuration -f $TargetFramework }
+},
+Publish
 
-# Synopsis: Copy files to the module root.
-# It is called from the post build event.
-task PostBuild {
-	remove $ModuleRoot
-	exec { robocopy Module $ModuleRoot /s /np /r:0 /xf *-Help.ps1 } (0..3)
-	exec { robocopy Src\bin\$Configuration\net45 $ModuleRoot /s /np /r:0 } (0..3)
+# Synopsis: Publish the module.
+task Publish {
+	if ($TargetFramework -eq 'net45') {
+		remove $ModuleRoot
+		exec { robocopy Module $ModuleRoot /s /np /r:0 /xf *-Help.ps1 } (0..3)
+		exec { robocopy Src\bin\$Configuration\$TargetFramework $ModuleRoot /s /np /r:0 } (0..3)
+	}
+	else {
+		exec { dotnet publish Src\$ModuleName.csproj -c $Configuration -f $TargetFramework }
+		remove $ModuleRoot
+		exec { robocopy Module $ModuleRoot /s /np /r:0 /xf *-Help.ps1 } (0..3)
+		exec { robocopy Src\bin\$Configuration\$TargetFramework\publish $ModuleRoot /s /np /r:0 } (0..3)
+	}
 }
 
 # Synopsis: Remove temp files.
