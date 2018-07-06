@@ -23,9 +23,17 @@ task Capped {
 	Test-Error {Add-MdbcCollection test -MaxSize 1mb -MaxDocuments 10} "Command create failed: *collection *already exists*"
 }
 
+<#
+	https://docs.mongodb.com/manual/reference/method/db.createCollection/
+	Starting in MongoDB 4.0, you cannot set the option autoIndexId to false
+	when creating collections in databases other than the `local` database.
+	So we can test only `local`.
+#>
 task AutoIndexId {
-	# AutoIndexId 0
-	Connect-Mdbc -NewCollection
+	Connect-Mdbc -ConnectionString mongodb://localhost:27017 -DatabaseName local
+	$null = $Database.DropCollection('test')
+
+	# use AutoIndexId 0
 	Add-MdbcCollection test -AutoIndexId 0
 
 	$Collection = $Database['test']
@@ -45,4 +53,7 @@ task AutoIndexId {
 	assert ($d._id)
 	$i = @($Collection.GetIndexes())
 	equals $i.Count 1
+
+	$r = $Database.DropCollection('test')
+	equals $r.Ok $true
 }
