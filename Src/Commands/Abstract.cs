@@ -11,11 +11,6 @@ namespace Mdbc.Commands
 	{
 		public const string TextParameterQuery = "Parameter Query must be specified and cannot be null.";
 		public const string TextParameterUpdate = "Parameter Update must be specified and cannot be null.";
-
-		protected Abstract()
-		{
-			Actor.Register();
-		}
 		protected void WriteException(Exception exception, object target)
 		{
 			WriteError(new ErrorRecord(exception, "Mdbc", ErrorCategory.NotSpecified, target));

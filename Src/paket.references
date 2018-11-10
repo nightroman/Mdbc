@@ -1,5 +1,0 @@
-mongocsharpdriver copy_local: false
-MongoDB.Bson copy_local: false
-MongoDB.Driver copy_local: false
-MongoDB.Driver.Core copy_local: false
-System.Runtime.InteropServices.RuntimeInformation copy_local: false

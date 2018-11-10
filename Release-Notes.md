@@ -1,6 +1,11 @@
 
 # Mdbc Release Notes
 
+## v5.1.3
+
+- .NET driver 2.7.2
+- Remove `Add-MdbcCollection` switch `AutoIndexId` (deprecated by the driver).
+
 ## v5.1.2
 
 - .NET driver 2.6.1

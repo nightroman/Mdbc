@@ -114,6 +114,7 @@ task PublicTypes {
 		'InvokeCommandCommand'
 		'InvokeMapReduceCommand'
 		'LazyDictionary'
+		'ModuleAssemblyInitializer'
 		'NewDataCommand'
 		'NewQueryCommand'
 		'NewUpdateCommand'

@@ -21,37 +21,6 @@ namespace Mdbc
 		public const string DatabaseVariable = "Database";
 		public const string CollectionVariable = "Collection";
 
-		static bool _registered;
-
-		// This method should be called as soon as possible. Multiple calls are allowed.
-		public static void Register()
-		{
-			if (_registered)
-				return;
-
-			_registered = true;
-
-			BsonSerializer.RegisterSerializer(typeof(Dictionary), new DictionarySerializer());
-			BsonSerializer.RegisterSerializer(typeof(LazyDictionary), new LazyDictionarySerializer());
-			BsonSerializer.RegisterSerializer(typeof(RawDictionary), new RawDictionarySerializer());
-			BsonSerializer.RegisterSerializer(typeof(PSObject), new PSObjectSerializer());
-
-			BsonTypeMapper.RegisterCustomTypeMapper(typeof(PSObject), new PSObjectTypeMapper());
-
-			var strGuidRepresentation = Environment.GetEnvironmentVariable("Mdbc_GuidRepresentation");
-			if (strGuidRepresentation == null)
-			{
-				BsonDefaults.GuidRepresentation = GuidRepresentation.Standard;
-			}
-			else
-			{
-				GuidRepresentation valGuidRepresentation;
-				if (Enum.TryParse(strGuidRepresentation, out valGuidRepresentation))
-					BsonDefaults.GuidRepresentation = valGuidRepresentation;
-				else
-					throw new InvalidOperationException(String.Format(null, "Invalid environment variable Mdbc_GuidRepresentation = {0}", strGuidRepresentation));
-			}
-		}
 		// NB: Change of the global defaults affects ToString().
 		// `Strict` (like mongoexport) is tempting, other tools may read it.
 		// But `Strict` is not suitable for reading and searching. Also, it
@@ -169,7 +138,6 @@ namespace Mdbc
 			// try to create BsonValue
 			try
 			{
-				Register();
 				return BsonValue.Create(value);
 			}
 			catch (ArgumentException ae)
@@ -335,7 +303,6 @@ namespace Mdbc
 		}
 		static IMongoQuery IdToQuery(object id)
 		{
-			Register();
 			var value = BsonValue.Create(id);
 
 			if (value.BsonType == BsonType.Array)

@@ -1009,10 +1009,6 @@ Sets the max size of a capped collection.
 		MaxDocuments = @'
 Sets the max number of documents in a capped collection in addition to MaxSize.
 '@
-		AutoIndexId = @'
-It may be set to true or false to explicitly enable or disable automatic
-creation of a unique key index on the _id field.
-'@
 	}
 }
 

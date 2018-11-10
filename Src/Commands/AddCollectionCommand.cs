@@ -19,11 +19,6 @@ namespace Mdbc.Commands
 		[Parameter]
 		public long MaxDocuments { get; set; }
 
-		[Parameter]
-		public bool AutoIndexId { get { return AutoIndexId; } set { _setAutoIndexId = true; _AutoIndexId = value; } }
-		bool _setAutoIndexId;
-		bool _AutoIndexId;
-
 		protected override void BeginProcessing()
 		{
 			// default options
@@ -37,10 +32,6 @@ namespace Mdbc.Commands
 				if (MaxDocuments > 0)
 					options.SetMaxDocuments(MaxDocuments);
 			}
-
-			// auto arrayIndex explicitly, otherwise default is used
-			if (_setAutoIndexId)
-				options.SetAutoIndexId(_AutoIndexId);
 
 			Database.CreateCollection(Name, options);
 		}
