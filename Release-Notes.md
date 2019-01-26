@@ -1,6 +1,10 @@
 
 # Mdbc Release Notes
 
+## v5.1.4
+
+.NET driver 2.7.3
+
 ## v5.1.3
 
 - .NET driver 2.7.2

@@ -36,7 +36,7 @@ task Meta @MetaParam {
 	$Version = Get-Version
 	$Project = 'https://github.com/nightroman/Mdbc'
 	$Summary = 'Mdbc module - MongoDB Cmdlets for PowerShell'
-	$Copyright = 'Copyright (c) 2011-2018 Roman Kuzmin'
+	$Copyright = 'Copyright (c) 2011-2019 Roman Kuzmin'
 
 	Set-Content Module\$ModuleName.psd1 @"
 @{
@@ -173,7 +173,7 @@ features like bson/json file collections which do not require MongoDB.
 		<authors>Roman Kuzmin</authors>
 		<owners>Roman Kuzmin</owners>
 		<projectUrl>https://github.com/nightroman/Mdbc</projectUrl>
-		<licenseUrl>http://www.apache.org/licenses/LICENSE-2.0</licenseUrl>
+		<license type="expression">Apache-2.0</license>
 		<requireLicenseAcceptance>false</requireLicenseAcceptance>
 		<summary>$text</summary>
 		<description>$text</description>
