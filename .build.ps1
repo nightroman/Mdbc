@@ -7,13 +7,13 @@
 param(
 	$Configuration = 'Release',
 
-	[ValidateSet('net45', 'netstandard2.0')]
-	$TargetFramework = 'net45'
+	[ValidateSet('net452', 'netstandard2.0')]
+	$TargetFramework = 'net452'
 )
 
 $ModuleName = 'Mdbc'
 
-if ($TargetFramework -eq 'net45') {
+if ($TargetFramework -eq 'net452') {
 	$ModuleRoot = if ($env:ProgramW6432) {$env:ProgramW6432} else {$env:ProgramFiles}
 	$ModuleRoot = "$ModuleRoot\WindowsPowerShell\Modules\$ModuleName"
 }
@@ -87,7 +87,7 @@ Publish
 
 # Synopsis: Publish the module.
 task Publish {
-	if ($TargetFramework -eq 'net45') {
+	if ($TargetFramework -eq 'net452') {
 		remove $ModuleRoot
 		exec { robocopy Module $ModuleRoot /s /np /r:0 /xf *-Help.ps1 } (0..3)
 		exec { robocopy Src\bin\$Configuration\$TargetFramework $ModuleRoot /s /np /r:0 } (0..3)
@@ -106,13 +106,13 @@ task Clean {
 }
 
 # Synopsis: Build help by Helps (https://github.com/nightroman/Helps).
-task Help -Inputs (
-	Get-Item Src\Commands\*, Module\en-US\$ModuleName.dll-Help.ps1
-) -Outputs (
-	"$ModuleRoot\en-US\$ModuleName.dll-Help.xml"
-) {
-	. Helps.ps1
-	Convert-Helps Module\en-US\$ModuleName.dll-Help.ps1 $Outputs
+task Help @{
+	Inputs = {Get-Item Src\Commands\*, Module\en-US\$ModuleName.dll-Help.ps1}
+	Outputs = {"$ModuleRoot\en-US\$ModuleName.dll-Help.xml"}
+	Jobs = {
+		. Helps.ps1
+		Convert-Helps Module\en-US\$ModuleName.dll-Help.ps1 $Outputs
+	}
 }
 
 # Synopsis: Build and test help.

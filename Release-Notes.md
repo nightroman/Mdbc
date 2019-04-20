@@ -1,6 +1,11 @@
 
 # Mdbc Release Notes
 
+## v5.1.5
+
+.NET driver 2.8.0.
+Note that it requires net452 instead of the old minimum net45.
+
 ## v5.1.4
 
 .NET driver 2.7.3
