@@ -201,16 +201,6 @@ task PushNuGet NuGet, {
 },
 Clean
 
-# Synopsis: Remove test.test* collections
-task CleanTest {
-	Import-Module Mdbc
-	foreach($Collection in Connect-Mdbc . test *) {
-		if ($Collection.Name -like 'test*') {
-			$null = $Collection.Drop()
-		}
-	}
-}
-
 # Synopsis: Test synopsis of each cmdlet and warn about unexpected.
 task TestHelpSynopsis {
 	Import-Module Mdbc
@@ -246,11 +236,26 @@ task CheckFiles {
 	}}
 }
 
-# Synopsis: Call tests and test the expected count.
+# Synopsis: Remove test.test* collections
+task CleanTest {
+	Import-Module Mdbc
+	foreach($Collection in Connect-Mdbc . test *) {
+		if ($Collection.Name -like 'test*') {
+			$null = $Collection.Drop()
+		}
+	}
+}
+
+# Synopsis: Test in the current PowerShell.
 task Test {
-	Invoke-Build ** Tests -Result result
+	Invoke-Build ** Tests
 },
 CleanTest
+
+# Synopsis: Test in PowerShell v6.
+task Test6 -If $env:powershell6 {
+	exec {& $env:powershell6 -NoProfile -Command Invoke-Build Test}
+}
 
 # Synopsis: Build, test and clean all.
 task . Build, TestHelp, Test, Clean, CheckFiles

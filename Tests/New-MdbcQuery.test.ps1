@@ -23,7 +23,7 @@ task EQ {
 	test { New-MdbcQuery -Not (New-MdbcQuery Name -EQ 42) } '{ "Name" : { "$ne" : 42 } }'
 
 	# EQ is used on its own
-	Test-Error { New-MdbcQuery Name -EQ 42 -GT 15 } 'Parameter set cannot be resolved using the specified named parameters.'
+	Test-Error { New-MdbcQuery Name -EQ 42 -GT 15 } 'Parameter set cannot be resolved using the specified named parameters.*'
 }
 
 task NE {

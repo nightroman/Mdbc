@@ -42,9 +42,7 @@ task ErrorTargetObject {
 		$r = Get-MdbcData
 		equals "$r" '{ "_id" : 1, "x" : 1 }'
 		assert ($e -like $131111_121454) $e
-		if ($PSVersionTable.PSVersion.Major -ge 3) {
-			equals $e.TargetObject.x 2
-		}
+		equals $e.TargetObject.x 2
 	}{
 		Connect-Mdbc -NewCollection
 		$131111_121454 = '*E11000 duplicate key error*dup key: { : 1 }*'

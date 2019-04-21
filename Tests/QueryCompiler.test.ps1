@@ -23,8 +23,6 @@ Enter-Build {
 		arr2 = @(@{x=1}, @{x=9}), @(1, 2)
 	}
 
-	$CLRVersion3 = $PSVersionTable.CLRVersion.Major -lt 4
-
 	Connect-Mdbc -NewCollection
 	$document | Add-MdbcData
 }
@@ -73,9 +71,7 @@ function query(
 	try {
 		# get and show expression
 		$expression = [Mdbc.QueryCompiler]::GetExpression($query)
-		$expressionText2 = $expression.ToString()
-		if ($CLRVersion3) {$expressionText2 = $expressionText2.Replace(' = ', ' == ')}
-		$expressionText2
+		($expressionText2 = $expression.ToString())
 
 		# run expression
 		$count2 = [int][Mdbc.QueryCompiler]::GetFunction($expression).Invoke($document)
@@ -213,7 +209,7 @@ task And {
 
 	# combined
 
-	$query = @{int=@{'$exists'=1; '$ne'=99}}
+	$query = @{int=[ordered]@{'$ne'=99; '$exists'=1}}
 
 	query $query 1 `
 	'{ "int" : { "$ne" : 99, "$exists" : 1 } }' '(NE(data, "int", 99) And (data.Contains("int") == True))'

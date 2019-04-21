@@ -18,7 +18,7 @@ task BsonValueError {
 
 	Invoke-Test {
 		assert ($e -like '.NET type * cannot be mapped to a BsonValue.')
-		assert ($PSVersionTable.PSVersion.Major -le 2 -or $e.TargetObject -eq $Host)
+		equals $Host $e.TargetObject
 		Test-List -Force $r $good
 	}{
 		$r = $bad | New-MdbcData -ErrorAction 0 -ErrorVariable e

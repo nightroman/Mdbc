@@ -51,12 +51,15 @@ task PreserveTypes {
 	[MongoDB.Bson.IO.JsonWriterSettings]::Defaults.OutputMode = 'Strict'
 	try {
 		$data | Export-MdbcData $json
-		$r = Get-Content -LiteralPath $json
-		$r
-		if ($PSVersionTable.PSVersion.Major -ge 3) {
-			$r1, $r2 = $r | ConvertFrom-Json
-			assert ($r1.Double -is [Decimal])
-			assert ($r2.Int64 -is [Int32])
+		($r = Get-Content -LiteralPath $json)
+		$r1, $r2 = $r | ConvertFrom-Json
+		if ($PSVersionTable.PSVersion.Major -ge 6) {
+			equals Double ($r1.Double.GetType().Name)
+			equals Int64 ($r2.Int64.GetType().Name)
+		}
+		else {
+			equals Decimal ($r1.Double.GetType().Name)
+			equals Int32 ($r2.Int64.GetType().Name)
 		}
 	}
 	finally {
