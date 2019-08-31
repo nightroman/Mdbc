@@ -40,7 +40,7 @@ task ErrorTargetObject {
 		# add and get result
 		@{_id=1; x=1}, @{_id=1; x=2} | Add-MdbcData -ErrorAction 0 -ErrorVariable e
 		$r = Get-MdbcData
-		equals "$r" '{ "_id" : 1, "x" : 1 }'
+		Test-Table @{_id=1; x=1} $r
 		assert ($e -like $131111_121454) $e
 		equals $e.TargetObject.x 2
 	}{

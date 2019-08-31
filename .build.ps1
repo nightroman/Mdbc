@@ -1,4 +1,3 @@
-
 <#
 .Synopsis
 	Build script (https://github.com/nightroman/Invoke-Build)
@@ -13,12 +12,18 @@ param(
 
 $ModuleName = 'Mdbc'
 
+# module root for publish
+# netX
+$ModuleRoot1 = if ($env:ProgramW6432) {$env:ProgramW6432} else {$env:ProgramFiles}
+$ModuleRoot1 = "$ModuleRoot1\WindowsPowerShell\Modules\$ModuleName"
+# netstandardX
+$ModuleRoot2 = Join-Path ([Environment]::GetFolderPath('MyDocuments')) PowerShell\Modules\$ModuleName
+# current
 if ($TargetFramework -eq 'net452') {
-	$ModuleRoot = if ($env:ProgramW6432) {$env:ProgramW6432} else {$env:ProgramFiles}
-	$ModuleRoot = "$ModuleRoot\WindowsPowerShell\Modules\$ModuleName"
+	$ModuleRoot = $ModuleRoot1
 }
 else {
-	$ModuleRoot = Join-Path ([Environment]::GetFolderPath('MyDocuments')) PowerShell\Modules\$ModuleName
+	$ModuleRoot = $ModuleRoot2
 }
 
 # Get version from release notes.
@@ -85,6 +90,12 @@ task Build Meta, {
 },
 Publish
 
+# Synopsis: Build all frameworks.
+task Build2 {
+	Invoke-Build Build -Configuration $Configuration -TargetFramework net452
+	Invoke-Build Build -Configuration $Configuration -TargetFramework netstandard2.0
+}
+
 # Synopsis: Publish the module.
 task Publish {
 	if ($TargetFramework -eq 'net452') {
@@ -132,8 +143,9 @@ task Markdown {
 # Synopsis: Set $script:Version.
 task Version {
 	($script:Version = Get-Version)
-	# module version
-	assert ((Get-Module $ModuleName -ListAvailable).Version -eq ([Version]$script:Version))
+	# manifest version
+	$data = & ([scriptblock]::Create([IO.File]::ReadAllText("$ModuleRoot\$ModuleName.psd1")))
+	assert ($data.ModuleVersion -eq $script:Version)
 	# assembly version
 	assert ((Get-Item $ModuleRoot\$ModuleName.dll).VersionInfo.FileVersion -eq ([Version]"$script:Version.0"))
 }
@@ -159,7 +171,7 @@ task Package Markdown, ?UpdateScript, {
 # Synopsis: Make NuGet package.
 task NuGet Package, Version, {
 	$text = @'
-Windows PowerShell module based on the official MongoDB C# driver v2.x
+Mdbc is the PowerShell module based on the official MongoDB C# driver.
 It makes MongoDB scripting in PowerShell easier and provides some extra
 features like bson/json file collections which do not require MongoDB.
 '@
@@ -197,7 +209,16 @@ task PushRelease Version, {
 
 # Synopsis: Make and push the NuGet package.
 task PushNuGet NuGet, {
+	assert ($TargetFramework -eq 'net452')
 	exec { NuGet push "$ModuleName.$Version.nupkg" -Source nuget.org }
+},
+Clean
+
+# Synopsis: Make and push the PSGallery package.
+task PushPSGallery Package, Version, {
+	assert ($TargetFramework -eq 'netstandard2.0')
+	$NuGetApiKey = Read-Host NuGetApiKey
+	Publish-Module -Path z/tools/$ModuleName -NuGetApiKey $NuGetApiKey -Confirm
 },
 Clean
 
@@ -258,4 +279,4 @@ task Test6 -If $env:powershell6 {
 }
 
 # Synopsis: Build, test and clean all.
-task . Build, TestHelp, Test, Clean, CheckFiles
+task . Build2, TestHelp, Test, Test6, Clean, CheckFiles

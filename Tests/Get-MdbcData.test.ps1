@@ -298,9 +298,9 @@ task UpdateResult {
 		. $$
 		@{_id = 1; x = 1} | Add-MdbcData
 		$d = Get-MdbcData $query -Update $update -ResultVariable r
-		equals "$d" '{ "_id" : 1, "x" : 1 }'
+		Test-Table $d @{_id = 1; x = 1}
 		$d = Get-MdbcData
-		equals "$d" '{ "_id" : 1, "x" : 42 }'
+		Test-Table $d @{_id = 1; x = 42}
 		equals $r.DocumentsAffected 1L
 		equals $r.UpdatedExisting $true
 
@@ -308,9 +308,9 @@ task UpdateResult {
 		. $$
 		@{_id = 1; x = 1} | Add-MdbcData
 		$d = Get-MdbcData $query -Update $update -New -ResultVariable r
-		equals "$d" '{ "_id" : 1, "x" : 42 }'
+		Test-Table $d @{_id = 1; x = 42}
 		$d = Get-MdbcData
-		equals "$d" '{ "_id" : 1, "x" : 42 }'
+		Test-Table $d @{_id = 1; x = 42}
 		equals $r.DocumentsAffected 1L
 		equals $r.UpdatedExisting $true
 
@@ -319,16 +319,16 @@ task UpdateResult {
 		$d = Get-MdbcData $query -Update $update -Add -ResultVariable r
 		assert (!$d)
 		$d = Get-MdbcData
-		equals "$d" '{ "_id" : 1, "x" : 42 }'
+		Test-Table $d @{_id = 1; x = 42}
 		equals $r.DocumentsAffected 1L
 		equals $r.UpdatedExisting $false
 
 		# upsert missing, get new
 		. $$
 		$d = Get-MdbcData $query -Update $update -Add -New -ResultVariable r
-		equals "$d" '{ "_id" : 1, "x" : 42 }'
+		Test-Table $d @{_id = 1; x = 42}
 		$d = Get-MdbcData
-		equals "$d" '{ "_id" : 1, "x" : 42 }'
+		Test-Table $d @{_id = 1; x = 42}
 		equals $r.DocumentsAffected 1L
 		equals $r.UpdatedExisting $false
 	}{

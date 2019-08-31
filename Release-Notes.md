@@ -1,5 +1,13 @@
-
 # Mdbc Release Notes
+
+## v5.2.0
+
+.NET driver 2.9.1.
+
+**Potentially breaking package change.**
+The PSGallery package is built for PowerShell v5 and PowerShell Core.
+
+The NuGet package is built for PowerShell v3, v4, v5 (same as before).
 
 ## v5.1.5
 

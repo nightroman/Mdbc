@@ -156,7 +156,7 @@ task Set {
 	# errors
 	update (New-MdbcUpdate -Set @{'x.y.z'=1}) @{x=@{y=1}} -UError "*Cannot create field 'z'*" -EError '*"Field (y) in (x.y.z) is not a document."'
 	update (New-MdbcUpdate -Set @{'a.x'=1}) @{a=@{x=1},@{x=1}} -UError "*Cannot create field 'x'*" -EError '*"Field (a) in (a.x) is not a document."'
-	update @{x=1; '$inc'=@{y=2}} @{} -UError "*Element name 'x' is not valid*" -EError '*Update cannot mix operators and fields.*' #_131103_204607
+	update @{x=1; '$inc'=@{y=2}} @{} -UError "*Element name '*' is not valid*" -EError '*Update cannot mix operators and fields.*' #_131103_204607
 
 	# v2.6 error
 	update @{x=@{'$bad'=1}} @{} @{x=@{'$bad'=1}} `
@@ -166,10 +166,12 @@ task Set {
 	-UError '*Element name ''$bad'' is not valid*' -EError '*Invalid document element name: "$bad".*'
 
 	#_131103_204607 simple form
-	update @{x=1; y=2} @{} @{x=1; y=2} '.Set(data, "y", 2).Set(data, "x", 1)'
+	$d = New-MdbcData; $d.x = 1; $d.y = 2
+	update $d @{} $d '.Set(data, "x", 1).Set(data, "y", 2)'
 
 	# set two
-	update (New-MdbcUpdate -Set @{x=1; y=2}) @{} @{x=1; y=2} '.Set(data, "y", 2).Set(data, "x", 1)'
+	$d = New-MdbcData; $d.x = 1; $d.y = 2
+	update (New-MdbcUpdate -Set $d) @{} $d '.Set(data, "x", 1).Set(data, "y", 2)'
 
 	# set nested
 	update (New-MdbcUpdate -Set @{'x.y'=42}) @{x=@{y=1}} @{x=@{y=42}} '.Set(data, "x.y", 42)'
@@ -231,7 +233,7 @@ task SetOnInsert {
 	update (New-MdbcUpdate -Set @{x=42}) @{} @{x=42} -Query @{x=1} '.Set(data, "x", 1).Set(data, "x", 42)'
 
 	# two fields in query
-	update (New-MdbcUpdate -Set @{x=42}) @{} @{x=42;y=1;z=1} -Query @{y=1;z=1} '.Set(data, "z", 1).Set(data, "y", 1).Set(data, "x", 42)'
+	update (New-MdbcUpdate -Set @{x=42}) @{} ([ordered]@{x=42;y=1;z=1}) -Query ([ordered]@{y=1;z=1}) '.Set(data, "y", 1).Set(data, "z", 1).Set(data, "x", 42)'
 }
 
 task MinMax {
@@ -605,8 +607,9 @@ task Push {
 	'.Push(data, "a", { })'
 
 	# some document
-	update @{'$push'=@{a=@{x=1; y=2}}} @{a=@()} @{a=@(@{x=1; y=2})} `
-	'.Push(data, "a", { "y" : 2, "x" : 1 })'
+	$d = New-MdbcData; $d.x = 1; $d.y = 2
+	update @{'$push'=@{a=$d}} @{a=@()} @{a=@($d)} `
+	'.Push(data, "a", { "x" : 1, "y" : 2 })'
 
 	### each
 

@@ -61,8 +61,13 @@ function query(
 		}
 
 		# 2. test query text
-		if ($queryText -cne $queryText2) {
-			Write-Error "`n Query text sample : $queryText`n Query text result : $queryText2"
+		$data1 = [MongoDB.Bson.BsonDocument]::Parse($queryText).ToHashtable()
+		$data2 = [MongoDB.Bson.BsonDocument]::Parse($queryText2).ToHashtable()
+		try {
+			Test-Table $data1 $data2
+		}
+		catch {
+			Write-Error "`n Query text sample : $queryText`n Query text result : $queryText2`n Difference: $_"
 		}
 	}
 
