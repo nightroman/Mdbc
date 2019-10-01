@@ -218,7 +218,7 @@ Clean
 task PushPSGallery Package, Version, {
 	assert ($TargetFramework -eq 'netstandard2.0')
 	$NuGetApiKey = Read-Host NuGetApiKey
-	Publish-Module -Path z/tools/$ModuleName -NuGetApiKey $NuGetApiKey -Confirm
+	Publish-Module -Path z/tools/$ModuleName -NuGetApiKey $NuGetApiKey
 },
 Clean
 

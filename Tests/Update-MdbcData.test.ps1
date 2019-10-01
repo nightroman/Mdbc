@@ -262,7 +262,7 @@ task JSON-like {
 		#_131122_164305
 		$do = { Update-MdbcData @{x=Get-Date} -Query @{} -All }
 		if ('test.test' -eq $Collection) {
-			Test-Error $do '*multi update only works with $ operators*'
+			Test-Error $do '*multi update is not supported for replacement-style update*'
 		}
 		else {
 			. $do
