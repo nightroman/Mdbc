@@ -1,5 +1,12 @@
 # Mdbc Release Notes
 
+## v5.2.2
+
+Amend manifest of PSGallery package:
+
+    PowerShellVersion = '5.1'
+    DotNetFrameworkVersion = '4.7.1'
+
 ## v5.2.1
 
 .NET driver 2.9.2.

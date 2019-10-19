@@ -55,6 +55,7 @@ task Meta @MetaParam {
 	RequiredAssemblies = 'System.Runtime.InteropServices.RuntimeInformation.dll', 'MongoDB.Bson.dll', 'MongoDB.Driver.Core.dll', 'MongoDB.Driver.dll', 'MongoDB.Driver.Legacy.dll'
 
 	PowerShellVersion = '3.0'
+	DotNetFrameworkVersion = '4.0'
 	GUID = '12c81cd8-bde3-4c91-a292-e6c4f868106a'
 
 	PrivateData = @{
@@ -108,6 +109,13 @@ task Publish {
 		remove $ModuleRoot
 		exec { robocopy Module $ModuleRoot /s /np /r:0 /xf *-Help.ps1 } (0..3)
 		exec { robocopy Src\bin\$Configuration\$TargetFramework\publish $ModuleRoot /s /np /r:0 } (0..3)
+
+		# tweak manifest requirements
+		Import-Module PsdKit
+		$xml = Import-PsdXml $ModuleRoot\Mdbc.psd1
+		Set-Psd $xml '5.1' 'Data/Table/Item[@Key="PowerShellVersion"]'
+		Set-Psd $xml '4.7.1' 'Data/Table/Item[@Key="DotNetFrameworkVersion"]'
+		Export-PsdXml $ModuleRoot\Mdbc.psd1 $xml
 	}
 }
 
