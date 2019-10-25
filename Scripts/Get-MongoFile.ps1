@@ -1,4 +1,3 @@
-
 <#
 .Synopsis
 	Gets file paths from the file system snapshot database.
@@ -44,10 +43,9 @@ Import-Module Mdbc
 Connect-Mdbc . test $CollectionName
 
 if ($Name) {
-	$query = New-MdbcQuery Name -IEQ $Pattern
-}
-else {
-	$query = New-MdbcQuery Name -Matches $Pattern, i
+	$Pattern = [regex]::Escape($Pattern)
 }
 
-foreach($_ in Get-MdbcData $query -Property @()) { $_._id }
+$query = @{Name = @{'$regex' = $Pattern; '$options' = 'i'}}
+
+foreach($_ in Get-MdbcData $query -Project @{_id = 1}) { $_._id }

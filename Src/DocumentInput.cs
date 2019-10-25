@@ -37,7 +37,7 @@ namespace Mdbc
 
 			return result.Count == 0 ? BsonNull.Value : null;
 		}
-		public static BsonDocument NewDocumentWithId(bool newId, PSObject id, PSObject input, SessionState session)
+		public static BsonDocument NewDocumentWithId(bool newId, PSObject id, PSObject input)
 		{
 			if (newId && id != null) throw new PSInvalidOperationException("Parameters Id and NewId cannot be used together.");
 

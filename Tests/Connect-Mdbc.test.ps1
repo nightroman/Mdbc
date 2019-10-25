@@ -1,4 +1,3 @@
-
 <#
 .Synopsis
 	Connect-Mdbc tests.
@@ -16,22 +15,23 @@ task BadParameters {
 # By the convention, Connect-Mdbc without parameters is works as Connect-Mdbc . test test
 task Parameterless {
 	Connect-Mdbc
-	Test-Type $Server MongoDB.Driver.MongoServer
-	Test-Type $Database MongoDB.Driver.MongoDatabase
-	Test-Type $Collection MongoDB.Driver.MongoCollection
-	equals $Database.Name test
-	equals $Collection.Name test
+	Test-Type $Client MongoDB.Driver.MongoClient
+	Test-Type $Database MongoDB.Driver.MongoDatabaseImpl
+	Test-Type $Collection MongoDB.Driver.MongoCollectionImpl
+	equals $Database.DatabaseNamespace.DatabaseName test
+	equals $Collection.CollectionNamespace.FullName test.test
+	equals $Collection.CollectionNamespace.CollectionName test
 }
 
 # By the convention, Connect-Mdbc .. * gets database objects.
 task StarDatabase {
-	$r = Connect-Mdbc . * | .{process{ $_.Name }}
+	$r = Connect-Mdbc . *
 	assert ($r -ccontains 'test')
 	assert ($r -ccontains 'local')
 }
 
 # By the convention, Connect-Mdbc .. .. * gets collection objects.
 task StarCollection {
-	$r = Connect-Mdbc . test * | .{process{ $_.Name }}
+	$r = Connect-Mdbc . test *
 	assert ($r -ccontains 'test')
 }

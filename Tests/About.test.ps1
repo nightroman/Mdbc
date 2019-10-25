@@ -1,4 +1,3 @@
-
 <#
 .Synopsis
 	Assorted tests.
@@ -21,18 +20,17 @@ task About {
 	# Get all data as custom objects and show them in a table
 	Get-MdbcData -As PS | Format-Table -AutoSize | Out-String
 
-	# Query a document by _id using a query expression
-	$data = Get-MdbcData (New-MdbcQuery _id -EQ 1)
-	$data
+	# Query by _id using the filter expression
+	Get-MdbcData '{_id : 1}'
 
 	# Update the document, set the 'value' to 100
-	$data._id | Update-MdbcData (New-MdbcUpdate -Set @{value = 100})
+	Update-MdbcData '{_id : 1}' '{$set : {value : 100}}'
 
-	# Query the document using a simple _id query
-	Get-MdbcData $data._id
+	# Query by _id using the filter expression
+	Get-MdbcData '{_id : 1}'
 
 	# Remove the document
-	$data._id | Remove-MdbcData
+	Remove-MdbcData '{_id : 1}'
 
 	# Count remaining documents, 1 is expected
 	Get-MdbcData -Count
@@ -95,36 +93,34 @@ task Invoke-Test {
 
 # Only these types are exposed
 task PublicTypes {
-	$types = [Reflection.Assembly]::GetAssembly(([Mdbc.Dictionary])).GetTypes() | .{process{ if ($_.IsPublic) {$_.Name} }} | Sort-Object
+	($types = [Reflection.Assembly]::GetAssembly(([Mdbc.Dictionary])).GetTypes() | .{process{ if ($_.IsPublic) {$_.Name} }} | Sort-Object)
 	Test-List $types @(
 		'Abstract'
+		'AbstractClientCommand'
 		'AbstractCollectionCommand'
 		'AbstractDatabaseCommand'
-		'AbstractWriteCommand'
 		'AddCollectionCommand'
 		'AddDataCommand'
+		'Api'
 		'Collection'
 		'ConnectCommand'
 		'Dictionary'
 		'ExportDataCommand'
 		'FileFormat'
+		'GetCollectionCommand'
+		'GetDatabaseCommand'
 		'GetDataCommand'
 		'ImportDataCommand'
 		'InvokeAggregateCommand'
 		'InvokeCommandCommand'
-		'InvokeMapReduceCommand'
-		'LazyDictionary'
 		'ModuleAssemblyInitializer'
 		'NewDataCommand'
-		'NewQueryCommand'
-		'NewUpdateCommand'
-		'OpenFileCommand'
 		'OutputType'
-		'QueryCompiler'
-		'RawDictionary'
+		'RemoveCollectionCommand'
+		'RemoveDatabaseCommand'
 		'RemoveDataCommand'
-		'SaveFileCommand'
-		'UpdateCompiler'
+		'RenameCollectionCommand'
+		'SetDataCommand'
 		'UpdateDataCommand'
 	)
 }

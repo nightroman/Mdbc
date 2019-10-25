@@ -1,14 +1,21 @@
-
 <#
 .Synopsis
 	Common tools used by tests.
 #>
 
+Import-Module Mdbc
+
+# Error messages for Test-Error
+$ErrorEmptyDocument = [Mdbc.Api]::ErrorEmptyDocument
+$ErrorCommand = [Mdbc.Api]::TextParameterCommand
+$ErrorFilter = [Mdbc.Api]::TextParameterFilter
+$ErrorPipeline = [Mdbc.Api]::TextParameterPipeline
+$ErrorSet = [Mdbc.Api]::TextParameterSet
+$ErrorUpdate = [Mdbc.Api]::TextParameterUpdate
+
 function Get-ServerVersion {
 	Connect-Mdbc . test
-	$command = New-MdbcData
-	$command.buildInfo = ''
-	$version = (Invoke-MdbcCommand $command).version
+	$version = (Invoke-MdbcCommand '{buildInfo:1}').version
 	assert ($version -match '^\d+\.\d+\.\d+$')
 	[version]$version
 }

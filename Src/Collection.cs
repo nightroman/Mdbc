@@ -39,7 +39,7 @@ namespace Mdbc
 		public int Count { get { return _array.Count; } }
 		public void CopyTo(Array array, int index)
 		{
-			if (array == null) throw new ArgumentNullException("array");
+			if (array == null) throw new ArgumentNullException(nameof(array));
 			foreach (var v in this)
 				array.SetValue(v, index++);
 		}

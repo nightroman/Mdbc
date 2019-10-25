@@ -2,6 +2,7 @@
 // Copyright (c) Roman Kuzmin
 // http://www.apache.org/licenses/LICENSE-2.0
 
+using MongoDB.Bson;
 using MongoDB.Driver;
 using System;
 using System.Collections.Generic;
@@ -9,14 +10,11 @@ using System.Management.Automation;
 
 namespace Mdbc.Commands
 {
-    [Cmdlet(VerbsCommon.Add, "MdbcData")]
-	public sealed class AddDataCommand : AbstractWriteCommand
+	[Cmdlet(VerbsCommon.Add, "MdbcData")]
+	public sealed class AddDataCommand : AbstractCollectionCommand
 	{
 		[Parameter(Position = 0, ValueFromPipeline = true)]
 		public PSObject InputObject { get; set; }
-
-		[Parameter]
-		public SwitchParameter Update { get; set; }
 
 		[Parameter]
 		public PSObject Id { get; set; }
@@ -28,7 +26,7 @@ namespace Mdbc.Commands
 		public ScriptBlock Convert { get; set; }
 
 		[Parameter]
-		public object[] Property { get { return null; } set { _Selectors = Selector.Create(value, this); } }
+		public object[] Property { get { return null; } set { if (value == null) throw new PSArgumentNullException(nameof(value)); _Selectors = Selector.Create(value, this); } }
 		IList<Selector> _Selectors;
 
 		protected override void ProcessRecord()
@@ -39,23 +37,19 @@ namespace Mdbc.Commands
 			try
 			{
 				// new document or none yet
-				var document = DocumentInput.NewDocumentWithId(NewId, Id, InputObject, SessionState);
+				var document = DocumentInput.NewDocumentWithId(NewId, Id, InputObject);
 
 				document = Actor.ToBsonDocument(document, InputObject, new DocumentInput(SessionState, Convert), _Selectors);
-
-				if (Update)
-					WriteResult(TargetCollection.Save(document, WriteConcern, Result));
-				else
-					WriteResult(TargetCollection.Insert(document, WriteConcern, Result));
+				Collection.InsertOne(document);
 			}
 			catch (ArgumentException ex)
 			{
 				WriteError(DocumentInput.NewErrorRecordBsonValue(ex, InputObject));
 			}
-            catch (MongoException ex)
-            {
-                WriteException(ex, InputObject);
-            }
-        }
-    }
+			catch (MongoException ex)
+			{
+				WriteException(ex, InputObject);
+			}
+		}
+	}
 }

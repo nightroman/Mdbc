@@ -47,7 +47,6 @@ task SetNull {
 }
 
 task RawBson {
-
 	# RawBsonDocument
 	Connect-Mdbc -NewCollection
 	@{array = 1, 2; document = @{name = 42}} | Add-MdbcData
@@ -82,6 +81,29 @@ task RawBson {
 		Test-Type $d.ToBsonDocument() MongoDB.Bson.RawBsonDocument
 		assert (![object]::ReferenceEquals($d.ToBsonDocument(), $md.document.ToBsonDocument()))
 	}
+}
 
-	$md.Dispose(); $md.Dispose() #! twice is fine
+task Binary {
+	# byte[] ~ BsonBinaryData
+	$data1 = [Mdbc.Dictionary]([byte[]](1..5))
+	$id1 = $data1._id
+	equals ($id1.ToString()) Binary:0x0102030405
+	equals ($id1.GetType().FullName) MongoDB.Bson.BsonBinaryData
+
+	# comparison operator works
+	$data2 = [Mdbc.Dictionary]([byte[]](1..5))
+	assert ($id1 -eq $data2._id)
+
+	# but UUID ~ guid
+	$data3 = [Mdbc.Dictionary]([guid]'9c700f34-e28d-416d-8aa8-eb55f7781565')
+	equals ($data3._id.ToString()) 9c700f34-e28d-416d-8aa8-eb55f7781565
+	equals ($data3._id.GetType().FullName) System.Guid
+	$doc3 = $data3.ToBsonDocument()
+	equals ($doc3['_id'].SubType) ([MongoDB.Bson.BsonBinarySubType]::UuidStandard)
+
+	# assign from .NET to document
+	$data4 = [Mdbc.Dictionary]$id1
+	$data4.p1 = $id1
+	equals $data4._id $id1
+	equals $data4.p1 $id1
 }

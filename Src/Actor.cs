@@ -5,19 +5,19 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Management.Automation;
 using MongoDB.Bson;
 using MongoDB.Bson.IO;
 using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
-using MongoDB.Driver.Builders;
 
 namespace Mdbc
 {
 	static class Actor
 	{
-		public const string ServerVariable = "Server";
+		public const string ClientVariable = "Client";
 		public const string DatabaseVariable = "Database";
 		public const string CollectionVariable = "Collection";
 
@@ -32,23 +32,29 @@ namespace Mdbc
 		{
 			get { return JsonWriterSettings.Defaults; }
 		}
+		/// <summary>
+		/// null | PSObject.BaseObject | self
+		/// </summary>
 		public static object BaseObject(object value)
 		{
-			if (value == null)
-				return null;
-			var ps = value as PSObject;
-			return ps == null ? value : ps.BaseObject;
+			return value == null ? null : value is PSObject ps ? ps.BaseObject : value;
 		}
+		/// <summary>
+		/// null | PSCustomObject | PSObject.BaseObject | self
+		/// </summary>
 		public static object BaseObject(object value, out PSObject custom)
 		{
 			custom = null;
+
 			if (value == null)
 				return null;
-			var ps = value as PSObject;
-			if (ps == null)
+
+			if (!(value is PSObject ps))
 				return value;
+
 			if (!(ps.BaseObject is PSCustomObject))
 				return ps.BaseObject;
+
 			custom = ps;
 			return ps;
 		}
@@ -56,16 +62,19 @@ namespace Mdbc
 		{
 			if (value == null)
 				return null;
-			var ps = value as PSObject;
-			value = ps == null ? value : ps.BaseObject;
-			IEnumerable enumerable;
-			if (null == (enumerable = value as IEnumerable))
+
+			if (value is PSObject ps)
+				value = ps.BaseObject;
+
+			if (!(value is IEnumerable en))
 				return null;
+
 			if (value is string)
 				return null;
-			return enumerable;
+
+			return en;
 		}
-		public static object ToObject(BsonValue value) //_120509_173140 keep consistent
+		public static object ToObject(BsonValue value) //_120509_173140 sync
 		{
 			if (value == null)
 				return null;
@@ -73,7 +82,6 @@ namespace Mdbc
 			switch (value.BsonType)
 			{
 				case BsonType.Array: return new Collection((BsonArray)value); // wrapper
-				case BsonType.Binary: return BsonTypeMapper.MapToDotNetValue(value) ?? value; // byte[] or Guid else self
 				case BsonType.Boolean: return ((BsonBoolean)value).Value;
 				case BsonType.DateTime: return ((BsonDateTime)value).ToUniversalTime();
 				case BsonType.Document: return new Dictionary((BsonDocument)value); // wrapper
@@ -83,6 +91,16 @@ namespace Mdbc
 				case BsonType.Null: return null;
 				case BsonType.ObjectId: return ((BsonObjectId)value).Value;
 				case BsonType.String: return ((BsonString)value).Value;
+				case BsonType.Binary:
+					var data = (BsonBinaryData)value;
+					switch (data.SubType)
+					{
+						case BsonBinarySubType.UuidLegacy:
+						case BsonBinarySubType.UuidStandard:
+							return data.ToGuid();
+						default:
+							return data;
+					}
 				default: return value;
 			}
 		}
@@ -98,8 +116,7 @@ namespace Mdbc
 			if (value == null)
 				return BsonNull.Value;
 
-			PSObject custom;
-			value = BaseObject(value, out custom);
+			value = BaseObject(value, out PSObject custom);
 
 			// case: custom
 			if (custom != null)
@@ -271,8 +288,7 @@ namespace Mdbc
 		{
 			IncSerializationDepth(ref depth);
 
-			PSObject custom;
-			value = BaseObject(value, out custom);
+			value = BaseObject(value, out PSObject custom);
 
 			//_131013_155413 reuse existing document or wrap
 			var cd = value as IConvertibleToBsonDocument;
@@ -301,142 +317,90 @@ namespace Mdbc
 			else
 				return ba;
 		}
-		static IMongoQuery IdToQuery(object id)
-		{
-			var value = BsonValue.Create(id);
-
-			if (value.BsonType == BsonType.Array)
-				throw new ArgumentException("Can't use an array for _id."); //_131110_085122
-
-			return Query.EQ(MyValue.Id, value);
-		}
-		//TODO PSCustomObject
-		// We can get data as MdbcDictionary or as PSCustomObject. The first
-		// can be used as a query, the second cannot. This is not "symmetric".
-		// Think. NB New-MdbcData converts PSCustomObject to MdbcDictionary.
-		//var custom = value as PSCustomObject;
-		//if (custom != null)
-		//	return new QueryDocument(ToBsonDocument(custom));
-		public static IMongoQuery ObjectToQuery(object value)
+		public static FilterDefinition<BsonDocument> ObjectToFilter(object value)
 		{
 			if (value == null)
-				return Query.Null;
-
-			value = BaseObject(value);
-
-			var query = value as IMongoQuery;
-			if (query != null)
-				return query;
-
-			var cd = value as IConvertibleToBsonDocument;
-			if (cd != null)
-				return new QueryDocument(cd.ToBsonDocument());
-
-			var dictionary = value as IDictionary;
-			if (dictionary != null)
-				return new QueryDocument(dictionary);
-
-			return IdToQuery(value);
-		}
-		/// <summary>
-		/// Converts PS objects to a SortBy object.
-		/// </summary>
-		/// <param name="values">Strings or @{Name=Boolean}. Null and empty is allowed.</param>
-		/// <returns>SortBy object, may be empty but not null.</returns>
-		public static IMongoSortBy ObjectsToSortBy(IEnumerable values)
-		{
-			if (values == null)
-				return SortBy.Null;
-
-			var builder = new SortByBuilder();
-			foreach (var it in values)
-			{
-				var name = it as string;
-				if (name != null)
-				{
-					builder.Ascending(name);
-					continue;
-				}
-
-				var hash = it as IDictionary;
-				if (hash == null) throw new ArgumentException("SortBy: Invalid size object type.");
-				if (hash.Count != 1) throw new ArgumentException("SortBy: Expected a dictionary with one entry.");
-
-				foreach (DictionaryEntry kv in hash)
-				{
-					name = kv.Key.ToString();
-					if (LanguagePrimitives.IsTrue(kv.Value))
-						builder.Ascending(name);
-					else
-						builder.Descending(name);
-				}
-			}
-			return builder;
-		}
-		public static IMongoFields ObjectsToFields(IList<object> values)
-		{
-			if (values == null)
 				return null;
 
-			IMongoFields fields;
-			if (values.Count == 1 && (fields = values[0] as IMongoFields) != null)
-				return fields;
-
-			var builder = new FieldsBuilder();
-			foreach (var it in values)
-			{
-				var name = it as string;
-				if (name != null)
-				{
-					builder.Include(name);
-					continue;
-				}
-				throw new ArgumentException("Property: Expected either one IMongoFields or one or more String.");
-			}
-			return builder;
-		}
-		public static IMongoUpdate ObjectToUpdate(object value, Action<string> error)
-		{
 			value = BaseObject(value);
 
-			var update = value as IMongoUpdate;
-			if (update != null)
-				return update;
+			//! before IDictionary, mind Mdbc.Dictionary
+			if (value is IConvertibleToBsonDocument cd)
+				return cd.ToBsonDocument();
 
-			var dictionary = value as IDictionary;
-			if (dictionary != null)
-				return new UpdateDocument(dictionary);
+			//! after IConvertibleToBsonDocument
+			if (value is IDictionary dictionary)
+				return new BsonDocument(dictionary);
 
-			var enumerable = value as IEnumerable;
-			if (enumerable != null && !(value is string))
-				return Update.Combine(enumerable.Cast<object>().Select(x => ObjectToUpdate(x, error)));
+			if (value is string json)
+				return json.Length == 0 ? null : json;
 
-			var message = string.Format(null, "Invalid update object type: {0}. Valid types: update(s), dictionary(s).", value.GetType());
-			if (error == null)
-				throw new ArgumentException(message);
-
-			error(message);
-			return null;
+			return (FilterDefinition<BsonDocument>)value;
 		}
-		public static IEnumerable<BsonDocument> ObjectToBsonDocuments(object value)
+		public static SortDefinition<BsonDocument> ObjectToSort(object value)
 		{
-			var r = new List<BsonDocument>();
 			if (value == null)
-				return r;
+				return null;
 
-			var enumerable = AsEnumerable(value);
-			if (enumerable == null)
-				r.Add(ToBsonDocument(null, value, null, null, 0));
-			else
-				foreach (var it in enumerable)
-					r.Add(ToBsonDocument(null, it, null, null, 0));
+			value = BaseObject(value);
 
-			return r;
+			//! before IDictionary, mind Mdbc.Dictionary
+			if (value is IConvertibleToBsonDocument cd)
+				return cd.ToBsonDocument();
+
+			//! after IConvertibleToBsonDocument
+			if (value is IDictionary dictionary)
+				return new BsonDocument(dictionary);
+
+			if (value is string json)
+				return json;
+
+			return (SortDefinition<BsonDocument>)value;
+		}
+		public static ProjectionDefinition<BsonDocument> ObjectsToProject(object value)
+		{
+			if (value == null)
+				return null;
+
+			value = BaseObject(value);
+
+			//! before IDictionary, mind Mdbc.Dictionary
+			if (value is IConvertibleToBsonDocument cd)
+				return cd.ToBsonDocument();
+
+			//! after IConvertibleToBsonDocument
+			if (value is IDictionary dictionary)
+				return new BsonDocument(dictionary);
+
+			if (value is string json)
+				return json;
+
+			return (ProjectionDefinition<BsonDocument>)value;
 		}
 		static void IncSerializationDepth(ref int depth)
 		{
 			if (++depth > BsonDefaults.MaxSerializationDepth)
 				throw new InvalidOperationException("Data exceed the default maximum serialization depth.");
+		}
+		/// <summary>
+		/// Gets function converting BsonDocument to the specified type.
+		/// It works effectively for Mdbc.Dictionary and BsonDocument.
+		/// Other types are serialized.
+		/// </summary>
+		public static Func<BsonDocument, object> ConvertDocument(Type outputType)
+		{
+			if (outputType == typeof(Dictionary))
+				return x => new Dictionary(x);
+
+			if (outputType == typeof(BsonDocument))
+				return x => x;
+
+			var serializer = BsonSerializer.LookupSerializer(outputType);
+			return x =>
+			{
+				var context = BsonDeserializationContext.CreateRoot(new BsonDocumentReader(x));
+				return serializer.Deserialize(context);
+			};
 		}
 	}
 }

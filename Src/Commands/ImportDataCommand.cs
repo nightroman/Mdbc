@@ -2,7 +2,12 @@
 // Copyright (c) Roman Kuzmin
 // http://www.apache.org/licenses/LICENSE-2.0
 
+using System;
+using System.IO;
+using System.Collections.Generic;
 using System.Management.Automation;
+using MongoDB.Bson.IO;
+using MongoDB.Bson.Serialization;
 
 namespace Mdbc.Commands
 {
@@ -24,8 +29,41 @@ namespace Mdbc.Commands
 			var documentAs = _ParameterAs ?? new ParameterAs(null);
 			Path = GetUnresolvedProviderPathFromPSPath(Path);
 
-			foreach (var doc in FileCollection.ReadDocumentsAs(documentAs.Type, Path, FileFormat))
+			foreach (var doc in ReadDocumentsAs(documentAs.Type, Path, FileFormat))
 				WriteObject(doc);
+		}
+		static IEnumerable<object> ReadDocumentsAs(Type documentType, string filePath, FileFormat format)
+		{
+			if (format == FileFormat.Auto)
+				format = filePath.EndsWith(".json", StringComparison.OrdinalIgnoreCase) ? FileFormat.Json : FileFormat.Bson;
+
+			var serializer = BsonSerializer.LookupSerializer(documentType);
+			if (format == FileFormat.Json)
+			{
+				using (var stream = File.OpenText(filePath))
+				{
+					using (var reader = new JsonReader(stream))
+					{
+						var context = BsonDeserializationContext.CreateRoot(reader);
+						while (!reader.IsAtEndOfFile())
+							yield return serializer.Deserialize(context);
+					}
+				}
+			}
+			else
+			{
+				using (var stream = File.OpenRead(filePath))
+				{
+					long length = stream.Length;
+
+					while (stream.Position < length)
+						using (var reader = new BsonBinaryReader(stream))
+						{
+							var context = BsonDeserializationContext.CreateRoot(reader);
+							yield return serializer.Deserialize(context);
+						}
+				}
+			}
 		}
 	}
 }

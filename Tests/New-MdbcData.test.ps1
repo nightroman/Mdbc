@@ -107,21 +107,6 @@ task HashtableToDocument {
 	Test-Type $new.Document Mdbc.Dictionary
 }
 
-task Value {
-	Test-Type (New-MdbcData -Value $null) MongoDB.Bson.BsonNull
-
-	Test-Type (New-MdbcData -Value $true) MongoDB.Bson.BsonBoolean
-	Test-Type (New-MdbcData -Value (Get-Date)) MongoDB.Bson.BsonDateTime
-	Test-Type (New-MdbcData -Value 1.1) MongoDB.Bson.BsonDouble
-	Test-Type (New-MdbcData -Value ([guid]::NewGuid())) MongoDB.Bson.BsonBinaryData
-	Test-Type (New-MdbcData -Value 1) MongoDB.Bson.BsonInt32
-	Test-Type (New-MdbcData -Value 1L) MongoDB.Bson.BsonInt64
-	Test-Type (New-MdbcData -Value text) MongoDB.Bson.BsonString
-
-	Test-Type (New-MdbcData -Value @()) MongoDB.Bson.BsonArray
-	Test-Type (New-MdbcData -Value @{}) MongoDB.Bson.BsonDocument
-}
-
 task PSCustomObject {
 	$property = @{n='_id'; e='Id'}, 'Name', 'StartTime', 'WorkingSet64'
 
@@ -227,11 +212,6 @@ task Cyclic {
 	$d = New-Object PSObject -Property @{Document=$null}
 	$d.Document = $d
 	Test-Error { New-MdbcData $d } $message
-
-	# array
-	$a = [Collections.ArrayList]@()
-	$null = $a.Add($a)
-	Test-Error { New-MdbcData -Value $a } $message
 
 	#! not a cycle
 	$d = @{x = 1}

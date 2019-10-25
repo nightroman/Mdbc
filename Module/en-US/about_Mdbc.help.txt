@@ -7,14 +7,15 @@ SHORT DESCRIPTION
 LONG DESCRIPTION
     The module provides the following cmdlets and tools:
 
-    Connect, set the default server, database, and collection:
+    Connect, set the default client, database, and collection:
 
         Connect-Mdbc
 
-    Add, get, remove, and update documents:
+    Add, get, set, remove, and update documents:
 
         Add-MdbcData
         Get-MdbcData
+        Set-MdbcData
         Remove-MdbcData
         Update-MdbcData
 
@@ -22,91 +23,46 @@ LONG DESCRIPTION
 
         New-MdbcData
 
-    Create update expressions, e.g. for Update-MdbcData:
-
-        New-MdbcUpdate
-
-    Create queries, e.g. for Get-MdbcData, Update-MdbcData:
-
-        New-MdbcQuery
-
-    Add collections with special properties, e.g. capped:
-
-        Add-MdbcCollection
-
-    Invoke map and reduce:
-
-        Invoke-MdbcMapReduce
-
-    Invoke MongoDB commands including not covered by Mdbc or C# driver:
+    Invoke MongoDB commands including not covered by module:
 
         Invoke-MdbcCommand
 
-    bson/json data persistence without MongoDB:
+    Invoke complex aggregate queries:
+
+        Invoke-MdbcAggregate
+
+    Manage databases and collections:
+
+        Get-MdbcDatabase
+        Add-MdbcCollection
+        Get-MdbcCollection
+        Remove-MdbcDatabase
+        Remove-MdbcCollection
+        Rename-MdbcCollection
+
+    Manage bson/json data without MongoDB:
 
         Export-MdbcData
         Import-MdbcData
 
-    bson/json file collections without MongoDB:
+HOW TO
+    Add document
+        Add-MdbcData -- adds strictly new, returns none
+        Set-MdbcData -Add -- replaces old or adds new, returns none or info
+        Get-MdbcData -Set -Add -- replaces old or adds new, returns old or new
+        + Update-MdbcData -Add -- updates old or adds new, returns none or info
 
-        Open-MdbcFile
-        Save-MdbcFile
+    Set document
+        Set-MdbcData -- replaces old, returns none or info
+        Get-MdbcData -Set -- replaces old, returns old or new
+        + Update-MdbcData -- updates old, returns none or info
 
-    Some more features for interactive sessions:
+    Remove document(s)
+        Remove-MdbcData -- removes one or many old, returns none or info
+        Get-MdbcData -Remove -- removes old, returns old
 
-        Mdbc.ps1
-
-FILE COLLECTIONS
-    Mdbc introduces bson/json file collections which do not require MongoDB.
-    They are opened and saved by Open-MdbcFile and Save-MdbcFile and support
-    commands Get-MdbcData, Add-MdbcData, Remove-MdbcData, and Update-MdbcData.
-
-    Not supported with file collections
-
-        * Command Invoke-MdbcAggregate
-        * Command Invoke-MdbcMapReduce
-        * $where queries
-
-    Not supported with simple data (no _id)
-
-        * Parameter Update in Add-MdbcData
-
-    About invalid element names *.*, $*
-
-        File collections read documents from files without name checks. This is
-        not an issue for files created and maintained by Open|Save-MdbcData and
-        Add|Remove|Update-MdbcData, all names should be valid. Files created
-        differently, e.g. by Export-MdbcData, may have invalid element names.
-
-    Error and write concern processing
-
-        Exceptions thrown on data updates are caught by cmdlets and converted
-        to not terminating errors. MongoDB and file collection error message
-        texts are different but they should normally explain the same causes.
-
-        For file collections write concern is always acknowledged, parameters
-        WriteConcern are ignored in all cmdlets. All issues result in errors.
-
-    Result of Add-MdbcData, Remove-MdbcData, Update-MdbcData
-
-        The switch Result tells to output a WriteConcernResult object.
-        Its properties with remarks for file collections are:
-
-            HasLastErrorMessage : used as usual
-            DocumentsAffected   : used as usual
-            UpdatedExisting     : used as usual
-            Ok                  : used as usual
-
-            LastErrorMessage    : text is different to MongoDB
-            ErrorMessage        : text is different to MongoDB
-            Response            : may be different to MongoDB response
-
-            Code                : not used
-            Command             : not used
-            CommandName         : not used
-
-        Used as usual values are normally the same as with MongoDB but
-        differences are still possible, especially on various errors.
+    Update document(s)
+        Update-MdbcData -- updates one or many old or adds one new, returns none or info
 
 SEE ALSO
     MongoDB http://www.mongodb.org

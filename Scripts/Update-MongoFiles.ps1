@@ -1,4 +1,3 @@
-
 <#
 .Synopsis
 	Updates the file system snapshot database.
@@ -52,8 +51,7 @@
 	Get-MongoFile.ps1
 #>
 
-param
-(
+param(
 	[Parameter(Position=0)][string[]]$Path = '.',
 	[string]$CollectionName = 'files',
 	[switch]$Log,
@@ -81,17 +79,16 @@ Write-Host "Updating data for $Path ..."
 function Connect {
 	Import-Module Mdbc
 	Connect-Mdbc . test $CollectionName
-	$CollectionLog = $Database.GetCollection(($CollectionName + '_log'))
+	$CollectionLog = Get-MdbcCollection ($CollectionName + '_log')
 
 	$info = 1 | Select-Object Path, Created, Changed, Removed, Elapsed
 	$info.Created = $info.Changed = $info.Removed = 0
-	$Update = New-MdbcUpdate -Set @{Updated = $Now}
+	$Update = @{'$set' = @{Updated = $Now}}
 }
 
 # Gets input items from the path.
 function Input {
-	$ea = if ($PSVersionTable.PSVersion.Major -ge 3) {'Ignore'} else { 0 }
-	Get-ChildItem -LiteralPath $Path -Force -Recurse -ErrorAction $ea
+	Get-ChildItem -LiteralPath $Path -Force -Recurse -ErrorAction Ignore
 }
 
 # Updates documents from input items.
@@ -108,10 +105,10 @@ function Update {process{
 	}
 
 	# query by main data and update Updated
-	$r = Update-MdbcData $Update $data -Result
+	$r = Update-MdbcData $data $Update -Result
 
 	# updated means not changed, done
-	if ($r.DocumentsAffected) {return}
+	if ($r.ModifiedCount) {return}
 
 	# more data
 	if (!$file) {
@@ -124,15 +121,18 @@ function Update {process{
 	}
 	$data.Updated = $Now
 
-	# add or update data
-	$r = Add-MdbcData $data -Update -Result
-	$op = [int]$r.UpdatedExisting
+	# set or add data
+	$qid = @{_id = $_.FullName}
+	$r = Set-MdbcData $qid $data -Add -Result
+	$op = [int]$r.ModifiedCount
 	if ($op) {
 		++$info.Changed
 	}
 	else {
 		++$info.Created
 	}
+
+	# no log? done
 	if (!$Log) {return}
 
 	# log created or changed
@@ -140,9 +140,10 @@ function Update {process{
 	$data.Remove('Name')
 	$data.Remove('Extension')
 	$data.Op = $op
-	Update-MdbcData -Collection $CollectionLog -Add -Query $_.FullName -Update (
-		New-MdbcUpdate -Set @{Updated = $Now; Op = $op} -Push @{Log = $data}
-	)
+	Update-MdbcData $qid -Collection $CollectionLog -Add -Update @{
+		'$set' = @{Updated = $Now; Op = $op}
+		'$push' = @{Log = $data}
+	}
 }}
 
 ### Update existing
@@ -162,18 +163,20 @@ else {
 }
 
 ### Remove missing
-$in = foreach($_ in $Path) {
-	if (!$_.EndsWith('\')) {$_ += '\'}
-	[regex]('^' + [regex]::Escape($_))
-}
-$queryUnknown = New-MdbcQuery -Not (New-MdbcQuery Updated -Type 9)
-$queryMissing = New-MdbcQuery -And (New-MdbcQuery _id -In $in), (New-MdbcQuery Updated -LT $Now)
-foreach($data in Get-MdbcData (New-MdbcQuery -Or $queryUnknown, $queryMissing)) {
+$in = @(
+	foreach($_ in $Path) {
+		if (!$_.EndsWith('\')) {$_ += '\'}
+		[regex]('^' + [regex]::Escape($_))
+	}
+)
+$queryUnknown = @{Updated = @{'$not' = @{'$type' = 9}}}
+$queryMissing = @{'$and' = @{_id = @{'$in' = $in}}, @{Updated = @{'$lt' = $Now}}}
+foreach($data in Get-MdbcData @{'$or' = $queryUnknown, $queryMissing}) {
 	++$info.Removed
 
 	# remove data
 	$id = $data._id
-	Remove-MdbcData $id
+	Remove-MdbcData @{_id = $id}
 
 	# log removed
 	if ($Log) {
@@ -181,9 +184,10 @@ foreach($data in Get-MdbcData (New-MdbcQuery -Or $queryUnknown, $queryMissing)) 
 		$data.Remove('Name')
 		$data.Remove('Extension')
 		$data.Op = 2
-		Update-MdbcData -Collection $CollectionLog -Add -Query $id -Update (
-			New-MdbcUpdate -Set @{Updated = $Now; Op = 2} -Push @{Log = $data}
-		)
+		Update-MdbcData @{_id = $id} -Collection $CollectionLog -Add -Update @{
+			'$set' = @{Updated = $Now; Op = 2}
+			'$push' = @{Log = $data}
+		}
 	}
 }
 

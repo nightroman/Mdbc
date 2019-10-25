@@ -2,55 +2,36 @@
 // Copyright (c) Roman Kuzmin
 // http://www.apache.org/licenses/LICENSE-2.0
 
-using System;
-using System.Collections.Generic;
-using System.Management.Automation;
 using MongoDB.Bson;
 using MongoDB.Driver;
+using System;
+using System.Management.Automation;
 
 namespace Mdbc.Commands
 {
-	[Cmdlet(VerbsLifecycle.Invoke, "MdbcAggregate")]
+	[Cmdlet(VerbsLifecycle.Invoke, "MdbcAggregate"), OutputType(typeof(Dictionary))]
 	public sealed class InvokeAggregateCommand : AbstractCollectionCommand
 	{
-		[Parameter(Position = 0, Mandatory = true)]
-		public object Pipeline { get { return null; } set { _Pipeline = Actor.ObjectToBsonDocuments(value); } }
-		IEnumerable<BsonDocument> _Pipeline;
+		[Parameter(Position = 0)]
+		public object Pipeline { get { return null; } set { if (value != null) _Pipeline = Api.PipelineDefinition(value); } }
+		PipelineDefinition<BsonDocument, BsonDocument> _Pipeline;
 
 		[Parameter]
-		public int BatchSize { get; set; }
+		public AggregateOptions Options { get; set; }
 
 		[Parameter]
-		public TimeSpan MaxTime { get; set; }
-
-		[Parameter]
-		public SwitchParameter AllowDiskUse { get; set; }
-
-		//[Parameter]
-		//public SwitchParameter Explain { get; set; }
+		public PSObject As { get { return null; } set { _ParameterAs_ = new ParameterAs(value); } }
+		Type DocumentType { get { return _ParameterAs_ == null ? typeof(Dictionary) : _ParameterAs_.Type; } }
+		ParameterAs _ParameterAs_;
 
 		protected override void BeginProcessing()
 		{
-			var mc = TargetCollection.Collection as MongoCollection;
-			if (mc == null) ThrowNotImplementedForFiles("Aggregate");
-
-			var args = new AggregateArgs() { Pipeline = _Pipeline, OutputMode = AggregateOutputMode.Cursor };
-			if (AllowDiskUse)
-				args.AllowDiskUse = true;
-			if (BatchSize > 0)
-				args.BatchSize = BatchSize;
-			if (MaxTime.Ticks > 0)
-				args.MaxTime = MaxTime;
-
-			//if (Explain)
-			//{
-			//    WriteObject(new Dictionary(mc.AggregateExplain(args).Response));
-			//    return;
-			//}
-
-			var result = mc.Aggregate(args);
-			foreach (var document in result)
-				WriteObject(new Dictionary(document));
+			if (_Pipeline == null) throw new PSArgumentException(Api.TextParameterPipeline);
+			var convert = Actor.ConvertDocument(DocumentType);
+			foreach (var document in Collection.Aggregate(_Pipeline, Options).ToEnumerable())
+			{
+				WriteObject(convert(document));
+			}
 		}
 	}
 }

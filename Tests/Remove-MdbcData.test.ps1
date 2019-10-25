@@ -4,87 +4,52 @@ Import-Module Mdbc
 Set-StrictMode -Version Latest
 
 task Result {
-	$init = { @{_id=1; x=1}, @{_id=2; x=2}, @{_id=3; x=2} | Add-MdbcData }
-	Invoke-Test {
-		# 0 removed
-		. $$
-		$r = Remove-MdbcData (New-MdbcQuery x 3) -Result
-		assert ('1 2 3' -eq (Get-MdbcData -Distinct _id))
-		equals $r.DocumentsAffected 0L
-		equals $r.UpdatedExisting $false
-		equals $r.HasLastErrorMessage $false
-
-		# 1 removed
-		. $$
-		$r = Remove-MdbcData (New-MdbcQuery x 2) -One -Result
-		assert ('1 3' -eq (Get-MdbcData -Distinct _id))
-		equals $r.DocumentsAffected 1L
-		equals $r.UpdatedExisting $false
-		equals $r.HasLastErrorMessage $false
-
-		# 2 removed
-		. $$
-		$r = Remove-MdbcData (New-MdbcQuery x 2) -Result
-		equals 1 (Get-MdbcData -Distinct _id)
-		equals $r.DocumentsAffected 2L
-		equals $r.UpdatedExisting $false
-		equals $r.HasLastErrorMessage $false
-
-		# pipeline with _id's
-		. $$
-		$1, $2 = 1, 3 | Remove-MdbcData -Result
-		equals 2 (Get-MdbcData -Distinct _id)
-		equals $1.DocumentsAffected 1L
-		equals $1.UpdatedExisting $false
-		equals $2.DocumentsAffected 1L
-		equals $2.UpdatedExisting $false
-
-		# pipeline with queries
-		. $$
-		$0, $1, $2 = @{x='miss'}, @{x=2}, @{x=1} | Remove-MdbcData -Result
-		equals $Collection.Count() 0L
-		equals $0.DocumentsAffected 0L
-		equals $0.UpdatedExisting $false
-		equals $1.DocumentsAffected 2L
-		equals $1.UpdatedExisting $false
-		equals $2.DocumentsAffected 1L
-		equals $2.UpdatedExisting $false
-	}{
-		$$ = { Connect-Mdbc -NewCollection; . $init }
-	}{
-		$$ = { Open-MdbcFile; . $init }
+	$$ = {
+		Connect-Mdbc -NewCollection
+		@{_id=1; x=1}, @{_id=2; x=2}, @{_id=3; x=2} | Add-MdbcData
 	}
+
+	# 0 removed
+	. $$
+	$r = Remove-MdbcData @{x=3} -Many -Result
+	assert ('1 2 3' -eq (Get-MdbcData -Distinct _id))
+	equals $r.DeletedCount 0L
+
+	# 1 removed
+	. $$
+	$r = Remove-MdbcData @{x=2} -Result
+	assert ('1 3' -eq (Get-MdbcData -Distinct _id))
+	equals $r.DeletedCount 1L
+
+	# 2 removed
+	. $$
+	$r = Remove-MdbcData @{x=2} -Many -Result
+	equals 1 (Get-MdbcData -Distinct _id)
+	equals $r.DeletedCount 2L
 }
 
 #_131121_104038
-task NoQuery {
-	$m = 'Parameter Query must be specified and cannot be null.'
+task NoFilter {
+	# omitted, empty, null
+	Connect-Mdbc -NewCollection
+	Test-Error { Remove-MdbcData } $ErrorFilter
+	Test-Error { Remove-MdbcData '' } $ErrorFilter
+	Test-Error { Remove-MdbcData $null } $ErrorFilter
 
-	# omitted
-	Open-MdbcFile # ensure $Collection
-	Test-Error { Remove-MdbcData } $m
-
-	# null query
-	Test-Error { Remove-MdbcData $null } $m
-	Test-Error { $null | Remove-MdbcData } $m
-
-	$init = { @{_id=''}, @{_id=1} | Add-MdbcData }
-	Invoke-Test {
-
-		# empty query is for all
-		. $$
-		$r = Remove-MdbcData @{} -Result
-		equals $r.DocumentsAffected 2L
-		equals $Collection.Count() 0L
-
-		# empty string is for _id ''
-		. $$
-		$r = Remove-MdbcData '' -Result
-		equals $r.DocumentsAffected 1L
-		equals $Collection.Count() 1L
-	}{
-		$$ = { Connect-Mdbc -NewCollection; . $init }
-	}{
-		$$ = { Open-MdbcFile; . $init }
+	$$ = {
+		Connect-Mdbc -NewCollection
+		@{_id=''}, @{_id=1} | Add-MdbcData
 	}
+
+	# empty query is for all
+	. $$
+	$r = Remove-MdbcData @{} -Many -Result
+	equals $r.DeletedCount 2L
+	equals (Get-MdbcData -Count) 0L
+
+	# empty string _id
+	. $$
+	$r = Remove-MdbcData '{_id : ""}' -Result
+	equals $r.DeletedCount 1L
+	equals (Get-MdbcData -Count) 1L
 }

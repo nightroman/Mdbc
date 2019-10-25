@@ -13,8 +13,6 @@ namespace Mdbc
 	public enum OutputType
 	{
 		Default,
-		Lazy,
-		Raw,
 		PS
 	}
 }

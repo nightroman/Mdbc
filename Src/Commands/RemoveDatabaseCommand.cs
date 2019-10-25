@@ -3,22 +3,18 @@
 // http://www.apache.org/licenses/LICENSE-2.0
 
 using System.Management.Automation;
-using MongoDB.Driver;
 
 namespace Mdbc.Commands
 {
-	[Cmdlet(VerbsCommon.Add, "MdbcCollection")]
-	public sealed class AddCollectionCommand : AbstractDatabaseCommand
+	[Cmdlet(VerbsCommon.Remove, "MdbcDatabase")]
+	public sealed class RemoveDatabaseCommand : AbstractClientCommand
 	{
 		[Parameter(Position = 0, Mandatory = true)]
 		public string Name { get; set; }
 
-		[Parameter]
-		public CreateCollectionOptions Options { get; set; }
-
 		protected override void BeginProcessing()
 		{
-			Database.CreateCollection(Name, Options);
+			Client.DropDatabase(Name);
 		}
 	}
 }

@@ -35,17 +35,6 @@ task PreserveTypes {
 	$r = Import-MdbcData $json
 	Test-List $data $r
 
-	Open-MdbcFile $json
-	$r = Get-MdbcData
-	Test-List $data $r
-
-	remove $json
-	Open-MdbcFile
-	$data | Add-MdbcData
-	Save-MdbcFile $json
-	$r = Import-MdbcData $json
-	Test-List $data $r
-
 	# use Strict and see loss of data types
 	$old = [MongoDB.Bson.IO.JsonWriterSettings]::Defaults.OutputMode
 	[MongoDB.Bson.IO.JsonWriterSettings]::Defaults.OutputMode = 'Strict'

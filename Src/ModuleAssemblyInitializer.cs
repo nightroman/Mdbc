@@ -21,8 +21,6 @@ namespace Mdbc
 			_called = true;
 
 			BsonSerializer.RegisterSerializer(typeof(Dictionary), new DictionarySerializer());
-			BsonSerializer.RegisterSerializer(typeof(LazyDictionary), new LazyDictionarySerializer());
-			BsonSerializer.RegisterSerializer(typeof(RawDictionary), new RawDictionarySerializer());
 			BsonSerializer.RegisterSerializer(typeof(PSObject), new PSObjectSerializer());
 
 			BsonTypeMapper.RegisterCustomTypeMapper(typeof(PSObject), new PSObjectTypeMapper());

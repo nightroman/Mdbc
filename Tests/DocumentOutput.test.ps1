@@ -1,4 +1,3 @@
-
 <#
 .Synopsis
 	Common tests for Get-MdbcData, Import-MdbcData, Invoke-MdbcMapReduce
@@ -12,11 +11,9 @@ Set-StrictMode -Version Latest
 # To be sure the enum values are fine, e.g. PSObject was a bad name for enum
 # value. Also, if this fails update the manuals.
 task Enum {
-	assert ([enum]::GetValues([Mdbc.OutputType]).Count -eq 4)
+	assert ([enum]::GetValues([Mdbc.OutputType]).Count -eq 2)
 	assert (0 -eq [Mdbc.OutputType]::Default)
-	assert (1 -eq [Mdbc.OutputType]::Lazy)
-	assert (2 -eq [Mdbc.OutputType]::Raw)
-	assert (3 -eq [Mdbc.OutputType]::PS)
+	assert (1 -eq [Mdbc.OutputType]::PS)
 }
 
 task As {
@@ -34,7 +31,7 @@ task As {
 	}
 
 	Invoke-Test {
-		Test-Error { test -As bad } '*Default, Lazy, Raw, PS"*'
+		Test-Error { test -As bad } '*Default, PS"*'
 
 		'Default 1'
 		$r = test
@@ -44,18 +41,6 @@ task As {
 		'Default 2'
 		$r = test -As Default
 		Test-Type $r Mdbc.Dictionary
-		Test-Member
-
-		'Lazy'
-		$r = test -As Lazy
-		Test-Type $r Mdbc.LazyDictionary
-		Test-Type $r.ToBsonDocument() MongoDB.Bson.LazyBsonDocument
-		Test-Member
-
-		'Raw'
-		$r = test -As Raw
-		Test-Type $r Mdbc.RawDictionary
-		Test-Type $r.ToBsonDocument() MongoDB.Bson.RawBsonDocument
 		Test-Member
 
 		'PS'
@@ -69,11 +54,6 @@ task As {
 		function test($As) { Get-MdbcData @PSBoundParameters }
 	}{
 		function test($As) { Import-MdbcData z.bson @PSBoundParameters }
-	}{
-		$map = 'function() { emit(this._id, this) }'
-		$reduce = 'function(key, emits) { return emits }'
-		$testMembers = $false
-		function test($As) { Invoke-MdbcMapReduce $map, $reduce @PSBoundParameters }
 	}
 
 	Remove-Item z.bson

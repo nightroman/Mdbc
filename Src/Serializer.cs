@@ -25,12 +25,11 @@ namespace Mdbc
 
 			return array;
 		}
-		static object ReadObject(IBsonReader bsonReader) //_120509_173140 keep consistent
+		static object ReadObject(IBsonReader bsonReader) //_120509_173140 sync
 		{
 			switch (bsonReader.GetCurrentBsonType())
 			{
 				case BsonType.Array: return ReadArray(bsonReader); // replacement
-				case BsonType.Binary: var binary = BsonSerializer.Deserialize<BsonValue>(bsonReader); return BsonTypeMapper.MapToDotNetValue(binary) ?? binary; // byte[] or Guid else self
 				case BsonType.Boolean: return bsonReader.ReadBoolean();
 				case BsonType.DateTime: return BsonUtils.ToDateTimeFromMillisecondsSinceEpoch(bsonReader.ReadDateTime());
 				case BsonType.Document: return ReadCustomObject(bsonReader); // replacement
@@ -40,6 +39,16 @@ namespace Mdbc
 				case BsonType.Null: bsonReader.ReadNull(); return null;
 				case BsonType.ObjectId: return bsonReader.ReadObjectId();
 				case BsonType.String: return bsonReader.ReadString();
+				case BsonType.Binary:
+					var data = BsonSerializer.Deserialize<BsonBinaryData>(bsonReader);
+					switch (data.SubType)
+					{
+						case BsonBinarySubType.UuidLegacy:
+						case BsonBinarySubType.UuidStandard:
+							return data.ToGuid();
+						default:
+							return data;
+					}
 				default: return BsonSerializer.Deserialize<BsonValue>(bsonReader);
 			}
 		}
@@ -69,21 +78,6 @@ namespace Mdbc
 		public override Dictionary Deserialize(BsonDeserializationContext context, BsonDeserializationArgs args)
 		{
 			return new Dictionary(BsonDocumentSerializer.Instance.Deserialize(context, args));
-		}
-	}
-	sealed class LazyDictionarySerializer : SealedClassSerializerBase<LazyDictionary>
-	{
-		public override LazyDictionary Deserialize(BsonDeserializationContext context, BsonDeserializationArgs args)
-        {
-            var serialiazer = new LazyBsonDocumentSerializer();
-            return new LazyDictionary(serialiazer.Deserialize(context, args));
-		}
-	}
-	sealed class RawDictionarySerializer : SealedClassSerializerBase<RawDictionary>
-    {
-		public override RawDictionary Deserialize(BsonDeserializationContext context, BsonDeserializationArgs args)
-		{
-            return new RawDictionary(RawBsonDocumentSerializer.Instance.Deserialize(context, args));
 		}
 	}
 }

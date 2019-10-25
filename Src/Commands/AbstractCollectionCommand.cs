@@ -2,63 +2,32 @@
 // Copyright (c) Roman Kuzmin
 // http://www.apache.org/licenses/LICENSE-2.0
 
+using MongoDB.Bson;
+using MongoDB.Driver;
 using System;
 using System.Management.Automation;
-using MongoDB.Driver;
 
 namespace Mdbc.Commands
 {
 	public abstract class AbstractCollectionCommand : Abstract
 	{
+		IMongoCollection<BsonDocument> _Collection;
 		[Parameter]
 		[ValidateNotNull]
-		public object Collection
-		{
-			get
-			{
-				return _Collection;
-			}
-			set
-			{
-				SetCollection(value);
-			}
-		}
-		ICollectionHost _Collection;
-		void SetCollection(object value)
-		{
-			if (value == null)
-			{
-				value = GetVariableValue(Actor.CollectionVariable);
-				if (value == null)
-					throw new PSArgumentException("Specify a collection by the parameter or variable Collection.");
-			}
-
-			value = Actor.BaseObject(value);
-
-			var mc = value as MongoCollection;
-			if (mc != null)
-			{
-				_Collection = new MongoCollectionHost(mc);
-				return;
-			}
-
-			var fc = value as FileCollection;
-			if (fc != null)
-			{
-				_Collection = fc;
-				return;
-			}
-
-			throw new PSArgumentException("Unexpected type of parameter or variable Collection.");
-		}
-		internal ICollectionHost TargetCollection
+		public IMongoCollection<BsonDocument> Collection
 		{
 			get
 			{
 				if (_Collection == null)
-					SetCollection(null);
-
+				{
+					_Collection = Actor.BaseObject(GetVariableValue(Actor.CollectionVariable)) as IMongoCollection<BsonDocument>;
+					if (_Collection == null) throw new PSInvalidOperationException("Specify a collection by the parameter or variable Collection.");
+				}
 				return _Collection;
+			}
+			set
+			{
+				_Collection = value;
 			}
 		}
 		protected static void ThrowNotImplementedForFiles(string what)

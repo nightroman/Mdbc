@@ -1,17 +1,16 @@
 # MongoDB Cmdlets for PowerShell
 
 Mdbc is the PowerShell module based on the official [MongoDB C# driver](https://github.com/mongodb/mongo-csharp-driver).
-Mdbc makes MongoDB scripting in PowerShell easier and provides some extra
-features like bson/json file collections which do not even require MongoDB.
+Mdbc makes MongoDB data and operations PowerShell friendly.
 
 - The PSGallery package is built for PowerShell v5.1 (.NET 4.7.1+) and PowerShell Core.
-- The legacy NuGet package is built for PowerShell v3, v4, v5.
+- The NuGet package is built for PowerShell v3, v4, v5.
 
 ## Quick Start
 
 **Step 1:** Get and install
 
-**Main package from PSGallery**
+**Package from PSGallery**
 
 Mdbc for PowerShell v5.1+ (.NET 4.7.1+) is published as the PSGallery module [Mdbc](https://www.powershellgallery.com/packages/Mdbc).
 
@@ -27,7 +26,7 @@ You can install the module by this command:
 Install-Module Mdbc
 ```
 
-**Legacy package from NuGet**
+**Package from NuGet**
 
 Mdbc for PowerShell v3, v4, v5 is published as the NuGet package [Mdbc](https://www.nuget.org/packages/Mdbc).
 Download it by NuGet tools or [directly](http://nuget.org/api/v2/package/Mdbc).
@@ -44,15 +43,15 @@ Copy the directory *Mdbc* to one of the PowerShell module directories, see
 Import-Module Mdbc
 ```
 
-**Step 3:** Take a look at help:
+**Step 3:** Take a look at help and available commands:
 
 ```powershell
 help about_Mdbc
-help Connect-Mdbc -full
+help Connect-Mdbc -Full
+Get-Command -Module Mdbc
 ```
 
-**Step 4:** Invoke these operations line by line, reading the comments
-(make sure that mongod is started, otherwise `Connect-Mdbc` fails):
+**Step 4:** Make sure mongod is running and try some commands:
 
 ```powershell
 # Load the module
@@ -61,40 +60,66 @@ Import-Module Mdbc
 # Connect the new collection test.test
 Connect-Mdbc . test test -NewCollection
 
-# Add some test data
-@{_id=1; value=42}, @{_id=2; value=3.14} | Add-MdbcData
+# Add two documents
+@{_id = 1; value = 42}, @{_id = 2; value = 3.14} | Add-MdbcData
 
-# Get all data as custom objects and show them in a table
-Get-MdbcData -As PS | Format-Table -AutoSize | Out-String
+# Get documents as PS objects
+Get-MdbcData -As PS | Format-Table
 
-# Query a document by _id using a query expression
-$data = Get-MdbcData (New-MdbcQuery _id -EQ 1)
-$data
+# Get the document by _id
+Get-MdbcData @{_id = 1}
 
-# Update the document, set the 'value' to 100
-$data._id | Update-MdbcData (New-MdbcUpdate -Set @{value = 100})
+# Update the document, set 'value' to 100
+Update-MdbcData @{_id = 1} @{'$set' = @{value = 100}}
 
-# Query the document using a simple _id query
-Get-MdbcData $data._id
+# Get the document again, 'value' is 100
+Get-MdbcData @{_id = 1}
 
 # Remove the document
-$data._id | Remove-MdbcData
+Remove-MdbcData @{_id = 1}
 
-# Count remaining documents, 1 is expected
+# Count documents, there is 1
 Get-MdbcData -Count
 ```
 
-If the code above works then the module is installed and ready to use.
-
 ## Next Steps
 
-Read cmdlet help topics and take a look at examples provided there for some
-basic use cases to start with.
+Read cmdlet help topics and take a look at examples for some basic use cases.
 
-Take a look at scripts in the directory *Scripts*, especially the interactive
-profile *Mdbc.ps1*. Other scripts are toys but may be useful. More technical
-examples can be found in *Tests* in the repository.
+Use *Scripts\Mdbc.ArgumentCompleters.ps1* for database and collection name
+completion. Other scripts are toys but may be useful. See *Tests* in the
+repository for more technical examples.
 
-Mdbc cmdlets are designed for very basic tasks. For advanced tasks the C#
-driver API may have to be used directly. In many cases this is easy in
-PowerShell. See the C# driver manuals for its API details.
+Mdbc cmdlets are designed for rather basic tasks.
+For advanced tasks use the driver API directly.
+
+## Driver methods and module commands
+
+| Driver | Module  | Output
+| :----- | :-----  | :-----
+| **Client** | |
+| MongoClient | Connect-Mdbc | $Client $Database $Collection
+| GetDatabase | Get-MdbcDatabase | database(s)
+| DropDatabase | Remove-MdbcDatabase | none
+| **Database** | |
+| RunCommand | Invoke-MdbcCommand | document
+| GetCollection | Get-MdbcCollection | collection(s)
+| CreateCollection | Add-MdbcCollection | none
+| RenameCollection | Rename-MdbcCollection | none
+| DropCollection | Remove-MdbcCollection | none
+| **Collection** | |
+| InsertOne | Add-MdbcData | none
+| Find | Get-MdbcData | documents
+| CountDocuments | Get-MdbcData -Count | count
+| Distinct | Get-MdbcData -Distinct | values
+| FindOneAndDelete | Get-MdbcData -Remove | old document
+| FindOneAndReplace | Get-MdbcData -Set | old or new (-New) document
+| FindOneAndUpdate | Get-MdbcData -Update | old or new (-New) document
+| DeleteOne | Remove-MdbcData | none or info (-Result)
+| DeleteMany | Remove-MdbcData -Many | none or info (-Result)
+| ReplaceOne | Set-MdbcData | none or info (-Result)
+| UpdateOne | Update-MdbcData | none or info (-Result)
+| UpdateMany | Update-MdbcData -Many | none or info (-Result)
+| Aggregate | Invoke-MdbcAggregate | documents
+
+See also [about_Mdbc](https://github.com/nightroman/Mdbc/blob/master/Module/en-US/about_Mdbc.help.txt)

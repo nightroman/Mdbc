@@ -1,11 +1,11 @@
 
-. .\Zoo.ps1
-Import-Module Mdbc
+. ./Zoo.ps1
 Set-StrictMode -Version Latest
 
 task Invalid {
 	Connect-Mdbc . test
-	Test-Error { Invoke-MdbcCommand 1 } '*Exception setting "Command": "Invalid command object type."'
+	Test-Error { Invoke-MdbcCommand } $ErrorCommand
+	Test-Error { Invoke-MdbcCommand $null } $ErrorCommand
 }
 
 task GetVersion {
@@ -44,7 +44,13 @@ task findAndModify {
 
 	#! fixed Get-Date -> BsonValue
 	$r = Invoke-MdbcCommand $command
-	$r.value
+	"$r"
+	$r.value | Out-String
 	assert $r.ok # success
 	equals $r.value.Count 3 # modified document
+
+	# ditto -As PS
+	$r = Invoke-MdbcCommand $command -As PS
+	$r | Out-String
+	equals ($r.GetType().Name) PSCustomObject
 }

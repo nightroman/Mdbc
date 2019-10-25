@@ -1,10 +1,9 @@
 .vs
-*.chm
-*.chw
-*.dll
-*.suo
-*.user
-*.zip
+bin/
+obj/
+Src/Properties/
+z
+*.bson
 AssemblyInfo.cs
 Mdbc.psd1
 

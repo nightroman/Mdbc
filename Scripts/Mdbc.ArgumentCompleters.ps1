@@ -46,7 +46,7 @@ Register-ArgumentCompleter -CommandName Connect-Mdbc -ParameterName CollectionNa
 	if (!($ConnectionString = $boundParameters['ConnectionString'])) { $ConnectionString = '.' }
 	if (!($DatabaseName = $boundParameters['DatabaseName'])) { $DatabaseName = 'test' }
 
-	@(Connect-Mdbc $ConnectionString $DatabaseName * | ForEach-Object Name) -like "$wordToComplete*" | .{process{
+	@(Connect-Mdbc $ConnectionString $DatabaseName *) -like "$wordToComplete*" | .{process{
 		New-Object System.Management.Automation.CompletionResult $_, $_, 'ParameterValue', $_
 	}}
 }

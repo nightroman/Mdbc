@@ -1,4 +1,3 @@
-
 <#
 .Synopsis
 	Common tests for New-MdbcData, Add-MdbcData, Export-MdbcData
@@ -7,7 +6,6 @@
 . .\Zoo.ps1
 Import-Module Mdbc
 Set-StrictMode -Version Latest
-Connect-Mdbc
 
 task BsonValueError {
 	# good data to be done regardless of errors
@@ -21,9 +19,10 @@ task BsonValueError {
 		equals $Host $e.TargetObject
 		Test-List -Force $r $good
 	}{
+		Connect-Mdbc -NewCollection
 		$r = $bad | New-MdbcData -ErrorAction 0 -ErrorVariable e
 	}{
-		$null = $Collection.RemoveAll()
+		Connect-Mdbc -NewCollection
 		$bad | Add-MdbcData -ErrorAction 0 -ErrorVariable e
 		$r = Get-MdbcData
 	}{
@@ -61,7 +60,7 @@ task IdParameters {
 		}
 	}{
 		function test([switch]$NewId, $Id, $ErrorAction) {
-			$null = $Collection.RemoveAll()
+			Connect-Mdbc -NewCollection
 			Add-MdbcData $ps @PSBoundParameters
 			Get-MdbcData
 		}

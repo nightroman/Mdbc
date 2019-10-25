@@ -9,15 +9,16 @@ namespace Mdbc.Commands
 {
 	public abstract class AbstractDatabaseCommand : Abstract
 	{
+		IMongoDatabase _Database;
 		[Parameter]
-		public MongoDatabase Database
+		public IMongoDatabase Database
 		{
 			get
 			{
 				if (_Database == null)
 				{
-					_Database = GetVariableValue(Actor.DatabaseVariable) as MongoDatabase;
-					if (_Database == null) throw new PSArgumentException("Specify a database by the parameter or variable Database.");
+					_Database = Actor.BaseObject(GetVariableValue(Actor.DatabaseVariable)) as IMongoDatabase;
+					if (_Database == null) throw new PSInvalidOperationException("Specify a database by the parameter or variable Database.");
 				}
 				return _Database;
 			}
@@ -26,6 +27,5 @@ namespace Mdbc.Commands
 				_Database = value;
 			}
 		}
-		MongoDatabase _Database;
 	}
 }

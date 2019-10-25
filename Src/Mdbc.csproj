@@ -1,13 +1,11 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <TargetFramework>net452</TargetFramework>
     <TargetFrameworks>net452; netstandard2.0</TargetFrameworks>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
-  <ItemGroup>
-    <CodeAnalysisDictionary Include="CodeAnalysisDictionary.xml" />
-  </ItemGroup>
   <ItemGroup Condition="$(TargetFramework) == 'net452'">
     <Reference Include="System.Management.Automation">
       <HintPath>$(MSBuildProgramFiles32)\Reference Assemblies\Microsoft\WindowsPowerShell\3.0\System.Management.Automation.dll</HintPath>
@@ -18,9 +16,18 @@
     <PackageReference Include="PowerShellStandard.Library" Version="5.1.0" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="mongocsharpdriver" Version="2.9.2" />
+    <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.9.7">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
     <PackageReference Include="MongoDB.Bson" Version="2.9.2" />
     <PackageReference Include="MongoDB.Driver" Version="2.9.2" />
     <PackageReference Include="MongoDB.Driver.Core" Version="2.9.2" />
   </ItemGroup>
+  <PropertyGroup>
+    <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
+    <PostBuildEvent>ib Publish -Configuration $(Configuration) -TargetFramework $(TargetFramework)</PostBuildEvent>
+    <RunAnalyzersDuringBuild>true</RunAnalyzersDuringBuild>
+    <RunAnalyzersDuringLiveAnalysis>true</RunAnalyzersDuringLiveAnalysis>
+  </PropertyGroup>
 </Project>

@@ -8,24 +8,21 @@ using System.Management.Automation;
 
 namespace Mdbc.Commands
 {
-	[Cmdlet(VerbsData.Update, "MdbcData"), OutputType(typeof(UpdateResult))]
-	public sealed class UpdateDataCommand : AbstractCollectionCommand
+	[Cmdlet(VerbsCommon.Set, "MdbcData"), OutputType(typeof(ReplaceOneResult))]
+	public sealed class SetDataCommand : AbstractCollectionCommand
 	{
 		//_131121_104038
 		[Parameter(Position = 0)]
 		public object Filter { get { return null; } set { _Filter = Actor.ObjectToFilter(value); } }
 		FilterDefinition<BsonDocument> _Filter;
 
-		//_131121_104038
+		//! keep it null, check later
 		[Parameter(Position = 1)]
-		public object Update { get { return null; } set { if (value != null) _Update = Api.UpdateDefinition(value); } }
-		UpdateDefinition<BsonDocument> _Update;
+		public object Set { get { return null; } set { if (value != null) _Set = Actor.ToBsonDocument(value); } }
+		BsonDocument _Set;
 
 		[Parameter]
 		public SwitchParameter Add { get; set; }
-
-		[Parameter]
-		public SwitchParameter Many { get; set; }
 
 		[Parameter]
 		public UpdateOptions Options { get; set; }
@@ -36,7 +33,7 @@ namespace Mdbc.Commands
 		protected override void BeginProcessing()
 		{
 			if (_Filter == null) throw new PSArgumentException(Api.TextParameterFilter); //_131121_104038
-			if (_Update == null) throw new PSArgumentException(Api.TextParameterUpdate);
+			if (_Set == null) throw new PSArgumentException(Api.TextParameterSet); //??
 
 			var options = Options ?? new UpdateOptions();
 			if (Add)
@@ -44,15 +41,7 @@ namespace Mdbc.Commands
 
 			try
 			{
-				UpdateResult result;
-				if (Many)
-				{
-					result = Collection.UpdateMany(_Filter, _Update, options);
-				}
-				else
-				{
-					result = Collection.UpdateOne(_Filter, _Update, options);
-				}
+				var result = Collection.ReplaceOne(_Filter, _Set, options);
 
 				if (Result)
 					WriteObject(result);

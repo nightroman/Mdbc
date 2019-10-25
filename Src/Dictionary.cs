@@ -5,8 +5,11 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using MongoDB.Bson;
+using MongoDB.Bson.IO;
+using MongoDB.Bson.Serialization;
 
 namespace Mdbc
 {
@@ -24,18 +27,20 @@ namespace Mdbc
 		}
 		public Dictionary(IConvertibleToBsonDocument document)
 		{
-			if (document == null) throw new ArgumentNullException("document");
+			if (document == null) throw new ArgumentNullException(nameof(document));
 			_document = document.ToBsonDocument();
 		}
 		public BsonDocument ToBsonDocument()
 		{
 			return _document;
 		}
-		public void Dispose()
+		public string Print()
 		{
-			var dispose = _document as IDisposable;
-			if (dispose != null)
-				dispose.Dispose();
+			var writer = new StringWriter();
+			var args = new JsonWriterSettings() { Indent = true };
+			using (var json = new JsonWriter(writer, args))
+				BsonSerializer.Serialize(json, typeof(BsonDocument), _document);
+			return writer.ToString();
 		}
 		#region IDictionary
 		public bool IsFixedSize
@@ -59,29 +64,29 @@ namespace Mdbc
 		{
 			get
 			{
-				if (key == null) throw new ArgumentNullException("key");
+				if (key == null) throw new ArgumentNullException(nameof(key));
 				BsonValue value;
 				return _document.TryGetValue(key.ToString(), out value) ? Actor.ToObject(value) : null;
 			}
 			set
 			{
-				if (key == null) throw new ArgumentNullException("key");
+				if (key == null) throw new ArgumentNullException(nameof(key));
 				_document.Set(key.ToString(), Actor.ToBsonValue(value));
 			}
 		}
 		public void Remove(object key)
 		{
-			if (key == null) throw new ArgumentNullException("key");
+			if (key == null) throw new ArgumentNullException(nameof(key));
 			_document.Remove(key.ToString());
 		}
 		public void Add(object key, object value)
 		{
-			if (key == null) throw new ArgumentNullException("key");
+			if (key == null) throw new ArgumentNullException(nameof(key));
 			_document.Add(key.ToString(), Actor.ToBsonValue(value));
 		}
 		public bool Contains(object key)
 		{
-			if (key == null) throw new ArgumentNullException("key");
+			if (key == null) throw new ArgumentNullException(nameof(key));
 			return _document.Contains(key.ToString());
 		}
 		public void Clear()
@@ -115,13 +120,5 @@ namespace Mdbc
 			public bool MoveNext() { return _that.MoveNext(); }
 		}
 		#endregion
-	}
-	public sealed class LazyDictionary : Dictionary
-	{
-		public LazyDictionary(LazyBsonDocument value) : base(value) { }
-	}
-	public sealed class RawDictionary : Dictionary
-	{
-		public RawDictionary(RawBsonDocument value) : base(value) { }
 	}
 }

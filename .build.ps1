@@ -52,7 +52,7 @@ task Meta @MetaParam {
 	Copyright = '$Copyright'
 
 	RootModule = '$ModuleName.dll'
-	RequiredAssemblies = 'System.Runtime.InteropServices.RuntimeInformation.dll', 'MongoDB.Bson.dll', 'MongoDB.Driver.Core.dll', 'MongoDB.Driver.dll', 'MongoDB.Driver.Legacy.dll'
+	RequiredAssemblies = 'MongoDB.Bson.dll', 'MongoDB.Driver.Core.dll', 'MongoDB.Driver.dll'
 
 	PowerShellVersion = '3.0'
 	DotNetFrameworkVersion = '4.0'
@@ -85,11 +85,10 @@ using System.Runtime.InteropServices;
 "@
 }
 
-# Synopsis: Build the project.
+# Synopsis: Build the project (and post-build Publish).
 task Build Meta, {
 	exec { dotnet build Src\$ModuleName.csproj -c $Configuration -f $TargetFramework }
-},
-Publish
+}
 
 # Synopsis: Build all frameworks.
 task Build2 {
@@ -97,7 +96,7 @@ task Build2 {
 	Invoke-Build Build -Configuration $Configuration -TargetFramework netstandard2.0
 }
 
-# Synopsis: Publish the module.
+# Synopsis: Publish the module (post-build).
 task Publish {
 	if ($TargetFramework -eq 'net452') {
 		remove $ModuleRoot
@@ -105,7 +104,7 @@ task Publish {
 		exec { robocopy Src\bin\$Configuration\$TargetFramework $ModuleRoot /s /np /r:0 } (0..3)
 	}
 	else {
-		exec { dotnet publish Src\$ModuleName.csproj -c $Configuration -f $TargetFramework }
+		exec { dotnet publish Src\$ModuleName.csproj -c $Configuration -f $TargetFramework --no-build }
 		remove $ModuleRoot
 		exec { robocopy Module $ModuleRoot /s /np /r:0 /xf *-Help.ps1 } (0..3)
 		exec { robocopy Src\bin\$Configuration\$TargetFramework\publish $ModuleRoot /s /np /r:0 } (0..3)
@@ -170,7 +169,6 @@ task Package Markdown, ?UpdateScript, {
 	$ModuleRoot\*
 
 	Copy-Item -Destination z\tools\$ModuleName\Scripts `
-	.\Scripts\Mdbc.ps1,
 	.\Scripts\Get-MongoFile.ps1,
 	.\Scripts\Update-MongoFiles.ps1,
 	.\Scripts\Mdbc.ArgumentCompleters.ps1
@@ -180,8 +178,7 @@ task Package Markdown, ?UpdateScript, {
 task NuGet Package, Version, {
 	$text = @'
 Mdbc is the PowerShell module based on the official MongoDB C# driver.
-It makes MongoDB scripting in PowerShell easier and provides some extra
-features like bson/json file collections which do not require MongoDB.
+Mdbc makes MongoDB data and operations PowerShell friendly.
 '@
 	# nuspec
 	Set-Content z\Package.nuspec @"
@@ -245,7 +242,6 @@ task TestHelp Help, TestHelpExample, TestHelpSynopsis
 
 $UpdateScriptInputs = @(
 	'Get-MongoFile.ps1'
-	'Mdbc.ps1'
 	'Mdbc.ArgumentCompleters.ps1'
 	'Update-MongoFiles.ps1'
 )
@@ -277,6 +273,7 @@ task CleanTest {
 
 # Synopsis: Test in the current PowerShell.
 task Test {
+	$ErrorView = 'NormalView'
 	Invoke-Build ** Tests
 },
 CleanTest

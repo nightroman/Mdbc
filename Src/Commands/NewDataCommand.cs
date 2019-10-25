@@ -9,43 +9,31 @@ using MongoDB.Bson;
 
 namespace Mdbc.Commands
 {
-	[Cmdlet(VerbsCommon.New, "MdbcData", DefaultParameterSetName = nsDocument)]
+	[Cmdlet(VerbsCommon.New, "MdbcData"), OutputType(typeof(Dictionary))]
 	public sealed class NewDataCommand : Abstract
 	{
-		const string nsDocument = "Document";
-		const string nsValue = "Value";
-
-		[Parameter(ParameterSetName = nsValue)]
-		public PSObject Value { get; set; }
-
-		[Parameter(Position = 0, ValueFromPipeline = true, ParameterSetName = nsDocument)]
+		[Parameter(Position = 0, ValueFromPipeline = true)]
 		public PSObject InputObject { get; set; }
 
-		[Parameter(ParameterSetName = nsDocument)]
+		[Parameter]
 		public PSObject Id { get; set; }
 
-		[Parameter(ParameterSetName = nsDocument)]
+		[Parameter]
 		public SwitchParameter NewId { get; set; }
 
-		[Parameter(ParameterSetName = nsDocument)]
+		[Parameter]
 		public ScriptBlock Convert { get; set; }
 
-		[Parameter(ParameterSetName = nsDocument)]
-		public object[] Property { get { return null; } set { _Selectors = Selector.Create(value, this); } }
+		[Parameter]
+		public object[] Property { get { return null; } set { if (value == null) throw new PSArgumentNullException(nameof(value)); _Selectors = Selector.Create(value, this); } }
 		IList<Selector> _Selectors;
 
 		protected override void ProcessRecord()
 		{
 			try
 			{
-				if (ParameterSetName == nsValue)
-				{
-					WriteObject(Actor.ToBsonValue(Value));
-					return;
-				}
-
 				// always new document
-				var document = DocumentInput.NewDocumentWithId(NewId, Id, InputObject, SessionState) ?? new BsonDocument();
+				var document = DocumentInput.NewDocumentWithId(NewId, Id, InputObject) ?? new BsonDocument();
 
 				if (InputObject != null)
 					document = Actor.ToBsonDocument(document, InputObject, new DocumentInput(SessionState, Convert), _Selectors);

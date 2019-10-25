@@ -9,8 +9,6 @@ namespace Mdbc.Commands
 {
 	public abstract class Abstract : PSCmdlet
 	{
-		public const string TextParameterQuery = "Parameter Query must be specified and cannot be null.";
-		public const string TextParameterUpdate = "Parameter Update must be specified and cannot be null.";
 		protected void WriteException(Exception exception, object target)
 		{
 			WriteError(new ErrorRecord(exception, "Mdbc", ErrorCategory.NotSpecified, target));
