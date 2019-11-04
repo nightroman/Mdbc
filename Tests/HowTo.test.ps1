@@ -3,23 +3,23 @@
 	Covers some how-to cases.
 #>
 
-. .\Zoo.ps1
-Import-Module Mdbc
+. ./Zoo.ps1
 
-# Synopsis: Create unique index. #15
+# Synopsis: How to create a unique index and get indexes.
+# Use Invoke-MdbcCommand when other cmdlets cannot help.
 # https://docs.mongodb.com/manual/reference/command/createIndexes/#dbcmd.createIndexes
-task CreateUniqueIndex {
+task CreateAndGetIndex {
 	Connect-Mdbc -NewCollection
 
-	### How to create an index
-	$r = Invoke-MdbcCommand -Command ([ordered]@{
+	# How to create an index
+	$r = Invoke-MdbcCommand ([ordered]@{
 		createIndexes = 'test'
 		indexes = @(
 			@{
 				key = @{
-					'tax-id' = 1
+					'my-index' = 1
 				}
-				name = "tax-id"
+				name = "my-index"
 				unique = "true"
 			}
 		)
@@ -29,7 +29,7 @@ task CreateUniqueIndex {
 	equals $r.numIndexesBefore 1
 	equals $r.numIndexesAfter 2
 
-	### How to get indexes
+	# How to get indexes
 	$r = Invoke-MdbcCommand '{ "listIndexes": "test" }'
 	$r.Print()
 
@@ -37,95 +37,37 @@ task CreateUniqueIndex {
 	equals $ii.Count 2
 	equals $ii[0].name _id_
 	equals $ii[0]['unique'] $null
-	equals $ii[1].name tax-id
+	equals $ii[1].name my-index
 	equals $ii[1].unique $true
 }
 
-# Test the simplified scenario of Update-MongoFiles.ps1
-task DataChangeWithLogging {
-	# V1 is slightly simpler but it changes input ($data.time = $time).
-	# And if it makes a copy of $data then it is not simpler.
-	function Test-DataChangeWithLoggingV1($data, $time) {
-		# query main data and set the time
-		$r = Update-MdbcData $data @{'$set' = @{time = $time}} -Result
+# Synopsis: How to use [regex] in $in expressions.
+# In JSON regex may be defined using syntax /.../.
+# In dictionary expressions use the [regex] type.
+task OperatorInWithRegex {
+	Connect-Mdbc -NewCollection
 
-		# if modified then data are the same and the time is set -> done
-		if ($r.ModifiedCount) {
-			'same'
-			return
-		}
+	# add documents with some names
+	@{name = 'Apple'}, @{name = 'Banana'}, @{name = 'Lemon'}, @{name = 'Orange'} | Add-MdbcData
 
-		# new data are different -> set or add
-		$data.time = $time
-		$r = Set-MdbcData @{_id = $data._id} $data -Add -Result
-		if ($r.ModifiedCount) {
-			'changed'
-		}
-		else {
-			'added'
+	# get names containing 'm' or 'p' using $in and regex
+	$r = Get-MdbcData -Distinct name -Filter @{
+		name = @{
+			'$in' = @(
+				[regex]'m'
+				[regex]'p'
+			)
 		}
 	}
 
-	# V2 does not change input, it uses aggregate update expression
-	function Test-DataChangeWithLoggingV2($data, $time) {
-		# set time expression, used by two commands
-		$set_time = @{'$set' = @{time = $time}}
-
-		# query main data and set the time
-		$r = Update-MdbcData $data $set_time -Result
-
-		# if modified then data are the same and the time is set -> done
-		if ($r.ModifiedCount) {
-			'same'
-			return
-		}
-
-		# new data are different -> update or add
-		$r = Update-MdbcData @{_id = $data._id} (@{'$set' = $data}, $set_time) -Add -Result
-		if ($r.ModifiedCount) {
-			'changed'
-		}
-		else {
-			'added'
-		}
-	}
-
-	# now test different version
-	Invoke-Test {
-		Connect-Mdbc -NewCollection
-
-		# data1, time1
-		$data1 = @{_id = 1; p1 = 1}
-		$r = Test-DataChangeWithLogging $data1 1
-		equals $r added
-		$r = Get-MdbcData
-		equals $r.p1 1
-		equals $r.time 1
-
-		# data1, time2
-		$data1 = @{_id = 1; p1 = 1}
-		$r = Test-DataChangeWithLogging $data1 2
-		equals $r same
-		$r = Get-MdbcData
-		equals $r.p1 1
-		equals $r.time 2
-
-		# data2, time3
-		$data1 = @{_id = 1; p1 = 2}
-		$r = Test-DataChangeWithLogging $data1 3
-		equals $r changed
-		$r = Get-MdbcData
-		equals $r.p1 2
-		equals $r.time 3
-	}{
-		Set-Alias Test-DataChangeWithLogging Test-DataChangeWithLoggingV1
-	}{
-		Set-Alias Test-DataChangeWithLogging Test-DataChangeWithLoggingV2
-	}
+	# Apple and Lemon
+	equals $r.Count 2
+	equals $r[0] Apple
+	equals $r[1] Lemon
 }
 
-# How to use SHA1 hashes as _id
-task BinaryId {
+# Synopsis: How to use SHA1 hashes as _id.
+task SHA1AsId {
 	Connect-Mdbc -NewCollection
 
 	# sample data
@@ -154,13 +96,67 @@ task BinaryId {
 	equals $r.data Hello
 
 	# query 'World' a bit simpler
-	$qid = [Mdbc.Dictionary]([MongoDB.Bson.BsonUtils]::ParseHexString('70c07ec18ef89c5309bbb0937f3a6342411e1fdd'))
-	$r = Get-MdbcData $qid
+	$qId = [Mdbc.Dictionary]([MongoDB.Bson.BsonUtils]::ParseHexString('70c07ec18ef89c5309bbb0937f3a6342411e1fdd'))
+	$r = Get-MdbcData $qId
 	equals $r.data World
 
 	# query -As PS should give the same _id
-	$r = Get-MdbcData $qid -As PS
+	$r = Get-MdbcData $qId -As PS
 	equals ($r.GetType().Name) PSCustomObject
-	equals $r._id $qid._id
+	equals $r._id $qId._id
 	equals $r.data World
+}
+
+# Synopsis: How to update data with stamps and track changes.
+# The simplified scenario of Update-MongoFiles.ps1
+task DataChangeWithLogging {
+	function Update-Data($data, $time) {
+		# set time expression, used by two commands
+		$set_time = @{'$set' = @{time = $time}}
+
+		# query main data and set the time
+		$r = Update-MdbcData $data $set_time -Result
+
+		# if modified then data are the same and the time is set -> done
+		if ($r.ModifiedCount) {
+			'same'
+			return
+		}
+
+		# new data are different -> update or add
+		$r = Update-MdbcData @{_id = $data._id} (@{'$set' = $data}, $set_time) -Add -Result
+		if ($r.ModifiedCount) {
+			'changed'
+		}
+		else {
+			'added'
+		}
+	}
+
+	# now test the function
+	Connect-Mdbc -NewCollection
+
+	# data1, time1
+	$data1 = @{_id = 1; p1 = 1}
+	$r = Update-Data $data1 1
+	equals $r added
+	$r = Get-MdbcData
+	equals $r.p1 1
+	equals $r.time 1
+
+	# data1, time2
+	$data1 = @{_id = 1; p1 = 1}
+	$r = Update-Data $data1 2
+	equals $r same
+	$r = Get-MdbcData
+	equals $r.p1 1
+	equals $r.time 2
+
+	# data2, time3
+	$data1 = @{_id = 1; p1 = 2}
+	$r = Update-Data $data1 3
+	equals $r changed
+	$r = Get-MdbcData
+	equals $r.p1 2
+	equals $r.time 3
 }

@@ -2,16 +2,14 @@
 // Copyright (c) Roman Kuzmin
 // http://www.apache.org/licenses/LICENSE-2.0
 
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Management.Automation;
 using MongoDB.Bson;
 using MongoDB.Bson.IO;
 using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Management.Automation;
 
 namespace Mdbc
 {
@@ -74,7 +72,7 @@ namespace Mdbc
 
 			return en;
 		}
-		public static object ToObject(BsonValue value) //_120509_173140 sync
+		public static object ToObject(BsonValue value) //_120509_173140 sync, test
 		{
 			if (value == null)
 				return null;
@@ -84,6 +82,7 @@ namespace Mdbc
 				case BsonType.Array: return new Collection((BsonArray)value); // wrapper
 				case BsonType.Boolean: return ((BsonBoolean)value).Value;
 				case BsonType.DateTime: return ((BsonDateTime)value).ToUniversalTime();
+				case BsonType.Decimal128: return ((BsonDecimal128)value).ToDecimal();
 				case BsonType.Document: return new Dictionary((BsonDocument)value); // wrapper
 				case BsonType.Double: return ((BsonDouble)value).Value;
 				case BsonType.Int32: return ((BsonInt32)value).Value;
@@ -123,31 +122,30 @@ namespace Mdbc
 				return ToBsonDocumentFromProperties(null, custom, input, null, depth);
 
 			// case: BsonValue
-			var bson = value as BsonValue;
-			if (bson != null)
+			if (value is BsonValue bson)
 				return bson;
 
 			// case: string
-			var text = value as string;
-			if (text != null)
+			if (value is string text)
 				return new BsonString(text);
 
 			// case: document
-			var cd = value as IConvertibleToBsonDocument;
-			if (cd != null)
+			if (value is IConvertibleToBsonDocument cd)
 				return cd.ToBsonDocument();
 
 			// case: dictionary
-			var dictionary = value as IDictionary;
-			if (dictionary != null)
+			if (value is IDictionary dictionary)
 				return ToBsonDocumentFromDictionary(null, dictionary, input, null, depth);
 
-			// case: collection
-			var enumerable = value as IEnumerable;
-			if (enumerable != null)
+			// case: bytes or collection
+			if (value is IEnumerable en)
 			{
+				//_191108_183844
+				if (en is byte[] bytes)
+					return new BsonBinaryData(bytes);
+
 				var array = new BsonArray();
-				foreach (var it in enumerable)
+				foreach (var it in en)
 					array.Add(ToBsonValue(it, input, depth));
 				return array;
 			}
@@ -196,11 +194,10 @@ namespace Mdbc
 			{
 				foreach (DictionaryEntry de in dictionary)
 				{
-					var name = de.Key as string;
-					if (name == null)
+					if (de.Key is string name)
+						document.Add(name, ToBsonValue(de.Value, input, depth));
+					else
 						throw new InvalidOperationException("Dictionary keys must be strings.");
-
-					document.Add(name, ToBsonValue(de.Value, input, depth));
 				}
 			}
 			else
@@ -291,8 +288,7 @@ namespace Mdbc
 			value = BaseObject(value, out PSObject custom);
 
 			//_131013_155413 reuse existing document or wrap
-			var cd = value as IConvertibleToBsonDocument;
-			if (cd != null)
+			if (value is IConvertibleToBsonDocument cd)
 			{
 				// reuse
 				if (source == null && properties == null)
@@ -302,8 +298,7 @@ namespace Mdbc
 				return ToBsonDocumentFromDictionary(source, new Dictionary(cd), input, properties, depth);
 			}
 
-			var dictionary = value as IDictionary;
-			if (dictionary != null)
+			if (value is IDictionary dictionary)
 				return ToBsonDocumentFromDictionary(source, dictionary, input, properties, depth);
 
 			return ToBsonDocumentFromProperties(source, custom ?? new PSObject(value), input, properties, depth);

@@ -25,13 +25,14 @@ namespace Mdbc
 
 			return array;
 		}
-		static object ReadObject(IBsonReader bsonReader) //_120509_173140 sync
+		static object ReadObject(IBsonReader bsonReader) //_120509_173140 sync, test
 		{
 			switch (bsonReader.GetCurrentBsonType())
 			{
 				case BsonType.Array: return ReadArray(bsonReader); // replacement
 				case BsonType.Boolean: return bsonReader.ReadBoolean();
 				case BsonType.DateTime: return BsonUtils.ToDateTimeFromMillisecondsSinceEpoch(bsonReader.ReadDateTime());
+				case BsonType.Decimal128: return Decimal128.ToDecimal(bsonReader.ReadDecimal128());
 				case BsonType.Document: return ReadCustomObject(bsonReader); // replacement
 				case BsonType.Double: return bsonReader.ReadDouble();
 				case BsonType.Int32: return bsonReader.ReadInt32();
@@ -40,7 +41,7 @@ namespace Mdbc
 				case BsonType.ObjectId: return bsonReader.ReadObjectId();
 				case BsonType.String: return bsonReader.ReadString();
 				case BsonType.Binary:
-					var data = BsonSerializer.Deserialize<BsonBinaryData>(bsonReader);
+					var data = bsonReader.ReadBinaryData();
 					switch (data.SubType)
 					{
 						case BsonBinarySubType.UuidLegacy:

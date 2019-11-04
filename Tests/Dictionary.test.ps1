@@ -1,7 +1,42 @@
 
-. .\Zoo.ps1
-Import-Module Mdbc
+. ./Zoo.ps1
 Set-StrictMode -Version Latest
+
+task BsonTypes {
+	$1 = ./BsonTypes.ps1
+
+	# round trip Mdbc.Dictionary -> DB -> Mdbc.Dictionary
+	Connect-Mdbc -NewCollection
+	$1 | Add-MdbcData
+	$2 = Get-MdbcData
+	equals $1 $2
+	assert ($1 -eq $2)
+
+	# round trip Mdbc.Dictionary -> DB -> PS -> Mdbc.Dictionary
+	$r = Get-MdbcData -As PS
+	equals $r.double 3.14
+	equals $r.string bar
+	equals $r.object.GetType() ([System.Management.Automation.PSCustomObject])
+	equals $r.array.GetType() ([System.Collections.ArrayList])
+	equals $r.binData1 ([guid]"cdccdb76-30a3-4d7c-97fa-5ae1ad28fd64")
+	equals $r.binData2.GetType() ([MongoDB.Bson.BsonBinaryData])
+	equals $r.objectId.GetType() ([MongoDB.Bson.ObjectId])
+	equals $r.bool $true
+	equals $r.date ([DateTime]'2019-11-11')
+	equals $r.null $null
+	equals $r.regex.GetType() ([MongoDB.Bson.BsonRegularExpression])
+	equals $r.javascript.GetType() ([MongoDB.Bson.BsonJavaScript])
+	equals $r.javascriptWithScope.GetType() ([MongoDB.Bson.BsonJavaScriptWithScope])
+	equals $r.int 42
+	equals $r.timestamp.GetType() ([MongoDB.Bson.BsonTimestamp])
+	equals $r.long 42L
+	equals $r.decimal 123456789.123456789d
+	equals $r.minKey ([MongoDB.Bson.BsonMinKey]::Value)
+	equals $r.maxKey ([MongoDB.Bson.BsonMaxKey]::Value)
+	$3 = New-MdbcData $r
+	equals $1 $3
+	assert ($1 -eq $3)
+}
 
 task Constructors {
 	# default
@@ -69,9 +104,9 @@ task RawBson {
 		$a = $md.array
 		assert ($a.IsFixedSize)
 		assert ($a.IsReadOnly)
-		assert ($a.Array().IsReadOnly) # fixed https://jira.mongodb.org/browse/CSHARP-842
-		Test-Type $a.Array() MongoDB.Bson.RawBsonArray
-		assert (![object]::ReferenceEquals($a.Array(), $md.array.Array()))
+		assert ($a.ToBsonArray().IsReadOnly) # fixed https://jira.mongodb.org/browse/CSHARP-842
+		Test-Type $a.ToBsonArray() MongoDB.Bson.RawBsonArray
+		assert (![object]::ReferenceEquals($a.ToBsonArray(), $md.array.ToBsonArray()))
 	}
 
 	&{
@@ -83,6 +118,8 @@ task RawBson {
 	}
 }
 
+#_120509_173140 BsonBinaryData and byte[] consideration.
+# We used to map to byte[] then reverted to BsonBinaryData except Guid.
 task Binary {
 	# byte[] ~ BsonBinaryData
 	$data1 = [Mdbc.Dictionary]([byte[]](1..5))
@@ -106,4 +143,81 @@ task Binary {
 	$data4.p1 = $id1
 	equals $data4._id $id1
 	equals $data4.p1 $id1
+}
+
+#_120509_173140 BsonRegularExpression and Regex consideration.
+# We can map BsonRegularExpression to Regex but the gain is not clear.
+# BsonRegularExpression does not parse patterns, the server does, so it's effective.
+task Regex {
+	# .NET Regex
+	$regex = [regex]::new('bar', 'IgnoreCase')
+
+	# Regex is mapped to BsonRegularExpression automatically
+	# BsonRegularExpression has .Pattern .Options, converted to Regex by ToRegex()
+	$r1 = New-MdbcData
+	$r1.p1 = $regex
+	$re = $r1.p1
+	equals $re.GetType() ([MongoDB.Bson.BsonRegularExpression])
+	equals $re.ToString() /bar/i
+	equals $re.Pattern bar
+	equals $re.Options i
+	$re1 = $r1.p1.ToRegex()
+	equals $re1.GetType() ([regex])
+
+	# test trip to bson file
+	$r1 | Export-MdbcData z.bson
+	$r2 = Import-MdbcData z.bson
+	$re = $r1.p1
+	equals $re.GetType() ([MongoDB.Bson.BsonRegularExpression])
+	equals $re.ToString() /bar/i
+	equals $re.Pattern bar
+	equals $re.Options i
+	$re2 = $r2.p1.ToRegex()
+	equals $re2.GetType() ([regex])
+
+	# BsonRegularExpression - comparison works
+	equals $r1.p1 $r2.p1
+
+	# Regex - comarison is not working
+	equals ($re1 -eq $re2) $false
+
+	remove z.bson
+}
+
+task BsonRegularExpression_facts {
+	# In BsonRegularExpression(re) mind `/.../` syntax for options.
+	# To specify literal `/bar/`, escape the first / or use others.
+	$r = [MongoDB.Bson.BsonRegularExpression]'/bar/'
+	equals $r.Pattern bar
+
+	# In BsonRegularExpression(re, op), `re` is literal pattern.
+	$r = [MongoDB.Bson.BsonRegularExpression]::new('/bar/', $null)
+	equals $r.Pattern /bar/
+
+	# [regex] may be used, too, it's literally converted
+	$r = [MongoDB.Bson.BsonRegularExpression][regex]'/bar/'
+	equals $r.Pattern /bar/
+}
+
+#_120509_173140 [decimal] <-> BsonDecimal128
+task Decimal {
+	$1 = [Mdbc.Dictionary]::new()
+
+	# decimal ~ BsonDecimal128
+	$1.p1 = 123.123d
+	equals ($1.p1.GetType()) ([decimal])
+	equals ($1.ToBsonDocument()['p1'].GetType()) ([MongoDB.Bson.BsonDecimal128])
+
+	Connect-Mdbc -NewCollection
+	$1 | Add-MdbcData
+	$2 = Get-MdbcData
+	equals $1 $2
+	equals $1.p1 $2.p1
+
+	$1 | Export-MdbcData z.bson
+	$2 = Import-MdbcData z.bson
+	equals $1 $2
+	equals $1.p1 $2.p1
+
+	remove z.bson
 }

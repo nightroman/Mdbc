@@ -1,6 +1,6 @@
 <#
 .Synopsis
-	Tests Update-MongoFiles.ps1 and Get-MongoFile.ps1.
+	Tests Update-MongoFiles.ps1.
 #>
 
 Import-Module Mdbc
@@ -39,12 +39,12 @@ task Update-MongoFiles {
 	$1, $2 = Get-MdbcData -Collection $log
 
 	assert ($1._id -like '*\Tests\z')
-	equals $1.Log.Count 1
-	equals $1.Log[0].Op 0
+	equals $1.log.Count 1
+	equals $1.log[0].op 0
 
 	assert ($2._id -like '*\Tests\z\z.txt')
-	equals $2.Log.Count 1
-	equals $2.Log[0].Op 0
+	equals $2.log.Count 1
+	equals $2.log[0].op 0
 
 	# change file
 	1 >> z\z.txt
@@ -59,12 +59,12 @@ task Update-MongoFiles {
 	$1, $2 = Get-MdbcData -Collection $log
 
 	assert ($1._id -like '*\Tests\z')
-	equals $1.Log.Count 1
-	equals $1.Log[0].Op 0
+	equals $1.log.Count 1
+	equals $1.log[0].op 0
 
 	assert ($2._id -like '*\Tests\z\z.txt')
-	equals $2.Log.Count 2
-	equals $2.Log[1].Op 1
+	equals $2.log.Count 2
+	equals $2.log[1].op 1
 
 	# remove directory and file
 	remove z
@@ -79,25 +79,12 @@ task Update-MongoFiles {
 	$1, $2 = Get-MdbcData -Collection $log -Sort @{_id = 1}
 
 	assert ($1._id -like '*\Tests\z')
-	equals $1.Log.Count 2
-	equals $1.Log[1].Op 2
+	equals $1.log.Count 2
+	equals $1.log[1].op 2
 
 	assert ($2._id -like '*\Tests\z\z.txt')
-	equals $2.Log.Count 3
-	equals $2.Log[2].Op 2
-}
-
-task Get-MongoFile Update-MongoFiles, {
-	$r = @(Get-MongoFile -CollectionName test 'collectionext|documentinput' | Sort-Object)
-	$r
-	equals 3 $r.Count
-	assert ($r[0] -clike '*\Mdbc\Src\CollectionExt.cs')
-	assert ($r[1] -clike '*\Mdbc\Src\DocumentInput.cs')
-	assert ($r[2] -clike '*\Mdbc\Tests\DocumentInput.test.ps1')
-
-	$r = @(Get-MongoFile -CollectionName test 'CollectionExt.cs' -Name)
-	equals 1 $r.Count
-	assert ($r[0] -clike '*\Mdbc\Src\CollectionExt.cs')
+	equals $2.log.Count 3
+	equals $2.log[2].op 2
 }
 
 task Test-MongoFiles Update-MongoFiles, {
@@ -126,4 +113,39 @@ task Test-MongoFiles Update-MongoFiles, {
 	$MissingLength = Test-Query @{Length = @{'$exists' = $false}}
 	$ExistingLength = Test-Query @{Length = @{'$exists' = $true}}
 	equals ($MissingLength + $ExistingLength) $total
+}
+
+# Used to be "Scripts\Get-MongoFile.ps1", now we just keep and test.
+function Get-MongoFile {
+	param(
+		[Parameter(Position=0, Mandatory=$true)][string]$Pattern,
+		$CollectionName = 'files',
+		[switch]$Name
+	)
+
+	Import-Module Mdbc
+	Connect-Mdbc . test $CollectionName
+
+	if ($Name) {
+		$Pattern = '^' + [regex]::Escape($Pattern) + '$'
+	}
+
+	$query = @{name = @{'$regex' = $Pattern; '$options' = 'i'}}
+
+	foreach($_ in Get-MdbcData $query -Project @{_id = 1}) {
+		$_._id
+	}
+}
+
+task Get-MongoFile Update-MongoFiles, {
+	$r = @(Get-MongoFile -CollectionName test 'collectionext|documentinput' | Sort-Object)
+	$r
+	equals 3 $r.Count
+	assert ($r[0] -clike '*\Mdbc\Src\CollectionExt.cs')
+	assert ($r[1] -clike '*\Mdbc\Src\DocumentInput.cs')
+	assert ($r[2] -clike '*\Mdbc\Tests\DocumentInput.test.ps1')
+
+	$r = @(Get-MongoFile -CollectionName test 'CollectionExt.cs' -Name)
+	equals 1 $r.Count
+	assert ($r[0] -clike '*\Mdbc\Src\CollectionExt.cs')
 }

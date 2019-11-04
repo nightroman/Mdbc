@@ -1,4 +1,7 @@
 
+# In TabExpansionPlusPlus completers cannot see variables in calling scopes.
+$IsTabExpansionPlusPlus = $BuildFile -like '*\TabExpansionPlusPlus.build.ps1'
+
 Enter-Build {
 	Import-Module Mdbc
 	Connect-Mdbc -NewCollection
@@ -6,6 +9,7 @@ Enter-Build {
 }
 
 function Invoke-Complete([Parameter()]$line, $caret=$line.Length) {
+	Write-Host "Complete: $line" -ForegroundColor Magenta
 	foreach($_ in (TabExpansion2 $line $caret).CompletionMatches) {
 		$_.CompletionText
 	}
@@ -19,11 +23,77 @@ task DatabaseName {
 	assert ($r -ccontains 'test')
 }
 
+task Get-MdbcDatabase.Name -If (!$IsTabExpansionPlusPlus) {
+	$IsTabExpansionPlusPlus
+	Connect-Mdbc .
+
+	($r = Invoke-Complete 'Get-MdbcDatabase te')
+	assert ($r -ccontains 'test')
+
+	($r = Invoke-Complete 'Get-MdbcDatabase -Name te')
+	assert ($r -ccontains 'test')
+
+	($r = Invoke-Complete 'Get-MdbcDatabase -Client $Client -Name te')
+	assert ($r -ccontains 'test')
+}
+
+task Remove-MdbcDatabase.Name -If (!$IsTabExpansionPlusPlus) {
+	Connect-Mdbc .
+
+	($r = Invoke-Complete 'Remove-MdbcDatabase te')
+	assert ($r -ccontains 'test')
+
+	($r = Invoke-Complete 'Remove-MdbcDatabase -Name te')
+	assert ($r -ccontains 'test')
+
+	($r = Invoke-Complete 'Remove-MdbcDatabase -Client $Client -Name te')
+	assert ($r -ccontains 'test')
+}
+
 task CollectionName {
 	($r = Invoke-Complete 'Connect-Mdbc . test te')
 	assert ($r -ccontains 'test')
 
 	($r = Invoke-Complete 'Connect-Mdbc -CollectionName te')
+	assert ($r -ccontains 'test')
+}
+
+task Get-MdbcCollection.Name -If (!$IsTabExpansionPlusPlus) {
+	Connect-Mdbc . test
+
+	($r = Invoke-Complete 'Get-MdbcCollection te')
+	assert ($r -ccontains 'test')
+
+	($r = Invoke-Complete 'Get-MdbcCollection -Name te')
+	assert ($r -ccontains 'test')
+
+	($r = Invoke-Complete 'Get-MdbcCollection -Database $Database te')
+	assert ($r -ccontains 'test')
+}
+
+task Remove-MdbcCollection.Name -If (!$IsTabExpansionPlusPlus) {
+	Connect-Mdbc . test
+
+	($r = Invoke-Complete 'Remove-MdbcCollection te')
+	assert ($r -ccontains 'test')
+
+	($r = Invoke-Complete 'Remove-MdbcCollection -Name te')
+	assert ($r -ccontains 'test')
+
+	($r = Invoke-Complete 'Remove-MdbcCollection -Database $Database te')
+	assert ($r -ccontains 'test')
+}
+
+task Rename-MdbcCollection.Name -If (!$IsTabExpansionPlusPlus) {
+	Connect-Mdbc . test
+
+	($r = Invoke-Complete 'Rename-MdbcCollection te')
+	assert ($r -ccontains 'test')
+
+	($r = Invoke-Complete 'Rename-MdbcCollection -Name te')
+	assert ($r -ccontains 'test')
+
+	($r = Invoke-Complete 'Rename-MdbcCollection -Database $Database te')
 	assert ($r -ccontains 'test')
 }
 
@@ -52,9 +122,8 @@ task Property {
 	equals $r Name
 }
 
-#! skip TE++, it cannot see variables in this test scenario
-task Conflicts -If ($BuildFile -notlike '*\TabExpansionPlusPlus.build.ps1') {
-	$commandName = $parameterName = $wordToComplete = $commandAst = $boundParameters =$Host
+task Conflicts -If (!$IsTabExpansionPlusPlus) {
+	$commandName = $parameterName = $wordToComplete = $commandAst = $boundParameters = $Host
 
 	($r = Invoke-Complete '$commandName | New-MdbcData -Property na')
 	equals $r Name

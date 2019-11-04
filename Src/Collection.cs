@@ -20,16 +20,20 @@ namespace Mdbc
 		{
 			_array = array;
 		}
-		public BsonArray Array()
+		public BsonArray ToBsonArray()
 		{
 			return _array;
 		}
-		public void Dispose()
+		#region Object
+		public override bool Equals(object obj)
 		{
-			var dispose = _array as IDisposable;
-			if (dispose != null)
-				dispose.Dispose();
+			return obj is Collection arr && _array.Equals(arr._array);
 		}
+		public override int GetHashCode()
+		{
+			return _array.GetHashCode();
+		}
+		#endregion
 		public IEnumerator GetEnumerator()
 		{
 			return _array.Select(Actor.ToObject).GetEnumerator();

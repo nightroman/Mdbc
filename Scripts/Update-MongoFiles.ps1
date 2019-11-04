@@ -1,30 +1,32 @@
 <#
 .Synopsis
-	Updates the file system snapshot database.
+	Updates the file system snapshot collection.
 
 .Description
-	Server: local, database: test, collections: files, files_log
-	Module: Mdbc <https://github.com/nightroman/Mdbc>
+	WARNING: This is a toy for making some test data, it may change without a
+	notice. But it may be useful for some analysis and tracking file changes.
+	Use it as the base for your own tool.
 
 	The script scans the specified directory tree, updates file and directory
 	documents, and then removes orphan documents which have not been updated.
-	Changes are optionally logged in another collection.
+	Changes are optionally logged to another collection.
+
+	Server: local; database: test; collections: files, files_log (optional).
 
 	Collection "files"
-		* _id           : full item path
-		* Attributes    : file system flags
-		* Length        : file length
-		* LastWriteTime : last write time
-		* CreationTime  : creation time
-		* Name          : item name
-		* Extension     : file extension
-		* Updated       : last update time
+		._id  : full path
+		.mode : system attributes
+		.time : file write or folder create time
+		.len  : file length
+		.name : item name
+		.ext  : file extension
+		.seen : last check time
 
-	Collection "files_log"
-		* _id           : full item path
-		* Updated       : last update time
-		* Log           : array of item snapshots
-		* Op            : 0: created, 1: changed, 2: removed
+	Collection "files_log" (optional)
+		._id  : full path
+		.seen : check time
+		.log  : array of item snapshots
+		.op   : 0: created, 1: changed, 2: removed
 
 .Parameter Path
 		Specifies one or more literal directory paths to be processed.
@@ -33,22 +35,16 @@
 .Parameter Log
 		Tells to log created, changed, and removed items to files_log.
 .Parameter Split
-		Tells to perform parallel data processing using Split-Pipeline.
-		Module: SplitPipeline <https://github.com/nightroman/SplitPipeline>
-
-.Inputs
-	None. Use the parameters to specify input.
+		Tells to perform parallel data processing using SplitPipeline.
+		Module: <https://github.com/nightroman/SplitPipeline>
 
 .Outputs
 	The result object with statistics
-		* Path    : the input path
-		* Created : count of created
-		* Changed : count of changed
-		* Removed : count of removed
-		* Elapsed : elapsed time span
-
-.Link
-	Get-MongoFile.ps1
+		.Path    : the input path
+		.Created : count of created
+		.Changed : count of changed
+		.Removed : count of removed
+		.Elapsed : elapsed time span
 #>
 
 param(
@@ -58,72 +54,70 @@ param(
 	[switch]$Split
 )
 
-$ErrorActionPreference = 'Stop'
-Set-StrictMode -Version 2
-$Now = [DateTime]::Now
+# Gets input items from the input paths.
+function Get-Input {
+	Get-ChildItem -LiteralPath $Path -Force -Recurse -ErrorAction Ignore
+}
 
-# Resolves exact case paths.
-function Resolve($Path) {
+# Gets the exact case path for the given path.
+function Resolve-Case($Path) {
 	$directory = [IO.DirectoryInfo]$Path
 	if ($directory.Parent) {
-		Join-Path (Resolve $directory.Parent.FullName) $directory.Parent.GetFileSystemInfos($directory.Name)[0].Name
+		Join-Path (Resolve-Case $directory.Parent.FullName) $directory.Parent.GetFileSystemInfos($directory.Name)[0].Name
 	}
 	else {
 		$directory.Name.ToUpper()
 	}
 }
-$Path = foreach($_ in $Path) { Resolve ($PSCmdlet.GetUnresolvedProviderPathFromPSPath($_)) }
-Write-Host "Updating data for $Path ..."
 
-# Connects collections and initializes data.
-function Connect {
+# Connects collections and initializes data. Dot-source this function, it
+# makes the result variables $Collection, $CollectionLog, $Update, $info.
+function Connect-Data {
+	# connect the main and optional log collection
 	Import-Module Mdbc
 	Connect-Mdbc . test $CollectionName
 	$CollectionLog = Get-MdbcCollection ($CollectionName + '_log')
 
+	# update time expression used in several places
+	$Update = @{'$set' = @{seen = $Now}}
+
+	# result info, init counters
 	$info = 1 | Select-Object Path, Created, Changed, Removed, Elapsed
 	$info.Created = $info.Changed = $info.Removed = 0
-	$Update = @{'$set' = @{Updated = $Now}}
 }
 
-# Gets input items from the path.
-function Input {
-	Get-ChildItem -LiteralPath $Path -Force -Recurse -ErrorAction Ignore
-}
+# Updates documents related to input items.
+function Update-Data {process{
+	$isFile = !$_.PSIsContainer
 
-# Updates documents from input items.
-function Update {process{
-	$file = !$_.PSIsContainer
-
-	# main data
-	$data = New-MdbcData
-	$data._id = $_.FullName
-	$data.Attributes = [int]$_.Attributes
-	if ($file) {
-		$data.Length = $_.Length
-		$data.LastWriteTime = $_.LastWriteTime
+	# data with _id = FullName and main changing fields
+	# (omit LastWriteTime for folders and CreationTime)
+	$data = [Mdbc.Dictionary] $_.FullName
+	$data.mode = [int]$_.Attributes
+	if ($isFile) {
+		$data.time = $_.LastWriteTime
+		$data.len = $_.Length
+	}
+	else {
+		$data.time = $_.CreationTime
 	}
 
-	# query by main data and update Updated
+	# query by main changing data and set Seen
 	$r = Update-MdbcData $data $Update -Result
 
-	# updated means not changed, done
+	# modified means $data is found, i.e. the same -> done
 	if ($r.ModifiedCount) {return}
 
-	# more data
-	if (!$file) {
-		$data.LastWriteTime = $_.LastWriteTime
+	# prepare to save changed data, add other fields
+	$data.name = $_.Name
+	if ($isFile) {
+		$data.ext = $_.Extension
 	}
-	$data.CreationTime = $_.CreationTime
-	$data.Name = $_.Name
-	if ($file) {
-		$data.Extension = $_.Extension
-	}
-	$data.Updated = $Now
+	$data.seen = $Now
 
-	# set or add data
-	$qid = @{_id = $_.FullName}
-	$r = Set-MdbcData $qid $data -Add -Result
+	# save changed data
+	$qId = @{_id = $_.FullName}
+	$r = Set-MdbcData $qId $data -Add -Result
 	$op = [int]$r.ModifiedCount
 	if ($op) {
 		++$info.Changed
@@ -135,62 +129,108 @@ function Update {process{
 	# no log? done
 	if (!$Log) {return}
 
-	# log created or changed
+	# log: remove some fields, set Op = created (0) or changed (1)
 	$data.Remove('_id')
-	$data.Remove('Name')
-	$data.Remove('Extension')
-	$data.Op = $op
-	Update-MdbcData $qid -Collection $CollectionLog -Add -Update @{
-		'$set' = @{Updated = $Now; Op = $op}
-		'$push' = @{Log = $data}
+	$data.Remove('name')
+	$data.Remove('ext')
+	$data.op = $op
+	Update-MdbcData $qId -Collection $CollectionLog -Add -Update @{
+		'$set' = @{seen = $Now; op = $op}
+		'$push' = @{log = $data}
 	}
 }}
 
-### Update existing
-. Connect
+###
+$ErrorActionPreference = 'Stop'
+Set-StrictMode -Version Latest
+
+# same time for all
+$Now = [DateTime]::Now
+
+# full and exact case paths
+$Path = foreach($_ in $Path) { Resolve-Case ($PSCmdlet.GetUnresolvedProviderPathFromPSPath($_)) }
+
+### Update documents of existing input files and folders
+Write-Host "Updating documents for $Path ..."
+
+. Connect-Data
 $info.Path = $Path
 $time = [Diagnostics.Stopwatch]::StartNew()
 if ($Split) {
+	# parallel processing using SplitPipeline
 	Import-Module SplitPipeline
-	Input | Split-Pipeline -Verbose -Count 2, 4 -Load 500, 5000 -Function Connect, Update -Variable CollectionName, Log, Now `
-	-Begin { . Connect } -Script { $input | Update } -End { $info } | .{process{
+	$param = @{
+		Verbose = $true
+		Count = 2, 4
+		Load = 500, 5000
+		Function = 'Connect-Data', 'Update-Data'
+		Variable = 'CollectionName', 'Log', 'Now'
+		Script = { $input | Update-Data }
+		Begin = { . Connect-Data }
+		End = { $info }
+	}
+	Get-Input | Split-Pipeline @param | .{process{
 		$info.Created += $_.Created
 		$info.Changed += $_.Changed
 	}}
 }
 else {
-	Input | Update
+	# normal processing
+	Get-Input | Update-Data
 }
 
-### Remove missing
-$in = @(
-	foreach($_ in $Path) {
-		if (!$_.EndsWith('\')) {$_ += '\'}
-		[regex]('^' + [regex]::Escape($_))
+### Compose some query parts (easier to read and test separately)
+
+# query _id in the input path, use regex to match the substring
+$qIdInPath = @{
+	_id = @{
+		'$in' = @(
+			foreach($_ in $Path) {
+				if (!$_.EndsWith('\')) {$_ += '\'}
+				[regex]('^' + [regex]::Escape($_))
+			}
+		)
 	}
-)
-$queryUnknown = @{Updated = @{'$not' = @{'$type' = 9}}}
-$queryMissing = @{'$and' = @{_id = @{'$in' = $in}}, @{Updated = @{'$lt' = $Now}}}
-foreach($data in Get-MdbcData @{'$or' = $queryUnknown, $queryMissing}) {
-	++$info.Removed
+}
 
-	# remove data
-	$id = $data._id
-	Remove-MdbcData @{_id = $id}
+# query removed from the input paths ~ with older .seen
+$qNotSeen = @{'$and' = $qIdInPath, @{seen = @{'$lt' = $Now}}}
 
-	# log removed
-	if ($Log) {
-		$data.Remove('_id')
-		$data.Remove('Name')
-		$data.Remove('Extension')
-		$data.Op = 2
-		Update-MdbcData @{_id = $id} -Collection $CollectionLog -Add -Update @{
-			'$set' = @{Updated = $Now; Op = 2}
-			'$push' = @{Log = $data}
+# and just in case unknown data ~ .seen is not 'date'
+$qUnknown = @{seen = @{'$not' = @{'$type' = 'date'}}}
+
+# final query for removing data
+$qRemove = @{'$or' = $qUnknown, $qNotSeen}
+
+### Remove documents of removed files and folders
+Write-Host "Removing documents for $Path ..."
+
+if ($Log) {
+	# log: get data to remove, remove and log
+	Get-MdbcData $qRemove | .{process{
+		++$info.Removed
+
+		# remove
+		$qId = @{_id = $_._id}
+		Remove-MdbcData $qId
+
+		# log: remove some fields, set Op = removed (2)
+		$_.Remove('_id')
+		$_.Remove('name')
+		$_.Remove('ext')
+		$_.op = 2
+		Update-MdbcData $qId -Collection $CollectionLog -Add -Update @{
+			'$set' = @{seen = $Now; op = 2}
+			'$push' = @{log = $_}
 		}
-	}
+	}}
+}
+else {
+	# no log: just remove many and get result
+	$r = Remove-MdbcData $qRemove -Many -Result
+	$info.Removed += [int]$r.DeletedCount
 }
 
-# output info
+### Complete and output results
 $info.Elapsed = $time.Elapsed
 $info

@@ -1,10 +1,9 @@
-
 <#
 .Synopsis
 	Argument completers for Mdbc commands.
 
 .Description
-	The script registers Mdbc completers for command parameters:
+	The script adds completers for:
 
 		Connect-Mdbc
 			-DatabaseName ..
@@ -15,19 +14,26 @@
 		Export-MdbcData
 			-Property .., ..
 
-	Completers can be used with:
+		Get-MdbcDatabase
+		Get-MdbcCollection
+		Remove-MdbcDatabase
+		Remove-MdbcCollection
+		Rename-MdbcCollection
+			[-Name] ..
 
-	* PowerShell v5 native Register-ArgumentCompleter
-	Simply invoke Mdbc.ArgumentCompleters.ps1, e.g. in a profile.
+	How to use:
 
-	* TabExpansionPlusPlus https://github.com/lzybkr/TabExpansionPlusPlus
-	Put Mdbc.ArgumentCompleters.ps1 to TabExpansionPlusPlus module directory in
-	order to be loaded automatically. Or invoke it after importing the module,
-	e.g. in a profile.
+	* PowerShell v5 native
+	Invoke Mdbc.ArgumentCompleters.ps1, e.g. in a profile.
 
 	* TabExpansion2.ps1 https://www.powershellgallery.com/packages/TabExpansion2
-	Put Mdbc.ArgumentCompleters.ps1 to the path in order to be loaded on the
-	first completion. Or invoke after TabExpansion2.ps1, e.g. in a profile.
+	Put Mdbc.ArgumentCompleters.ps1 to the path.
+	Or invoke after TabExpansion2.ps1, e.g. in a profile.
+
+	* TabExpansionPlusPlus https://github.com/lzybkr/TabExpansionPlusPlus
+	Put Mdbc.ArgumentCompleters.ps1 to TabExpansionPlusPlus directory.
+	Or invoke after importing the module, e.g. in a profile.
+	NOTE: Not all completers work in TabExpansionPlusPlus.
 #>
 
 Register-ArgumentCompleter -CommandName Connect-Mdbc -ParameterName DatabaseName -ScriptBlock {
@@ -40,6 +46,20 @@ Register-ArgumentCompleter -CommandName Connect-Mdbc -ParameterName DatabaseName
 	}}
 }
 
+Register-ArgumentCompleter -CommandName Get-MdbcDatabase, Remove-MdbcDatabase -ParameterName Name -ScriptBlock {
+	param($commandName, $parameterName, $wordToComplete, $commandAst, $boundParameters)
+
+	if (!($myClient = $boundParameters['Client'])) { $myClient = $Client }
+
+	@(
+		foreach($_ in Get-MdbcDatabase -Client $myClient) {
+			$_.DatabaseNamespace.DatabaseName
+		}
+	) -like "$wordToComplete*" | .{process{
+		New-Object System.Management.Automation.CompletionResult $_, $_, 'ParameterValue', $_
+	}}
+}
+
 Register-ArgumentCompleter -CommandName Connect-Mdbc -ParameterName CollectionName -ScriptBlock {
 	param($commandName, $parameterName, $wordToComplete, $commandAst, $boundParameters)
 
@@ -47,6 +67,20 @@ Register-ArgumentCompleter -CommandName Connect-Mdbc -ParameterName CollectionNa
 	if (!($DatabaseName = $boundParameters['DatabaseName'])) { $DatabaseName = 'test' }
 
 	@(Connect-Mdbc $ConnectionString $DatabaseName *) -like "$wordToComplete*" | .{process{
+		New-Object System.Management.Automation.CompletionResult $_, $_, 'ParameterValue', $_
+	}}
+}
+
+Register-ArgumentCompleter -CommandName Get-MdbcCollection, Remove-MdbcCollection, Rename-MdbcCollection -ParameterName Name -ScriptBlock {
+	param($commandName, $parameterName, $wordToComplete, $commandAst, $boundParameters)
+
+	if (!($myDatabase = $boundParameters['Database'])) { $myDatabase = $Database }
+
+	@(
+		foreach($_ in Get-MdbcCollection -Database $myDatabase) {
+			$_.CollectionNamespace.CollectionName
+		}
+	) -like "$wordToComplete*" | .{process{
 		New-Object System.Management.Automation.CompletionResult $_, $_, 'ParameterValue', $_
 	}}
 }

@@ -13,7 +13,7 @@ using MongoDB.Bson.Serialization;
 
 namespace Mdbc
 {
-	public class Dictionary : IDictionary, IConvertibleToBsonDocument
+	public sealed class Dictionary : IDictionary, IConvertibleToBsonDocument
 	{
 		readonly BsonDocument _document;
 		public Dictionary()
@@ -22,8 +22,7 @@ namespace Mdbc
 		}
 		public Dictionary(object id)
 		{
-			_document = new BsonDocument();
-			_document.Add(MyValue.Id, BsonValue.Create(id));
+			_document = new BsonDocument { { MyValue.Id, BsonValue.Create(id) } };
 		}
 		public Dictionary(IConvertibleToBsonDocument document)
 		{
@@ -42,6 +41,16 @@ namespace Mdbc
 				BsonSerializer.Serialize(json, typeof(BsonDocument), _document);
 			return writer.ToString();
 		}
+		#region Object
+		public override bool Equals(object obj)
+		{
+			return obj is Dictionary dic && _document.Equals(dic._document);
+		}
+		public override int GetHashCode()
+		{
+			return _document.GetHashCode();
+		}
+		#endregion
 		#region IDictionary
 		public bool IsFixedSize
 		{
@@ -65,8 +74,7 @@ namespace Mdbc
 			get
 			{
 				if (key == null) throw new ArgumentNullException(nameof(key));
-				BsonValue value;
-				return _document.TryGetValue(key.ToString(), out value) ? Actor.ToObject(value) : null;
+				return _document.TryGetValue(key.ToString(), out BsonValue value) ? Actor.ToObject(value) : null;
 			}
 			set
 			{

@@ -84,11 +84,13 @@ Get-MdbcData -Count
 
 ## Next Steps
 
+[HowTo.test.ps1]: https://github.com/nightroman/Mdbc/blob/master/Tests/HowTo.test.ps1
+
 Read cmdlet help topics and take a look at examples for some basic use cases.
 
-Use *Scripts\Mdbc.ArgumentCompleters.ps1* for database and collection name
-completion. Other scripts are toys but may be useful. See *Tests* in the
-repository for more technical examples.
+Use *Scripts/Mdbc.ArgumentCompleters.ps1* for database and collection name completion and property completion.
+*Scripts/Update-MongoFiles.ps1* is a toy for making test data but may be useful for tracking file changes.
+See also [HowTo.test.ps1] sample tasks and other tests for more technical examples.
 
 Mdbc cmdlets are designed for rather basic tasks.
 For advanced tasks use the driver API directly.

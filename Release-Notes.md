@@ -1,5 +1,22 @@
 # Mdbc Release Notes
 
+## v6.0.1
+
+**Mdbc.Dictionary and Mdbc.Collection**
+
+- Add/Set `byte[]` should map to `BsonBinaryData`, not `BsonArray`.
+- Override `Equals` and `GetHashCode` similar to wrapped types.
+- Map `decimal` <-> `BsonDecimal128`.
+
+**/Scripts**
+
+- `Mdbc.ArgumentCompleters.ps1` -- add name completers for `Get-MdbcDatabase`,
+  `Remove-MdbcDatabase`, `Get-MdbcCollection`, `Remove-MdbcCollection`,
+  `Rename-MdbcCollection`.
+- Rework `Update-MongoFiles.ps1` -- save less data, use shorter lower case
+  field names, add some comments.
+- Remove `Get-MongoFile.ps1` as not quite useful or significant.
+
 ## v6.0.0
 
 Many changes including breaking in order to adopt v2 driver API, improve

@@ -76,18 +76,17 @@ documents use an empty filter, e.g. @{}.
 
 $UpdateParameter = @'
 Specifies the update expression.
-The argument is either JSON or similar dictionary.
-Use dictionary arrays to define aggregate expressions.
+The argument is JSON, similar dictionary, or array for aggregate expressions.
 '@
 
 $AsParameter = @'
 Specifies the output document type. The argument is either the required type or
-a shortcut enum value for special types.
+the special type shortcut.
 
-A type specifies the output type literally. Type properties must match the
+A type specifies the output type literally. Type properties should match the
 document fields or the custom type serialization must be registered.
 
-Shortcuts are either enum values or strings:
+Special type shortcut strings or enum values:
 
 	Default
 		Default output, Mdbc.Dictionary with underlying BsonDocument.
@@ -287,9 +286,7 @@ Cmdlets with the parameter Collection use it as the default value.
 			}
 			test = {
 				$collections = @(. $args[0])
-				#! MMAPv1: files, system.indexes; WiredTiger: files
-				if ($collections.Count -lt 1) { throw }
-				if ($collections -notcontains 'files') { throw }
+				if (!$collections -or $collections[0].GetType().Name -ne 'String') { throw }
 			}
 		}
 	)
@@ -682,48 +679,73 @@ Merge-Helps $ADatabase @{
 	command = 'Invoke-MdbcCommand'
 	synopsis = 'Invokes database commands.'
 	description = @'
-This cmdlet is normally used in order to invoke commands not covered by the
-module and driver. See MongoDB manuals for available commands and syntax.
+This cmdlet is useful in order to invoke commands not covered by the module.
+See MongoDB for available commands and syntax.
 '@
 	parameters = @{
 		Command = @{
 			required = $true
 			description = @'
 Specifies the command to be invoked.
-The argument is either JSON or similar dictionary, for example hashtable:
+The argument is JSON, ordered dictionary, Mdbc.Dictionary, one item hashtable.
 
-	Invoke-MdbcCommand @{create='test'; capped=$true; size=1kb; max=5 }
+JSON:
 
-If the element order in a command is important then hashtables may not work.
-Use JSON strings, ordered tables [ordered]@{...}, or Mdbc.Dictionary instead:
+	Invoke-MdbcCommand '{create: "test", capped: true, size: 10485760}'
+
+Ordered dictionary:
+
+	Invoke-MdbcCommand ([ordered]@{create='test'; capped=$true; size=10mb })
+
+Mdbc.Dictionary, ordered by definition:
 
 	$c = New-MdbcData
 	$c.create = 'test'
 	$c.capped = $true
-	$c.size = 1kb
-	$c.max = 5
+	$c.size = 10mb
 	Invoke-MdbcCommand $c
 '@
 		}
 		As = $AsParameter
 	}
-	outputs = @{
-		type = '[Mdbc.Dictionary]'
-		description = 'The response document wrapped by Mdbc.Dictionary.'
-	}
+	outputs = @(
+		@{
+			type = '[Mdbc.Dictionary]'
+			description = 'The response document wrapped by Mdbc.Dictionary.'
+		}
+		@{
+			type = '[object]'
+			description = 'Other object type depending on As.'
+		}
+	)
 	links = @(
 		@{ text = 'MongoDB'; URI = 'http://www.mongodb.org' }
 	)
 	examples = @(
 		@{
 			code = {
-				# Invoke the command `serverStatus`
+				# Get the server status, one item hashtable is fine
+
 				Connect-Mdbc . test
 				Invoke-MdbcCommand @{serverStatus = 1}
 			}
 			test = {
 				$response = . $args[0]
 				if ($response.host -ne $env:COMPUTERNAME) {throw}
+			}
+		}
+		@{
+			code = {
+				# Connect the database `test`, get statistics for the collection
+				# `test.test`. Mind [ordered], otherwise the command may fail:
+				# "`scale` is unknown command".
+
+				Connect-Mdbc . test
+				Invoke-MdbcCommand ([ordered]@{collStats = "test"; scale = 1mb})
+			}
+			test = {
+				# just run, used to fail without [ordered]
+				. $args[0]
 			}
 		}
 		@{
@@ -757,14 +779,14 @@ Use JSON strings, ordered tables [ordered]@{...}, or Mdbc.Dictionary instead:
 				$null = Invoke-MdbcCommand $c
 
 				# add 10 documents
-				1..10 | .{process{ @{_id = $_} }} | Add-MdbcData
+				foreach($_ in 1..10) {Add-MdbcData @{_id = $_}}
 
 				# get 5 documents
 				Get-MdbcData
 			}
 			test = {
-				$data = . $args[0]
-				if ($data.Count -ne 5) {throw}
+				$r = . $args[0]
+				if ($r.Count -ne 5) {throw}
 			}
 		}
 	)

@@ -169,9 +169,8 @@ task Package Markdown, ?UpdateScript, {
 	$ModuleRoot\*
 
 	Copy-Item -Destination z\tools\$ModuleName\Scripts `
-	.\Scripts\Get-MongoFile.ps1,
-	.\Scripts\Update-MongoFiles.ps1,
-	.\Scripts\Mdbc.ArgumentCompleters.ps1
+	.\Scripts\Mdbc.ArgumentCompleters.ps1,
+	.\Scripts\Update-MongoFiles.ps1
 }
 
 # Synopsis: Make NuGet package.
@@ -241,7 +240,6 @@ task TestHelpSynopsis {
 task TestHelp Help, TestHelpExample, TestHelpSynopsis
 
 $UpdateScriptInputs = @(
-	'Get-MongoFile.ps1'
 	'Mdbc.ArgumentCompleters.ps1'
 	'Update-MongoFiles.ps1'
 )

@@ -3,37 +3,39 @@
 	Assorted tests.
 #>
 
-. .\Zoo.ps1
-Import-Module Mdbc
+. ./Zoo.ps1
 
-# Quick start code used in README.md
-task About {
-	# Load the module
-	Import-Module Mdbc
+# Quick start code from README, ensure it works
+task README {
+	$r = $(
+		# Load the module
+		Import-Module Mdbc
 
-	# Connect the new collection test.test
-	Connect-Mdbc . test test -NewCollection
+		# Connect the new collection test.test
+		Connect-Mdbc . test test -NewCollection
 
-	# Add some test data
-	@{_id=1; value=42}, @{_id=2; value=3.14} | Add-MdbcData
+		# Add two documents
+		@{_id = 1; value = 42}, @{_id = 2; value = 3.14} | Add-MdbcData
 
-	# Get all data as custom objects and show them in a table
-	Get-MdbcData -As PS | Format-Table -AutoSize | Out-String
+		# Get documents as PS objects
+		Get-MdbcData -As PS | Format-Table
 
-	# Query by _id using the filter expression
-	Get-MdbcData '{_id : 1}'
+		# Get the document by _id
+		Get-MdbcData @{_id = 1}
 
-	# Update the document, set the 'value' to 100
-	Update-MdbcData '{_id : 1}' '{$set : {value : 100}}'
+		# Update the document, set 'value' to 100
+		Update-MdbcData @{_id = 1} @{'$set' = @{value = 100}}
 
-	# Query by _id using the filter expression
-	Get-MdbcData '{_id : 1}'
+		# Get the document again, 'value' is 100
+		Get-MdbcData @{_id = 1}
 
-	# Remove the document
-	Remove-MdbcData '{_id : 1}'
+		# Remove the document
+		Remove-MdbcData @{_id = 1}
 
-	# Count remaining documents, 1 is expected
-	Get-MdbcData -Count
+		# Count documents, there is 1
+		Get-MdbcData -Count
+	)
+	equals $r[-1] 1L
 }
 
 # Test the function Test-Table
