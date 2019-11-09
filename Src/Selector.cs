@@ -14,21 +14,27 @@ namespace Mdbc
 		public string DocumentName { get; private set; }
 		public string PropertyName { get; private set; }
 		ScriptBlock _ScriptBlock;
-		PSCmdlet _Cmdlet;
-		internal static IList<Selector> Create(IEnumerable values, PSCmdlet cmdlet)
+		internal static IList<Selector> Create(IEnumerable values)
 		{
 			var list = new List<Selector>();
 			foreach (var value in values)
+			{
 				if (value != null)
-					list.Add(new Selector(value, cmdlet));
-
+				{
+					if (value is string name && name == "*")
+					{
+						list.Clear();
+						break;
+					}
+					list.Add(new Selector(value));
+				}
+			}
 			return list;
 		}
 		internal object GetValue(object value)
 		{
-			var vars = new List<PSVariable>() { new PSVariable("_", value) };
-			var r = _ScriptBlock.InvokeWithContext(null, vars);
-			switch(r.Count)
+			var r = Actor.InvokeWithDollar(_ScriptBlock, value);
+			switch (r.Count)
 			{
 				case 1: { return r[0]; }
 				case 0: { return null; }
@@ -45,20 +51,16 @@ namespace Mdbc
 					throw new ArgumentException("Expression must be specified by a string or a script block.");
 			}
 		}
-		Selector(object selector, PSCmdlet cmdlet)
+		Selector(object selector)
 		{
-			_Cmdlet = cmdlet;
-
-			var name = selector as string;
-			if (name != null)
+			if (selector is string name)
 			{
 				DocumentName = name;
 				PropertyName = name;
 				return;
 			}
 
-			IDictionary dictionary = selector as IDictionary;
-			if (dictionary == null)
+			if (!(selector is IDictionary dictionary))
 				throw new ArgumentException("Property must be specified by a string or a dictionary.");
 
 			if (dictionary.Count == 1)

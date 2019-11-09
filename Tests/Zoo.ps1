@@ -13,6 +13,11 @@ $ErrorPipeline = [Mdbc.Api]::TextParameterPipeline
 $ErrorSet = [Mdbc.Api]::TextParameterSet
 $ErrorUpdate = [Mdbc.Api]::TextParameterUpdate
 
+function Zoo1 {
+	class T { $Version = [version]'0.0' }
+	[T]::new()
+}
+
 function Get-ServerVersion {
 	Connect-Mdbc . test
 	$version = (Invoke-MdbcCommand '{buildInfo:1}').version
@@ -43,14 +48,28 @@ function Test-Type($Value, $TypeName) {
 
 # Invokes a command and checks the error and the sample.
 # Args: [0] script block [1] sample error wildcard.
-function Test-Error {
-	${private:+command}, ${private:+sample} = $args
-	${private:+result} = $null
-	try { & ${+command} }
-	catch { ${+result} = $_ }
+function Test-Error([Parameter()]$Command, $Like, $Text) {
+	Remove-Variable Command, Like, Text
 
-	if (${+result} -notlike ${+sample}) {
-		Write-Error -ErrorAction 1 "`n Sample error : ${+sample}`n Result error : ${+result}"
+	${private:+result} = $null
+	try { & $PSBoundParameters.Command }
+	catch { ${+result} = "$_" }
+
+	if (!${+result}) {
+		Write-Error -ErrorAction 1 'Expected error.'
+	}
+	elseif ($_ = $PSBoundParameters['Like']) {
+		if (${+result} -notlike $_) {
+			Write-Error -ErrorAction 1 "Sample/Result:`n$_`n${+result}"
+		}
+	}
+	elseif ($_ = $PSBoundParameters['Text']) {
+		if (${+result} -cne $_) {
+			Write-Error -ErrorAction 1 "Sample/Result:`n$_`n${+result}"
+		}
+	}
+	else {
+		throw
 	}
 }
 
@@ -101,10 +120,10 @@ function Test-Table([System.Collections.IDictionary]$1, [System.Collections.IDic
 
 # Compares two lists.
 function Test-List([System.Collections.IList]$1, [System.Collections.IList]$2, [switch]$Force) {
-	if ($1.Count -ne $2.Count) {
-		Write-Error -ErrorAction 1 "Different list counts: $($1.Count) and $($2.Count)."
-	}
 	for($i = 0; $i -lt $1.Count; ++$i) {
+		if ($i -ge $2.Count) {
+			break
+		}
 		$v1 = $1[$i]
 		$v2 = $2[$i]
 
@@ -139,6 +158,9 @@ function Test-List([System.Collections.IList]$1, [System.Collections.IList]$2, [
 			}
 		}
 	}
+	if ($1.Count -ne $2.Count) {
+		Write-Error -ErrorAction 1 "Different list counts: $($1.Count) and $($2.Count)."
+	}
 }
 
 # Log expression and sample, invoke expression, compare with sample
@@ -148,4 +170,52 @@ function Test-Expression($expression, $sample) {
 	if ($result -cne $sample) {
 		Write-Error -ErrorAction 1 "`n Sample : $sample`n Result : $result"
 	}
+}
+
+# Gets a dictionary with all known bson types
+function New-BsonBag {
+	$m = New-MdbcData
+	# 1 Double - round trip [double]
+	$m.double = 3.14
+	# 2 String - round trip [string]
+	$m.string = 'bar'
+	# 3 Object - object/dictionary -> BsonDocument -> Mdbc.Dictionary
+	$m.object = @{bar = 1}
+	# 4 Array - collection -> BsonArray -> Mdbc.Collection
+	$m.array = @(1, 2)
+	# 5 Binary - round trip [guid], one way [byte[]]
+	# guid - round trip [guid]
+	$m.binData04 = [guid]"cdccdb76-30a3-4d7c-97fa-5ae1ad28fd64"
+	# bytes - one way byte[] -> BsonBinaryData
+	$m.binData00 = [byte[]](1, 2)
+	# 6 Undefined - Deprecated
+	# 7 ObjectId - round trip [MongoDB.Bson.ObjectId]
+	$m.objectId = [MongoDB.Bson.ObjectId]"5dc4c9808c94b4316c418f95"
+	# 8 Boolean - round trip [bool]
+	$m.bool = $true
+	# 9 Date - round trip [DateTime]
+	$m.date = [DateTime]"2019-11-11"
+	# 10 Null - round trip $null
+	$m.null = $null
+	# 11 RegularExpression - one way [regex] -> BsonRegularExpression
+	$m.regex = [regex]'bar'
+	# 12 DBPointer - Deprecated
+	# 13 JavaScript - just BsonJavaScript
+	$m.javascript = [MongoDB.Bson.BsonJavaScript]'x = 42'
+	# 14 Symbol - Deprecated
+	# 15 JavaScriptWithScope - just BsonJavaScriptWithScope
+	$m.javascriptWithScope = [MongoDB.Bson.BsonJavaScriptWithScope]::new('x = y', [Mdbc.Dictionary]::new())
+	# 16 Int32 - round trip [int]
+	$m.int = 42
+	# 17 Timestamp - just BsonTimestamp
+	$m.timestamp = [MongoDB.Bson.BsonTimestamp]12345
+	# 18 Int64 - round trip [long]
+	$m.long = 42L
+	# 19 Decimal128 -- round trip [decimal]
+	$m.decimal = 123456789.123456789d
+	# -1 MinKey - singleton [MongoDB.Bson.BsonMinKey]
+	$m.minKey = [MongoDB.Bson.BsonMinKey]::Value
+	# 127 MaxKey - singleton [MongoDB.Bson.BsonMaxKey]
+	$m.maxKey = [MongoDB.Bson.BsonMaxKey]::Value
+	$m
 }

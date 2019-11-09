@@ -33,7 +33,7 @@ namespace Mdbc.Commands
 		public ScriptBlock Convert { get; set; }
 
 		[Parameter]
-		public object[] Property { get { return null; } set { if (value == null) throw new PSArgumentNullException(nameof(value)); _Selectors = Selector.Create(value, this); } }
+		public object[] Property { set { if (value == null) throw new PSArgumentNullException(nameof(value)); _Selectors = Selector.Create(value); } }
 		IList<Selector> _Selectors;
 
 		[Parameter]
@@ -118,7 +118,7 @@ namespace Mdbc.Commands
 				var document = DocumentInput.NewDocumentWithId(NewId, Id, InputObject);
 
 				// document from input
-				document = Actor.ToBsonDocument(document, InputObject, new DocumentInput(SessionState, Convert), _Selectors);
+				document = Actor.ToBsonDocument(document, InputObject, Convert, _Selectors);
 
 				// write
 				if (FileFormat == FileFormat.Json)

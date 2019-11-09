@@ -322,3 +322,29 @@ task GetUpdateAddNew {
 	$r = Get-MdbcData
 	equals "$r" '{ "_id" : 76, "p1" : 3 }'
 }
+
+#! can use -Project * and -As type-name
+task ProjectStar {
+	Connect-Mdbc -NewCollection
+	@{_id = 0; p1 = 1; p2 = 2; p3 = 3} | Add-MdbcData
+
+	# * is fine with no -As
+	$r = Get-MdbcData -Project *
+	equals $r.Count 4
+
+	# id stands for _id automatically
+	class T1 {$id; $p2}
+	$r = Get-MdbcData -As T1 -Project *
+	equals '{"id":0,"p2":2}' ($r | ConvertTo-Json -Compress)
+
+	# id may be missing
+	class T2 {$p2; $p3}
+	$r = Get-MdbcData -As T2 -Project *
+	equals '{"p2":2,"p3":3}' ($r | ConvertTo-Json -Compress)
+
+	#! serialized type
+	class T3 {$Name; $p3}
+	Register-MdbcClassMap T3 -IdProperty Name
+	$r = Get-MdbcData -As T3 -Project *
+	equals '{"Name":0,"p3":3}' ($r | ConvertTo-Json -Compress)
+}

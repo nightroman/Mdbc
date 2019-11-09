@@ -2,13 +2,12 @@
 // Copyright (c) Roman Kuzmin
 // http://www.apache.org/licenses/LICENSE-2.0
 
-using System;
-using System.Collections;
-using System.Management.Automation;
 using MongoDB.Bson;
 using MongoDB.Bson.IO;
 using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Serializers;
+using System.Collections;
+using System.Management.Automation;
 
 namespace Mdbc
 {
@@ -79,6 +78,21 @@ namespace Mdbc
 		public override Dictionary Deserialize(BsonDeserializationContext context, BsonDeserializationArgs args)
 		{
 			return new Dictionary(BsonDocumentSerializer.Instance.Deserialize(context, args));
+		}
+		public override void Serialize(BsonSerializationContext context, BsonSerializationArgs args, Dictionary value)
+		{
+			BsonDocumentSerializer.Instance.Serialize(context, args, value.ToBsonDocument());
+		}
+	}
+	sealed class CollectionSerializer : SealedClassSerializerBase<Collection>
+	{
+		public override Collection Deserialize(BsonDeserializationContext context, BsonDeserializationArgs args)
+		{
+			return new Collection(BsonArraySerializer.Instance.Deserialize(context, args));
+		}
+		public override void Serialize(BsonSerializationContext context, BsonSerializationArgs args, Collection value)
+		{
+			BsonArraySerializer.Instance.Serialize(context, args, value.ToBsonArray());
 		}
 	}
 }

@@ -9,6 +9,7 @@ using MongoDB.Bson;
 
 namespace Mdbc
 {
+	//! sync logic with Dictionary
 	public sealed class Collection : IList
 	{
 		readonly BsonArray _array;
@@ -16,9 +17,37 @@ namespace Mdbc
 		{
 			_array = new BsonArray();
 		}
+		/// <summary>
+		/// Wrapper.
+		/// </summary>
 		public Collection(BsonArray array)
 		{
-			_array = array;
+			_array = array ?? throw new ArgumentNullException(nameof(array));
+		}
+		[Obsolete("Designed for scripts.")]
+		public Collection(object value)
+		{
+			value = Actor.BaseObject(value);
+			if (value == null)
+				throw new ArgumentNullException(nameof(value));
+
+			if (value is IEnumerable en && !(value is string))
+			{
+				if (en is Collection that)
+				{
+					_array = (BsonArray)that._array.DeepClone();
+				}
+				else
+				{
+					_array = new BsonArray();
+					foreach (var item in en)
+						_array.Add(Actor.ToBsonValue(item));
+				}
+			}
+			else
+			{
+				_array = new BsonArray() { Actor.ToBsonValue(value) };
+			}
 		}
 		public BsonArray ToBsonArray()
 		{
@@ -32,6 +61,10 @@ namespace Mdbc
 		public override int GetHashCode()
 		{
 			return _array.GetHashCode();
+		}
+		public override string ToString()
+		{
+			return _array.ToString();
 		}
 		#endregion
 		public IEnumerator GetEnumerator()

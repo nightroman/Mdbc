@@ -1,6 +1,5 @@
 
-. .\Zoo.ps1
-Import-Module Mdbc
+. ./Zoo.ps1
 Set-StrictMode -Version Latest
 
 task DataTypes {
@@ -179,29 +178,31 @@ task Property {
 }
 
 task Convert {
+	$zoo1 = Zoo1
+
 	# error due to unknown data
-	Test-Error {New-MdbcData $Host} ".NET type * cannot be mapped to a BsonValue."
+	Test-Error {New-MdbcData @{data = $zoo1}} "Cannot convert 'Zoo1.T' to 'BsonValue'."
 
 	# error due to a bad converter
-	Test-Error {New-MdbcData $Host -Convert {throw 'Oops'}} 'Converter script was called on "* cannot be mapped to a BsonValue." and failed with "Oops".'
+	Test-Error {New-MdbcData @{data = $zoo1} -Convert {throw 'Oops'}} "Converter script was called for 'Zoo1.T' and failed with 'Oops'."
 
 	# convert unknown to nulls
-	$r = New-MdbcData $Host -Convert {}
-	assert $r.Contains('Version')
-	equals $r.Version
+	$r = New-MdbcData @{p1 = 1; p2 = $Host} -Convert {}
+	assert $r.Contains('p2')
+	equals $r.p2
 
 	# ditto
-	$r = New-MdbcData $Host -Convert {$null}
-	assert $r.Contains('Version')
-	equals $r.Version
+	$r = New-MdbcData @{p1 = 1; p2 = $Host} -Convert {$null}
+	assert $r.Contains('p2')
+	equals $r.p2
 
 	# convert unknowns to strings
-	$r = New-MdbcData $Host -Convert {"$_"}
-	Test-Type $r.Version System.String
+	$r = New-MdbcData @{p1 = 1; p2 = $Host} -Convert {"$_"}
+	Test-Type $r.p2 System.String
 }
 
 task Cyclic {
-	$message = 'Data exceed the default maximum serialization depth.'
+	$message = '*Data exceed the default maximum serialization depth.'
 
 	# dictionary
 	$d = @{}

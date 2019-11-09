@@ -118,6 +118,7 @@ task PublicTypes {
 		'ModuleAssemblyInitializer'
 		'NewDataCommand'
 		'OutputType'
+		'RegisterClassMapCommand'
 		'RemoveCollectionCommand'
 		'RemoveDatabaseCommand'
 		'RemoveDataCommand'

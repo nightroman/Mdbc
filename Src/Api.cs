@@ -2,6 +2,10 @@
 // Copyright (c) Roman Kuzmin
 // http://www.apache.org/licenses/LICENSE-2.0
 
+using MongoDB.Bson;
+using MongoDB.Bson.IO;
+using MongoDB.Bson.Serialization;
+using MongoDB.Driver;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -9,21 +13,28 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Management.Automation;
-using MongoDB.Bson;
-using MongoDB.Bson.IO;
-using MongoDB.Bson.Serialization;
-using MongoDB.Driver;
 
 namespace Mdbc
 {
 	public static class Api
 	{
+		#region Messages
 		public const string ErrorEmptyDocument = "Document must not be empty.";
 		public const string TextParameterCommand = "Parameter Command must be specified and cannot be null.";
 		public const string TextParameterFilter = "Parameter Filter must be specified and cannot be null.";
 		public const string TextParameterPipeline = "Parameter Pipeline must be specified and cannot be null.";
 		public const string TextParameterSet = "Parameter Set must be specified and cannot be null.";
 		public const string TextParameterUpdate = "Parameter Update must be specified and cannot be null.";
+		internal static string TextCannotConvert2(object from, object to)
+		{
+			return $"Cannot convert '{from}' to '{to}'.";
+		}
+		internal static string TextCannotConvert3(object from, object to, string error)
+		{
+			return $"{TextCannotConvert2(from, to)} -- {error}";
+		}
+		#endregion
+
 		static object BaseObjectNotNull(object value)
 		{
 			if (value == null) throw new ArgumentNullException(nameof(value));
@@ -58,12 +69,15 @@ namespace Mdbc
 				throw new ArgumentException($"JSON: expected document, found {bson.BsonType}.");
 		}
 		/// <summary>
-		/// IConvertibleToBsonDocument, IDictionary, or JSON.
+		/// JSON, IConvertibleToBsonDocument, IDictionary.
 		/// </summary>
 		static BsonDocument BsonDocument(object value)
 		{
 			// unwrap, it may be PSObject item of PS array, see _191103_084410
 			value = BaseObjectNotNull(value);
+
+			if (value is string json)
+				return JsonToBsonDocument(json);
 
 			//! before IDictionary, mind Mdbc.Dictionary
 			if (value is IConvertibleToBsonDocument cd)
@@ -71,20 +85,23 @@ namespace Mdbc
 
 			//! after IConvertibleToBsonDocument
 			if (value is IDictionary dictionary)
-				return new BsonDocument(dictionary);
+				return Actor.ToBsonDocumentFromDictionary(dictionary);
 
-			if (value is string json)
-				return JsonToBsonDocument(json);
-
-			throw new ArgumentException($"Cannot convert {value.GetType().FullName} to {nameof(BsonDocument)}");
+			throw new InvalidOperationException(Api.TextCannotConvert2(value.GetType(), nameof(BsonDocument)));
 		}
 		/// <summary>
-		/// IConvertibleToBsonDocument, IDictionary, or JSON.
+		/// JSON, IConvertibleToBsonDocument, IDictionary.
 		/// </summary>
 		static bool TryBsonDocument(object value, out BsonDocument result)
 		{
 			// unwrap, it may be PSObject item of PS array, see _191103_084410
 			value = BaseObjectNotNull(value);
+
+			if (value is string json)
+			{
+				result = JsonToBsonDocument(json);
+				return true;
+			}
 
 			//! before IDictionary, mind Mdbc.Dictionary
 			if (value is IConvertibleToBsonDocument cd)
@@ -96,13 +113,45 @@ namespace Mdbc
 			//! after IConvertibleToBsonDocument
 			if (value is IDictionary dictionary)
 			{
-				result = new BsonDocument(dictionary);
+				result = Actor.ToBsonDocumentFromDictionary(dictionary);
 				return true;
 			}
 
+			result = null;
+			return false;
+		}
+		/// <summary>
+		/// Null, empty string, JSON, IConvertibleToBsonDocument, IDictionary.
+		/// </summary>
+		// Used for optional -Filter, -Sort, -Project. They may be omitted,
+		// nulls or empty strings (e.g. nulls converted to strings by PS).
+		static bool TryBsonDocumentOrNull(object value, out BsonDocument result)
+		{
+			if (value == null)
+			{
+				result = null;
+				return true;
+			}
+
+			value = Actor.BaseObject(value);
+
 			if (value is string json)
 			{
-				result = JsonToBsonDocument(json);
+				result = json.Length == 0 ? null : JsonToBsonDocument(json);
+				return true;
+			}
+
+			//! before IDictionary, mind Mdbc.Dictionary
+			if (value is IConvertibleToBsonDocument cd)
+			{
+				result = cd.ToBsonDocument();
+				return true;
+			}
+
+			//! after IConvertibleToBsonDocument
+			if (value is IDictionary dictionary)
+			{
+				result = Actor.ToBsonDocumentFromDictionary(dictionary);
 				return true;
 			}
 
@@ -120,6 +169,20 @@ namespace Mdbc
 			}
 
 			return (Command<BsonDocument>)value;
+		}
+		public static FilterDefinition<BsonDocument> FilterDefinition(object value)
+		{
+			if (TryBsonDocumentOrNull(value, out var doc))
+				return doc;
+
+			return (FilterDefinition<BsonDocument>)value;
+		}
+		public static SortDefinition<BsonDocument> SortDefinition(object value)
+		{
+			if (TryBsonDocumentOrNull(value, out var doc))
+				return doc;
+
+			return (SortDefinition<BsonDocument>)value;
 		}
 		public static PipelineDefinition<BsonDocument, BsonDocument> PipelineDefinition(object value)
 		{
@@ -146,7 +209,7 @@ namespace Mdbc
 
 			//! after IConvertibleToBsonDocument
 			if (value is IDictionary dictionary)
-				return new BsonDocument[] { new BsonDocument(dictionary) };
+				return new BsonDocument[] { Actor.ToBsonDocumentFromDictionary(dictionary) };
 
 			// PS arrays or other collections
 			if (value is IEnumerable en)
@@ -159,6 +222,13 @@ namespace Mdbc
 
 			// either PipelineDefinition (unlikely but possible) or "Cannot cast X to Y"
 			return (PipelineDefinition<BsonDocument, BsonDocument>)value;
+		}
+		public static ProjectionDefinition<BsonDocument> ProjectionDefinition(object value)
+		{
+			if (TryBsonDocumentOrNull(value, out var doc))
+				return doc;
+
+			return (ProjectionDefinition<BsonDocument>)value;
 		}
 		public static UpdateDefinition<BsonDocument> UpdateDefinition(object value)
 		{

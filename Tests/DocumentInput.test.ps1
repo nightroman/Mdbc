@@ -3,23 +3,29 @@
 	Common tests for New-MdbcData, Add-MdbcData, Export-MdbcData
 #>
 
-. .\Zoo.ps1
-Import-Module Mdbc
+. ./Zoo.ps1
 Set-StrictMode -Version Latest
+
+task BadTopObject {
+	Test-Error { Zoo1 | New-MdbcData } "Cannot convert 'Zoo1.T' to 'BsonDocument'. -- Cannot convert 'System.Version' to 'BsonValue'."
+}
+
+task BadConvertGetsManyValues {
+	Test-Error { @{p1 = [version]'1.1'} | New-MdbcData -Convert {1, 2} } '*Converter script should return one value or none but it returns 2.*'
+}
 
 task BsonValueError {
 	# good data to be done regardless of errors
 	$good = @{_id = 1; Name = 'name1'}, @{_id = 2; Name = 'name2'}
 
 	# bad data inserted before good
-	$bad = @($Host) + $good
+	$bad = @(@{data = Zoo1}; $good)
 
 	Invoke-Test {
-		assert ($e -like '.NET type * cannot be mapped to a BsonValue.')
-		equals $Host $e.TargetObject
+		equals "$e" "Cannot convert 'Zoo1.T' to 'BsonValue'."
+		equals $e.TargetObject.data.GetType().FullName Zoo1.T
 		Test-List -Force $r $good
 	}{
-		Connect-Mdbc -NewCollection
 		$r = $bad | New-MdbcData -ErrorAction 0 -ErrorVariable e
 	}{
 		Connect-Mdbc -NewCollection

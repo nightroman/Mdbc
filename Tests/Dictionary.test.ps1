@@ -3,7 +3,7 @@
 Set-StrictMode -Version Latest
 
 task BsonTypes {
-	$1 = ./BsonTypes.ps1
+	$1 = New-BsonBag
 
 	# round trip Mdbc.Dictionary -> DB -> Mdbc.Dictionary
 	Connect-Mdbc -NewCollection
@@ -18,8 +18,8 @@ task BsonTypes {
 	equals $r.string bar
 	equals $r.object.GetType() ([System.Management.Automation.PSCustomObject])
 	equals $r.array.GetType() ([System.Collections.ArrayList])
-	equals $r.binData1 ([guid]"cdccdb76-30a3-4d7c-97fa-5ae1ad28fd64")
-	equals $r.binData2.GetType() ([MongoDB.Bson.BsonBinaryData])
+	equals $r.binData04 ([guid]"cdccdb76-30a3-4d7c-97fa-5ae1ad28fd64")
+	equals $r.binData00.GetType() ([MongoDB.Bson.BsonBinaryData])
 	equals $r.objectId.GetType() ([MongoDB.Bson.ObjectId])
 	equals $r.bool $true
 	equals $r.date ([DateTime]'2019-11-11')
@@ -36,9 +36,25 @@ task BsonTypes {
 	$3 = New-MdbcData $r
 	equals $1 $3
 	assert ($1 -eq $3)
+
+	# What we can get -As object, ExpandoObject
+	$r = Get-MdbcData -As ([object]) -Project '{binData00: 0, regex: 0, javascript: 0, javascriptWithScope: 0, timestamp: 0, minKey: 0, maxKey: 0}'
+	equals $r.GetType() ([System.Dynamic.ExpandoObject])
+	equals $r.double 3.14
+	equals $r.string bar
+	equals $r.object.GetType() ([System.Dynamic.ExpandoObject]) #!
+	equals $r.array.GetType() ([System.Collections.Generic.List[object]]) #!
+	equals $r.binData04 ([guid]"cdccdb76-30a3-4d7c-97fa-5ae1ad28fd64")
+	equals $r.objectId.GetType() ([MongoDB.Bson.ObjectId])
+	equals $r.bool $true
+	equals $r.date ([DateTime]'2019-11-11')
+	equals $r.null $null
+	equals $r.int 42
+	equals $r.long 42L
+	equals $r.decimal ([MongoDB.Bson.Decimal128]123456789.123456789d) #!
 }
 
-task Constructors {
+task DictionaryConstructors {
 	# default
 	$r = New-Object Mdbc.Dictionary
 	equals $r.Count 0
@@ -56,7 +72,67 @@ task Constructors {
 	equals $r.name name1
 
 	# from a bad object
-	Test-Error { [Mdbc.Dictionary]$Host } '*cannot be mapped to a BsonValue.*'
+	Test-Error { [Mdbc.Dictionary]([version]1.1) } '* Error: "Cannot convert ''System.Version'' to ''BsonValue''."'
+
+	# Mdbc.Dictionary deep clone
+	$arr = [MongoDB.Bson.BsonArray]@(1)
+	$r1 = [Mdbc.Dictionary]@{p1 = $arr}
+	$r2 = [Mdbc.Dictionary]$r1 #! trap, it's cast, not copy
+	assert ([object]::ReferenceEquals($r1, $r2))
+	# so use true constructor
+	$r2 = [Mdbc.Dictionary]::new($r1)
+	$doc2 = $r2.ToBsonDocument()
+	equals "$doc2" p1=[1]
+	assert (!([object]::ReferenceEquals($doc2, $r1.ToBsonDocument())))
+	equals $doc2 $r1.ToBsonDocument()
+	$arr2 = $doc2['p1']
+	equals $arr2.ToString() [1]
+	assert (!([object]::ReferenceEquals($arr2, $arr)))
+	equals $arr2 $arr
+}
+
+task CollectionConstructors {
+	# [object], IEnumerable, not string
+	$r = [Mdbc.Collection](1, 2)
+	equals "$r" '1 2' # PowerShell does not .ToString()
+	equals $r.ToString() '[1, 2]'
+
+	# [object], IEnumerable, string
+	$r = [Mdbc.Collection]'bar'
+	equals $r.ToString() '[bar]'
+
+	# [object], not IEnumerable
+	$r = [Mdbc.Collection]42
+	equals $r.ToString() '[42]'
+
+	# [object] IEnumerable
+	$r = [Mdbc.Collection](1, 2)
+	equals $r.Count 2
+
+	# BsonArray
+	$arr = [MongoDB.Bson.BsonArray](1, 2)
+	$r = [Mdbc.Collection]$arr
+	assert ([object]::ReferenceEquals($arr, $r.ToBsonArray()))
+
+	# Mdbc.Collection, deep clone
+	$arr1 = [MongoDB.Bson.BsonArray]@(1)
+	$arr2 = [MongoDB.Bson.BsonArray]@(, $arr1)
+	$r1 = [Mdbc.Collection]$arr2
+	$r2 = [Mdbc.Collection]$r1 #! trap, it's copy
+	assert ([object]::ReferenceEquals($r1, $r2))
+	# so use true constructor
+	$r2 = [Mdbc.Collection]::new($r1)
+	equals $r2.ToString() [[1]]
+
+	$copy2 = $r2.ToBsonArray()
+	equals $copy2.ToString() [[1]]
+	equals $copy2 $arr2
+	assert (!([object]::ReferenceEquals($arr2, $copy2)))
+
+	$copy1 = $copy2[0]
+	equals $copy1.ToString() [1]
+	equals $copy1 $arr1
+	assert (!([object]::ReferenceEquals($arr1, $copy1)))
 }
 
 # v4.8.0

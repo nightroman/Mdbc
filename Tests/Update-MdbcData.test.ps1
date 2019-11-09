@@ -17,7 +17,9 @@ task BadSet {
 	Test-Error { Set-MdbcData $null } $ErrorFilter
 	Test-Error { Set-MdbcData @{} } $ErrorSet
 	Test-Error { Set-MdbcData @{} $null } $ErrorSet
-	Test-Error { Set-MdbcData @{} '' } '*Cannot convert System.String to a document.*'
+	Test-Error { Set-MdbcData @{} '' } -Text @'
+Cannot bind parameter 'Set' to the target. Exception setting "Set": "Cannot convert 'System.String' to 'BsonDocument'."
+'@
 }
 
 #_131121_104038

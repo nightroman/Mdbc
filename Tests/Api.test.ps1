@@ -1,7 +1,21 @@
 
 . ./Zoo.ps1
+. ./Classes.lib.ps1
 
-task BadCommand {
+# serialized class for tests
+$Person = [Person]::new()
+
+task Command {
+	# bad commands but Api works, Command fails later
+	assert ([Mdbc.Api]::Command((New-MdbcData -Id 1)))
+
+	$r1 = [Mdbc.Api]::Command(@{bad = 1})
+	$r2 = [Mdbc.Api]::Command($r1)
+	assert ($r1 -and [object]::ReferenceEquals($r1, $r2))
+
+	# not real but should not fail, so such reals work
+	assert ([Mdbc.Api]::Command(@{bar = $Person}))
+
 	Test-Error { [Mdbc.Api]::Command($null) } '*: "Value cannot be null.*'
 	Test-Error { [Mdbc.Api]::Command('') } '*: "Invalid JSON."'
 	Test-Error { [Mdbc.Api]::Command('bad') } '*: "Invalid JSON."'
@@ -12,17 +26,60 @@ task BadCommand {
 	Test-Error { [Mdbc.Api]::Command(1) } '*: "Unable to cast object of type ''System.Int32'' to type ''MongoDB.Driver.Command*'
 }
 
-task Command {
-	$(
-		# bad commands but Api works, Command fails later
-		[Mdbc.Api]::Command((New-MdbcData -Id 1))
-		($r1 = [Mdbc.Api]::Command(@{bad = 1}))
-		($r2 = [Mdbc.Api]::Command($r1))
-		equals $r1 $r2
-	) | Out-String
+task FilterDefinition {
+	equals ([Mdbc.Api]::FilterDefinition('')) $null
+	equals ([Mdbc.Api]::FilterDefinition($null)) $null
+
+	assert ([Mdbc.Api]::FilterDefinition('{}'))
+	assert ([Mdbc.Api]::FilterDefinition(@{}))
+	$r1 = [Mdbc.Api]::FilterDefinition(@{p1 = 1})
+	$r2 = [Mdbc.Api]::FilterDefinition($r1)
+	assert ($r1 -and [object]::ReferenceEquals($r1, $r2))
+
+	# not real but should not fail, so such reals work
+	assert ([Mdbc.Api]::FilterDefinition(@{bar = $Person}))
+
+	Test-Error { [Mdbc.Api]::FilterDefinition('bad') } '*: "Invalid JSON."'
+	Test-Error { [Mdbc.Api]::FilterDefinition(1) } '*: "Unable to cast object of type ''System.Int32'' to type ''MongoDB.Driver.FilterDefinition*'
 }
 
-task BadPipelineDefinition {
+task SortDefinition {
+	equals ([Mdbc.Api]::SortDefinition('')) $null
+	equals ([Mdbc.Api]::SortDefinition($null)) $null
+
+	assert ([Mdbc.Api]::SortDefinition('{}'))
+	assert ([Mdbc.Api]::SortDefinition(@{}))
+	$r1 = [Mdbc.Api]::SortDefinition(@{p1 = 1})
+	$r2 = [Mdbc.Api]::SortDefinition($r1)
+	assert ($r1 -and [object]::ReferenceEquals($r1, $r2))
+
+	# not real but should not fail, so such reals work
+	assert ([Mdbc.Api]::SortDefinition(@{bar = $Person}))
+
+	Test-Error { [Mdbc.Api]::SortDefinition('bad') } '*: "Invalid JSON."'
+	Test-Error { [Mdbc.Api]::SortDefinition(1) } '*: "Unable to cast object of type ''System.Int32'' to type ''MongoDB.Driver.SortDefinition*'
+}
+
+task PipelineDefinition {
+	# JSON
+	assert ([Mdbc.Api]::PipelineDefinition('[]'))
+	assert ([Mdbc.Api]::PipelineDefinition('{}'))
+	assert ([Mdbc.Api]::PipelineDefinition('{x : 1}'))
+	assert ([Mdbc.Api]::PipelineDefinition('[{x : 1}]'))
+	$r1 = [Mdbc.Api]::PipelineDefinition(('{x : 1}', '{x : 1}'))
+
+	# dictionary
+	assert ([Mdbc.Api]::PipelineDefinition(@{}))
+	assert ([Mdbc.Api]::PipelineDefinition((@{}, @{})))
+	assert ([Mdbc.Api]::PipelineDefinition(@(New-MdbcData; New-MdbcData))) #_191103_084410
+
+	# self
+	$r2 = [Mdbc.Api]::PipelineDefinition($r1)
+	assert ([object]::ReferenceEquals($r1, $r2))
+
+	# not real but should not fail, so such reals work
+	assert ([Mdbc.Api]::PipelineDefinition(@{bar = $Person}))
+
 	# null
 	Test-Error { [Mdbc.Api]::PipelineDefinition($null) } '*: "Value cannot be null.*'
 
@@ -38,27 +95,31 @@ task BadPipelineDefinition {
 	Test-Error { [Mdbc.Api]::PipelineDefinition(1) } '*: "Unable to cast object of type ''System.Int32'' to type ''MongoDB.Driver.PipelineDefinition``2*'
 }
 
-task PipelineDefinition {
-	$(
-		# JSON
-		[Mdbc.Api]::PipelineDefinition('[]')
-		[Mdbc.Api]::PipelineDefinition('{}')
-		[Mdbc.Api]::PipelineDefinition('{x : 1}')
-		[Mdbc.Api]::PipelineDefinition('[{x : 1}]')
-		($r1 = [Mdbc.Api]::PipelineDefinition(('{x : 1}', '{x : 1}')))
+task ProjectionDefinition {
+	equals ([Mdbc.Api]::ProjectionDefinition('')) $null
+	equals ([Mdbc.Api]::ProjectionDefinition($null)) $null
 
-		# dictionary
-		[Mdbc.Api]::PipelineDefinition(@{})
-		[Mdbc.Api]::PipelineDefinition((@{}, @{}))
-		[Mdbc.Api]::PipelineDefinition(@(New-MdbcData; New-MdbcData)) #_191103_084410
+	assert ([Mdbc.Api]::ProjectionDefinition('{}'))
+	assert ([Mdbc.Api]::ProjectionDefinition(@{}))
+	$r1 = [Mdbc.Api]::ProjectionDefinition(@{p1 = 1})
+	$r2 = [Mdbc.Api]::ProjectionDefinition($r1)
+	assert ($r1 -and [object]::ReferenceEquals($r1, $r2))
 
-		# self
-		$r2 = [Mdbc.Api]::PipelineDefinition($r1)
-		equals $r1 $r2
-	) | Out-String
+	# not real but should not fail, so such reals work
+	assert ([Mdbc.Api]::ProjectionDefinition(@{bar = $Person}))
+
+	Test-Error { [Mdbc.Api]::ProjectionDefinition('bad') } '*: "Invalid JSON."'
+	Test-Error { [Mdbc.Api]::ProjectionDefinition(1) } '*: "Unable to cast object of type ''System.Int32'' to type ''MongoDB.Driver.ProjectionDefinition*'
 }
 
-task BadUpdateDefinition {
+task UpdateDefinition {
+	$r1 = [Mdbc.Api]::UpdateDefinition(@{bad = 1})
+	$r2 = [Mdbc.Api]::UpdateDefinition($r1)
+	assert ($r1 -and [object]::ReferenceEquals($r1, $r2))
+
+	# not real but should not fail, so such reals work
+	assert ([Mdbc.Api]::UpdateDefinition(@{bar = $Person}))
+
 	Test-Error { [Mdbc.Api]::UpdateDefinition($null) } '*: "Value cannot be null.*'
 	Test-Error { [Mdbc.Api]::UpdateDefinition('') } '*: "Invalid JSON."'
 	Test-Error { [Mdbc.Api]::UpdateDefinition('bad') } '*: "Invalid JSON."'
@@ -69,12 +130,11 @@ task BadUpdateDefinition {
 	Test-Error { [Mdbc.Api]::UpdateDefinition(1) } '*: "Unable to cast object of type ''System.Int32'' to type ''MongoDB.Driver.UpdateDefinition*'
 }
 
-task UpdateDefinition {
-	$(
-		($r1 = [Mdbc.Api]::UpdateDefinition(@{bad = 1}))
-		($r2 = [Mdbc.Api]::UpdateDefinition($r1))
-		equals $r1 $r2
-	) | Out-String
+task BsonMapping {
+	# PSObject registered mapper
+	$custom = [PSCustomObject]@{p1 = 1; p2 = 2}
+	$r = [MongoDB.Bson.BsonTypeMapper]::MapToBsonValue($custom)
+	equals $r.GetType() ([MongoDB.Bson.BsonDocument])
 }
 
 task Issue32 {

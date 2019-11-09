@@ -18,18 +18,17 @@ namespace Mdbc.Commands
 		public string Path { get; set; }
 
 		[Parameter]
-		public PSObject As { get { return null; } set { _ParameterAs = new ParameterAs(value); } }
-		ParameterAs _ParameterAs;
+		public object As { set { _As.Set(value); } }
+		readonly ParameterAs _As = new ParameterAs();
 
 		[Parameter]
 		public FileFormat FileFormat { get; set; }
 
 		protected override void BeginProcessing()
 		{
-			var documentAs = _ParameterAs ?? new ParameterAs(null);
 			Path = GetUnresolvedProviderPathFromPSPath(Path);
 
-			foreach (var doc in ReadDocumentsAs(documentAs.Type, Path, FileFormat))
+			foreach (var doc in ReadDocumentsAs(_As.Type, Path, FileFormat))
 				WriteObject(doc);
 		}
 		static IEnumerable<object> ReadDocumentsAs(Type documentType, string filePath, FileFormat format)

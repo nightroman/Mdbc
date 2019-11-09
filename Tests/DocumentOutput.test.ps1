@@ -31,7 +31,7 @@ task As {
 	}
 
 	Invoke-Test {
-		Test-Error { test -As bad } '*Default, PS"*'
+		Test-Error { test -As bad } '*"As": "Cannot convert the "bad" value of type "System.String" to type "System.Type"."'
 
 		'Default 1'
 		$r = test

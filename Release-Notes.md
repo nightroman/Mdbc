@@ -1,5 +1,43 @@
 # Mdbc Release Notes
 
+## v6.1.0
+
+New features and changes in serialization, some potentially incompatible.
+
+**Getting data**
+
+If a simple PowerShell class `class MyType { $arr; $doc }` is used for `-As`
+and array/document members declared as `[object]` (ditto omitted type) then
+they are re-hydrated as `Mdbc.Collection` and `Mdbc.Dictionary` instead of
+driver chosen list and dynamic (Mdbc containers preserve all bson types).
+
+New and old container types are semantically similar.
+Old code without assumptions about exact types should work fine.
+
+Serialized types (see further) still re-hydrate containers by driver rules.
+
+In `Get-MdbcData -As MyType -Project *`, the special value `*` tells to infer
+projected fields from `MyType`. This makes composing queries with typed output
+much easier.
+
+Parameters `-As` accept type names in addition to types and special aliases.
+For interactive use, `MyType` is better than `([MyType])`. For scripts, the
+exact type might be preferable perhaps.
+
+**Setting data**
+
+EXPERIMENTAL: Types registered by `Register-MdbcClassMap` are serialized, not
+converted. Use `-Property` (use `*` for all) in order to convert by properties.
+
+`Mdbc.Dictionary` implements `IDictionary<string, object>` in addition to
+`IDictionary` and can be used in serialized types for `BsonExtraElements`.
+
+See [Classes.lib.ps1] for examples of classes with `Bson*` attributes and
+[Classes.test.ps1] for saving and reading typed data.
+
+[Classes.lib.ps1]: https://github.com/nightroman/Mdbc/blob/master/Tests/Classes.lib.ps1
+[Classes.test.ps1]: https://github.com/nightroman/Mdbc/blob/master/Tests/Classes.test.ps1
+
 ## v6.0.3
 
 C# driver 2.9.3

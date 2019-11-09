@@ -9,33 +9,24 @@ using MongoDB.Bson;
 
 namespace Mdbc
 {
-	class DocumentInput
+	static class DocumentInput
 	{
-		SessionState Session;
-		ScriptBlock Convert;
-
-		public DocumentInput()
-		{ }
-		public DocumentInput(SessionState session, ScriptBlock convert)
+		public static object ConvertValue(ScriptBlock convert, object value)
 		{
-			Session = session;
-			Convert = convert;
-		}
-		// Called on exceptions. If that returns null an exception is rethrown. So for a valid null return that as BsonNull.
-		public object ConvertValue(object value)
-		{
-			if (Convert == null)
-				return null;
-
-			var vars = new List<PSVariable>() { new PSVariable("_", value) };
-			var result = Convert.InvokeWithContext(null, vars);
-			if (result.Count == 1)
+			var result = Actor.InvokeWithDollar(convert, value);
+			switch (result.Count)
 			{
-				var ps = result[0];
-				return ps == null ? BsonNull.Value : ps.BaseObject;
+				case 0:
+					return null;
+				case 1:
+					{
+						var ps = result[0];
+						return ps?.BaseObject;
+					}
+				default:
+					//! use this type
+					throw new RuntimeException($"Converter script should return one value or none but it returns {result.Count}.");
 			}
-
-			return result.Count == 0 ? BsonNull.Value : null;
 		}
 		public static BsonDocument NewDocumentWithId(bool newId, PSObject id, PSObject input)
 		{
@@ -47,12 +38,10 @@ namespace Mdbc
 			if (id == null)
 				return null;
 
-			var sb = id.BaseObject as ScriptBlock;
-			if (sb == null)
+			if (!(id.BaseObject is ScriptBlock sb))
 				return new BsonDocument().Add(MyValue.Id, BsonValue.Create(id.BaseObject));
 
-			var vars = new List<PSVariable>() { new PSVariable("_", input) };
-			var arr = sb.InvokeWithContext(null, vars);
+			var arr = Actor.InvokeWithDollar(sb, input);
 			if (arr.Count != 1)
 				throw new ArgumentException("-Id script must return a single object."); //! use this type
 			return new BsonDocument().Add(MyValue.Id, BsonValue.Create(arr[0].BaseObject));

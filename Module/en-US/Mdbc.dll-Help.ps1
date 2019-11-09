@@ -9,16 +9,17 @@ Set-StrictMode -Version Latest
 ### Shared descriptions
 
 $IdParameter = @'
-The document _id value to be assigned or a script block returning this value
-for the input object represented by the variable $_.
+Specifies the _id value of result document, either literally or using a script
+block returning this value for the input object represented by the variable $_.
+The script block is used for multiple objects in the pipeline.
 
-_id must not exist in input objects or Property.
+If Id is used then _id must not exist in input objects or Property.
 '@
 
 $NewIdParameter = @'
-Tells to generate and assign a new document _id as MongoDB.Bson.ObjectId.
+Tells to assign _id to a new generated MongoDB.Bson.ObjectId.
 
-_id must not exist in input objects or Property.
+If NewId is used then _id must not exist in input objects or Property.
 '@
 
 $ConvertParameter = @'
@@ -34,17 +35,19 @@ $PropertyParameter = @'
 Specifies properties or keys which values are included into documents or
 defines calculated fields. Missing input properties and keys are ignored.
 
-Arguments are defined in three ways:
+EXPERIMENTAL: Types registered by Register-MdbcClassMap are serialized, not
+converted. Use `-Property ..` (`*` for all) in order to save by properties.
 
-1. Strings define property or key names and the corresponding result document
-field names.
+Arguments:
 
-2. Hashtables @{Key=Value} define renamed and calculated fields. The key is a
-new document field name. The value is either a string (input object property
-name) or a script block (field value calculated from the input object $_).
+1. Strings define property or key names of input objects.
+
+2. Hashtables @{Key=Value} define renamed and calculated fields. The key is the
+result document field name. The value is either a string (input object property
+or key) or a script block (field value calculated from the input object $_).
 
 3. Hashtables @{Name=...; Expression=...} or @{Label=...; Expression=...} are
-similar but use the same convention as the parameter Property of Select-Object.
+similar but follow the syntax of `Select-Object -Property`.
 
 See New-MdbcData examples.
 '@
@@ -80,22 +83,25 @@ The argument is JSON, similar dictionary, or array for aggregate expressions.
 '@
 
 $AsParameter = @'
-Specifies the output document type. The argument is either the required type or
-the special type shortcut.
+Specifies the type of output objects. The argument is either the type or full
+name or a special alias.
 
-A type specifies the output type literally. Type properties should match the
-document fields or the custom type serialization must be registered.
+Key based types:
+	- [Mdbc.Dictionary] (alias "Default"), wrapper of BsonDocument
+	- [Hashtable] or other dictionaries, PowerShell native
+	- [Object], same as [System.Dynamic.ExpandoObject]
+	- [MongoDB.Bson.BsonDocument], driver native
 
-Special type shortcut strings or enum values:
+Property based types:
+	- [PSObject] (alias "PS"), same as [PSCustomObject]
+	- Classes defined in PowerShell or .NET assemblies
 
-	Default
-		Default output, Mdbc.Dictionary with underlying BsonDocument.
+Key based types and PSObject are schema free, they accept any result fields.
+Classes should match the result fields, literally or according to the custom
+serialization.
 
-	PS
-		PowerShell custom object.
-
-On choosing an output type keep in mind that Mdbc.Dictionary (BsonDocument)
-field names are case sensitive unlike other object properties in PowerShell.
+Finally, some types are case sensitive (Mdbc.Dictionary, BsonDocument)
+and others are not, for example all property based types in PowerShell.
 '@
 
 $SortParameter = @'
@@ -126,9 +132,6 @@ $DocumentInputs = @(
 		description = @'
 Objects created by New-MdbcData or obtained by Get-MdbcData or Import-MdbcData.
 This type is the most effective and safe as input/output of Mdbc data cmdlets.
-
-The native driver document [MongoDB.Bson.BsonDocument] may be used as well but
-its wrapper [Mdbc.Dictionary] is more suitable in PowerShell.
 '@
 	}
 	@{
@@ -367,8 +370,7 @@ using `$dictionary['key']`, it returns nulls for missing keys.
 	parameters = @{
 		InputObject = @'
 Specifies the object to be converted to Mdbc.Dictionary. Suitable objects are
-dictionaries, PowerShell custom objects, and complex .NET types, normally not
-collections.
+dictionaries, PowerShell custom objects, and complex .NET types.
 
 If the input object is omitted or null then an empty document is created.
 '@
@@ -432,6 +434,7 @@ If the input object is omitted or null then an empty document is created.
 				Connect-Mdbc . test test -NewCollection
 
 				# Create data from input objects and add to the database
+				# (Note: in similar cases Add-MdbcData may be used alone)
 				Get-Process mongod |
 				New-MdbcData -Id {$_.Id} -Property Name, WorkingSet, StartTime |
 				Add-MdbcData
@@ -534,10 +537,13 @@ By default old documents are returned if they exist.
 Tells to add new documents on Replace and Update if old documents do not exist.
 '@
 		Project = @'
-Specifies the projection, i.e. fields to be retrieved.
+Specifies the projection expression, i.e. fields to be retrieved.
 The field _id is always included unless it is explicitly excluded.
 
-The argument is either JSON or similar dictionary.
+The special value `*` used together with `-As <type>` tells to infer
+projected fields from the type.
+
+Otherwise, the argument is either JSON or similar dictionary.
 '@
 		Sort = $SortParameter
 		First = @'
@@ -1067,4 +1073,56 @@ Tells to allow renaming if the target collection exists.
 	links = @(
 		@{ text = 'Connect-Mdbc' }
 	)
+}
+
+### Register-MdbcClassMap
+@{
+	command = 'Register-MdbcClassMap'
+	synopsis = 'Registers serialized types. (EXPERIMENTAL)'
+	description = @'
+*** EXPERIMENTAL, WORK IN PROGRESS, SUBJECT TO CHANGE ***
+
+The cmdlet registers the specified type and makes it serialized by the driver
+on saving and converting to documents. It should be called for each serialized
+type before the first serialization. Types cannot be unregistered, they are
+supposed to be either serialized or converted for the entire session.
+
+If a type is already registered by the driver, for example in another assembly,
+the command fails unless it is called with just Type and Force parameters.
+The registered class map cannot be altered by other parameters.
+'@
+	parameters = @{
+		Type = @'
+Specifies the type to be treated as serialized. Use other parameters in order
+to tweak some serialization options in here instead of using Bson* attributes
+or in addition.
+'@
+		Force = @'
+Tells that the type might be already registered by the driver and this is
+expected. The command registers the existing or auto created map.
+Parameters other than Type are not allowed with Force.
+'@
+		Init = @'
+Specifies the script which initializes the new class map defined by $_.
+Other parameters are applied to the map after calling the script.
+Usually, the script calls `$_.AutoMap()` first.
+'@
+		Discriminator = @'
+Specifies the type discriminator (saved as the field _t of this type objects).
+'@
+		ExtraElementsProperty = @'
+Specifies the property which holds extra elements.
+Suitable property types: [Mdbc.Dictionary], [BsonDocument], [Dictionary[string, object]].
+'@
+		IdProperty = @'
+Specifies the property mapped to the document field _id.
+'@
+		IgnoreExtraElements = @'
+Tells to ignore document elements that do not match the properties.
+'@
+		KnownTypes = @'
+For the base type specifies known derived types in order to resolve saved type
+discriminators _t to their types.
+'@
+	}
 }

@@ -14,7 +14,7 @@ namespace Mdbc.Commands
 		//_131121_104038 Not mandatory to avoid prompts. Manual null check is used instead for consistent messages.
 		// String values from prompts might imply unexpected results.
 		[Parameter(Position = 0)]
-		public object Filter { get { return null; } set { _Filter = Actor.ObjectToFilter(value); } }
+		public object Filter { set { _Filter = Api.FilterDefinition(value); } }
 		FilterDefinition<BsonDocument> _Filter;
 
 		[Parameter]

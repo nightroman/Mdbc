@@ -13,12 +13,12 @@ namespace Mdbc.Commands
 	{
 		//_131121_104038
 		[Parameter(Position = 0)]
-		public object Filter { get { return null; } set { _Filter = Actor.ObjectToFilter(value); } }
+		public object Filter { set { _Filter = Api.FilterDefinition(value); } }
 		FilterDefinition<BsonDocument> _Filter;
 
 		//_131121_104038
 		[Parameter(Position = 1)]
-		public object Update { get { return null; } set { if (value != null) _Update = Api.UpdateDefinition(value); } }
+		public object Update { set { if (value != null) _Update = Api.UpdateDefinition(value); } }
 		UpdateDefinition<BsonDocument> _Update;
 
 		[Parameter]

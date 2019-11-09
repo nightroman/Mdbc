@@ -3,6 +3,7 @@
 // http://www.apache.org/licenses/LICENSE-2.0
 
 using MongoDB.Bson;
+using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
 using System;
 using System.Management.Automation;
@@ -20,7 +21,7 @@ namespace Mdbc.Commands
 		const string nsUpdate = "Update";
 
 		[Parameter(Position = 0)]
-		public object Filter { get { return null; } set { _Filter = Actor.ObjectToFilter(value); } }
+		public object Filter { set { _Filter = Api.FilterDefinition(value); } }
 		FilterDefinition<BsonDocument> _Filter = Builders<BsonDocument>.Filter.Empty;
 
 		[Parameter(Mandatory = true, ParameterSetName = nsDistinct)]
@@ -33,11 +34,11 @@ namespace Mdbc.Commands
 		public SwitchParameter Remove { get; set; }
 
 		[Parameter(Mandatory = true, ParameterSetName = nsSet)]
-		public object Set { get { return null; } set { _Set = Actor.ToBsonDocument(value); } }
+		public object Set { set { _Set = Actor.ToBsonDocument(value); } }
 		BsonDocument _Set;
 
 		[Parameter(Mandatory = true, ParameterSetName = nsUpdate)]
-		public object Update { get { return null; } set { _Update = Api.UpdateDefinition(value); } }
+		public object Update { set { _Update = Api.UpdateDefinition(value); } }
 		UpdateDefinition<BsonDocument> _Update;
 
 		[Parameter(ParameterSetName = nsSet)]
@@ -63,23 +64,22 @@ namespace Mdbc.Commands
 		[Parameter(ParameterSetName = nsRemove)]
 		[Parameter(ParameterSetName = nsSet)]
 		[Parameter(ParameterSetName = nsUpdate)]
-		public object Project { get { return null; } set { _Project = Actor.ObjectsToProject(value); } }
-		ProjectionDefinition<BsonDocument> _Project;
+		public object Project { set { _Project.Set(value); } }
+		readonly ParameterProject _Project = new ParameterProject();
 
 		[Parameter(ParameterSetName = nsAll)]
 		[Parameter(ParameterSetName = nsRemove)]
 		[Parameter(ParameterSetName = nsSet)]
 		[Parameter(ParameterSetName = nsUpdate)]
-		public object Sort { get { return null; } set { _Sort = Actor.ObjectToSort(value); } }
+		public object Sort { set { _Sort = Api.SortDefinition(value); } }
 		SortDefinition<BsonDocument> _Sort;
 
 		[Parameter(ParameterSetName = nsAll)]
 		[Parameter(ParameterSetName = nsRemove)]
 		[Parameter(ParameterSetName = nsSet)]
 		[Parameter(ParameterSetName = nsUpdate)]
-		public PSObject As { get { return null; } set { _ParameterAs_ = new ParameterAs(value); } }
-		Type DocumentType { get { return _ParameterAs_ == null ? typeof(Dictionary) : _ParameterAs_.Type; } }
-		ParameterAs _ParameterAs_;
+		public object As { set { _As.Set(value); } }
+		readonly ParameterAs _As = new ParameterAs();
 
 		void DoDistinct()
 		{
@@ -89,28 +89,28 @@ namespace Mdbc.Commands
 		}
 		void DoRemove()
 		{
-			var document = Collection.MyFindOneAndDelete(_Filter, _Sort, _Project);
+			var document = Collection.MyFindOneAndDelete(_Filter, _Sort, _Project.Get(_As));
 			if (document != null)
 			{
-				var convert = Actor.ConvertDocument(DocumentType);
+				var convert = Actor.ConvertDocument(_As.Type);
 				WriteObject(convert(document));
 			}
 		}
 		void DoSet()
 		{
-			var document = Collection.MyFindOneAndReplace(_Filter, _Set, _Sort, _Project, New, Add);
+			var document = Collection.MyFindOneAndReplace(_Filter, _Set, _Sort, _Project.Get(_As), New, Add);
 			if (document != null)
 			{
-				var convert = Actor.ConvertDocument(DocumentType);
+				var convert = Actor.ConvertDocument(_As.Type);
 				WriteObject(convert(document));
 			}
 		}
 		void DoUpdate()
 		{
-			var document = Collection.MyFindOneAndUpdate(_Filter, _Update, _Sort, _Project, New, Add);
+			var document = Collection.MyFindOneAndUpdate(_Filter, _Update, _Sort, _Project.Get(_As), New, Add);
 			if (document != null)
 			{
-				var convert = Actor.ConvertDocument(DocumentType);
+				var convert = Actor.ConvertDocument(_As.Type);
 				WriteObject(convert(document));
 			}
 		}
@@ -166,8 +166,8 @@ namespace Mdbc.Commands
 					return;
 
 				//_131018_160000 Do not use WriteObject(.., true), that seems to take a lot more memory
-				var convert = Actor.ConvertDocument(DocumentType);
-				foreach (var document in Collection.MyFind(_Filter, _Sort, Skip, First, _Project))
+				var convert = Actor.ConvertDocument(_As.Type);
+				foreach (var document in Collection.MyFind(_Filter, _Sort, Skip, First, _Project.Get(_As)))
 				{
 					WriteObject(convert(document));
 				}

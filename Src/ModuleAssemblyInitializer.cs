@@ -20,6 +20,7 @@ namespace Mdbc
 				return;
 			_called = true;
 
+			BsonSerializer.RegisterSerializer(typeof(Collection), new CollectionSerializer());
 			BsonSerializer.RegisterSerializer(typeof(Dictionary), new DictionarySerializer());
 			BsonSerializer.RegisterSerializer(typeof(PSObject), new PSObjectSerializer());
 
@@ -32,11 +33,10 @@ namespace Mdbc
 			}
 			else
 			{
-				GuidRepresentation valGuidRepresentation;
-				if (Enum.TryParse(strGuidRepresentation, out valGuidRepresentation))
+				if (Enum.TryParse(strGuidRepresentation, out GuidRepresentation valGuidRepresentation))
 					BsonDefaults.GuidRepresentation = valGuidRepresentation;
 				else
-					throw new InvalidOperationException(String.Format(null, "Invalid environment variable Mdbc_GuidRepresentation = {0}", strGuidRepresentation));
+					throw new InvalidOperationException($"Invalid environment variable Mdbc_GuidRepresentation = {strGuidRepresentation}");
 			}
 		}
 	}
