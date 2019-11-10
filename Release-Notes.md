@@ -1,5 +1,11 @@
 # Mdbc Release Notes
 
+## v6.0.3
+
+C# driver 2.9.3
+
+Amend work on #32.
+
 ## v6.0.2
 
 Fix update expression conversion, #32

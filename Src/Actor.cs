@@ -177,10 +177,6 @@ namespace Mdbc
 				return ToBsonValue(value, null, depth);
 			}
 		}
-		public static BsonDocument ToBsonDocumentFromDictionary(IDictionary dictionary)
-		{
-			return ToBsonDocumentFromDictionary(null, dictionary, null, null, 0);
-		}
 		//! IConvertibleToBsonDocument (e.g. Mdbc.Dictionary) must be converted before if source and properties are null
 		static BsonDocument ToBsonDocumentFromDictionary(BsonDocument source, IDictionary dictionary, DocumentInput input, IEnumerable<Selector> properties, int depth)
 		{

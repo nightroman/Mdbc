@@ -2,10 +2,9 @@
 // Copyright (c) Roman Kuzmin
 // http://www.apache.org/licenses/LICENSE-2.0
 
-using System;
-using System.Collections.Generic;
-using System.Management.Automation;
 using MongoDB.Bson;
+using System;
+using System.Management.Automation;
 
 namespace Mdbc
 {
@@ -14,11 +13,8 @@ namespace Mdbc
 	{
 		public bool TryMapToBsonValue(object value, out BsonValue bsonValue)
 		{
-			var ps = value as PSObject;
-			if (ps != null)
-				return BsonTypeMapper.TryMapToBsonValue(ps.BaseObject, out bsonValue);
-			bsonValue = null;
-			return false;
+			bsonValue = Actor.ToBsonValue(value);
+			return true;
 		}
 	}
 	class ParameterAs
