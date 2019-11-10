@@ -96,7 +96,7 @@ namespace Mdbc
 			//! after IConvertibleToBsonDocument
 			if (value is IDictionary dictionary)
 			{
-				result = new BsonDocument(dictionary);
+				result = Actor.ToBsonDocumentFromDictionary(dictionary);
 				return true;
 			}
 

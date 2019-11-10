@@ -1,5 +1,9 @@
 # Mdbc Release Notes
 
+## v6.0.2
+
+Fix update expression conversion, #32
+
 ## v6.0.1
 
 **Mdbc.Dictionary and Mdbc.Collection**

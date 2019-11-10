@@ -76,3 +76,9 @@ task UpdateDefinition {
 		equals $r1 $r2
 	) | Out-String
 }
+
+task Issue32 {
+	$manifestEntry = [PSCustomObject]@{releaseNumber = 1; p1 = 1}
+	$r = [Mdbc.Api]::UpdateDefinition(@{'$set' = @{value = $manifestEntry}})
+	equals $r.Render($null, $null).ToString() '{ "$set" : { "value" : { "releaseNumber" : 1, "p1" : 1 } } }'
+}
