@@ -2,6 +2,8 @@
 // Copyright (c) Roman Kuzmin
 // http://www.apache.org/licenses/LICENSE-2.0
 
+//! Do not expose `KnownTypes`, it is not useful in Mdbc because we require all types registered, i.e. "known".
+
 using MongoDB.Bson.Serialization;
 using System;
 using System.Management.Automation;
@@ -24,16 +26,16 @@ namespace Mdbc.Commands
 		public ScriptBlock Init { get; set; }
 
 		[Parameter(ParameterSetName = psMain)]
-		public string Discriminator { get; set; }
-
-		[Parameter(ParameterSetName = psMain)]
 		public string IdProperty { get; set; }
 
 		[Parameter(ParameterSetName = psMain)]
-		public string ExtraElementsProperty { get; set; }
+		public string Discriminator { get; set; }
 
 		[Parameter(ParameterSetName = psMain)]
-		public Type[] KnownTypes { get; set; }
+		public SwitchParameter DiscriminatorIsRequired { get; set; }
+
+		[Parameter(ParameterSetName = psMain)]
+		public string ExtraElementsProperty { get; set; }
 
 		[Parameter(ParameterSetName = psMain)]
 		public SwitchParameter IgnoreExtraElements { get; set; }
@@ -75,17 +77,18 @@ namespace Mdbc.Commands
 						throw new PSArgumentException("The Init script must not return anything.");
 				}
 
-				if (Discriminator != null)
-					cm.SetDiscriminator(Discriminator);
 				if (IdProperty != null)
 					cm.MapIdProperty(IdProperty);
-				if (ExtraElementsProperty != null)
-					cm.MapExtraElementsProperty(ExtraElementsProperty);
+
+				if (Discriminator != null)
+					cm.SetDiscriminator(Discriminator);
+				if (DiscriminatorIsRequired)
+					cm.SetDiscriminatorIsRequired(true);
+
 				if (IgnoreExtraElements)
 					cm.SetIgnoreExtraElements(IgnoreExtraElements);
-				if (KnownTypes != null)
-					foreach (var type in KnownTypes)
-						cm.AddKnownType(type);
+				if (ExtraElementsProperty != null)
+					cm.MapExtraElementsProperty(ExtraElementsProperty);
 
 				// in theory, may throw if the map is registered in another thread
 				BsonClassMap.RegisterClassMap(cm);

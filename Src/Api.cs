@@ -21,7 +21,7 @@ namespace Mdbc
 		#region Messages
 		public const string ErrorEmptyDocument = "Document must not be empty.";
 		public const string TextParameterCommand = "Parameter Command must be specified and cannot be null.";
-		public const string TextParameterFilter = "Parameter Filter must be specified and cannot be null.";
+		public const string TextParameterFilter = "Parameter Filter must be specified and cannot be null or empty string. To match all, use an empty document.";
 		public const string TextParameterPipeline = "Parameter Pipeline must be specified and cannot be null.";
 		public const string TextParameterSet = "Parameter Set must be specified and cannot be null.";
 		public const string TextParameterUpdate = "Parameter Update must be specified and cannot be null.";
@@ -71,7 +71,7 @@ namespace Mdbc
 		/// <summary>
 		/// JSON, IConvertibleToBsonDocument, IDictionary.
 		/// </summary>
-		static BsonDocument BsonDocument(object value)
+		internal static BsonDocument BsonDocument(object value)
 		{
 			// unwrap, it may be PSObject item of PS array, see _191103_084410
 			value = BaseObjectNotNull(value);

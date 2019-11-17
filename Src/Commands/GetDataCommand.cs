@@ -3,14 +3,12 @@
 // http://www.apache.org/licenses/LICENSE-2.0
 
 using MongoDB.Bson;
-using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
-using System;
 using System.Management.Automation;
 
 namespace Mdbc.Commands
 {
-	[Cmdlet(VerbsCommon.Get, "MdbcData", DefaultParameterSetName = nsAll)]
+	[Cmdlet(VerbsCommon.Get, "MdbcData", DefaultParameterSetName = nsAll), OutputType(typeof(Dictionary))]
 	public sealed class GetDataCommand : AbstractCollectionCommand
 	{
 		const string nsAll = "All";

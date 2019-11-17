@@ -160,3 +160,29 @@ task DataChangeWithLogging {
 	equals $r.p1 2
 	equals $r.time 3
 }
+
+# Synopsis: Remove some documents from arrays, then remove documents with empty arrays.
+# (like removing old log entries from `files_log` produced by Update-MongoFiles.ps1)
+task RemoveDocumentsFromArraysThenEmpty {
+	Connect-Mdbc -NewCollection
+
+	# 3 documents with arrays of documents
+	$(
+		@{_id = 1; arr = @{p1 = 0}, @{p1 = 1}}
+		@{_id = 2; arr = @{p1 = 10}, @{p1 = 11}}
+		@{_id = 3; arr = @{p1 = 110}, @{p1 = 111}}
+	) | Add-MdbcData
+
+	# remove documents with .p1 <= 10 from .arr
+	# (removed: 2, 1, 0 -> modified 2 documents)
+
+	$r = Update-MdbcData -Many -Result @{} @{'$pull' = @{arr = @{p1 = @{'$lte' = 10}}}}
+	equals $r.ModifiedCount 2L
+
+	# remove documents with empty .arr
+	# (removed 1 document)
+
+	$r = Remove-MdbcData -Many -Result @{arr = @{'$size' = 0}}
+	equals $r.DeletedCount 1L
+	equals "$(Get-MdbcData)" '{ "_id" : 2, "arr" : [{ "p1" : 11 }] } { "_id" : 3, "arr" : [{ "p1" : 110 }, { "p1" : 111 }] }'
+}

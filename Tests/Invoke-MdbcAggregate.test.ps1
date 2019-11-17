@@ -61,3 +61,43 @@ task HelpExample3 InitHelpExample, {
 	$r | Format-Table | Out-String
 	equals $r.Count 5
 }
+
+task GroupNoId {
+	Connect-Mdbc -NewCollection
+	1..9 | .{process{ @{n = $_} }} | Add-MdbcData
+	$expected = '{ "min" : 1, "max" : 9, "avg" : 5.0 }'
+
+	$r = Invoke-MdbcAggregate -Group '{min: {$min: "$n"}, max: {$max: "$n"}, avg: {$avg: "$n"}}'
+	equals "$r" $expected
+
+	$r = Invoke-MdbcAggregate -Group ([ordered]@{
+		min = @{'$min' = '$n'}
+		max = @{'$max' = '$n'}
+		avg = @{'$avg' = '$n'}
+	})
+	equals "$r" $expected
+}
+
+task GroupWithId {
+	Connect-Mdbc -NewCollection
+	1..9 | .{process{ @{n = $_; c = $_ % 2} }} | Add-MdbcData
+	$expected = '{ "_id" : 0, "count" : 4 } { "_id" : 1, "count" : 5 }'
+
+	$r = Invoke-MdbcAggregate -Group '{_id: "$c", count: {$sum: 1}}' | Sort-Object {$_._id}
+	equals "$r" $expected
+
+	$r = Invoke-MdbcAggregate -Group ([ordered]@{
+		_id = '$c'
+		count = @{'$sum' = 1}
+	}) | Sort-Object {$_._id}
+	equals "$r" $expected
+}
+
+task FixGroupAltersInput {
+	Connect-Mdbc -NewCollection
+	$d = New-MdbcData
+	$d.count = @{'$sum' = 1}
+	$r = Invoke-MdbcAggregate -Group $d
+	equals $r $null
+	equals $d.Count 1 #! was 2 due to added _id
+}

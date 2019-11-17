@@ -803,7 +803,7 @@ Merge-Helps $ACollection @{
 	command = 'Invoke-MdbcAggregate'
 	synopsis = 'Invokes aggregate operations.'
 	description = @'
-The cmdlet invokes the specified aggregation pipeline for the specified or default collection.
+The cmdlet invokes the aggregation pipeline for the specified or default collection.
 '@
 	parameters = @{
 		Pipeline = @{
@@ -812,6 +812,13 @@ The cmdlet invokes the specified aggregation pipeline for the specified or defau
 One or more aggregation pipeline operations represented by JSON or similar dictionaries.
 '@
 		}
+		Group = @'
+Specifies the low ceremony aggregate pipeline of just $group. The argument is
+the $group expression, either JSON or similar dictionary.
+
+If the expression omits the grouping _id then null is used. This form is useful
+for calculating $max, $min, $sum, etc. of all field values, see examples.
+'@
 		Options = 'Extra options, see MongoDB.Driver.AggregateOptions'
 		As = $AsParameter
 	}
@@ -844,6 +851,22 @@ One or more aggregation pipeline operations represented by JSON or similar dicti
 					@{ '$sort' = @{Memory = -1} }
 					@{ '$limit' = 3 }
 				)
+			}
+			test = {
+				& $args[0]
+			}
+		}
+		@{
+			code = {
+				# Get the minimum and maximum values of the field .price:
+				Invoke-MdbcAggregate -Group '{min: {$min: "$price"}, max: {$max: "$price"}}'
+
+				# Get maximum prices by categories:
+				Invoke-MdbcAggregate -Group '{_id: "$category", price: {$max: "$price"}}'
+			}
+			test = {
+				Connect-Mdbc -NewCollection
+				& $args[0]
 			}
 		}
 	)
@@ -1078,7 +1101,7 @@ Tells to allow renaming if the target collection exists.
 ### Register-MdbcClassMap
 @{
 	command = 'Register-MdbcClassMap'
-	synopsis = 'Registers serialized types. (EXPERIMENTAL)'
+	synopsis = 'Registers serialized types (EXPERIMENTAL).'
 	description = @'
 *** EXPERIMENTAL, WORK IN PROGRESS, SUBJECT TO CHANGE ***
 
@@ -1107,22 +1130,23 @@ Specifies the script which initializes the new class map defined by $_.
 Other parameters are applied to the map after calling the script.
 Usually, the script calls `$_.AutoMap()` first.
 '@
-		Discriminator = @'
-Specifies the type discriminator (saved as the field _t of this type objects).
-'@
-		ExtraElementsProperty = @'
-Specifies the property which holds extra elements.
-Suitable property types: [Mdbc.Dictionary], [BsonDocument], [Dictionary[string, object]].
-'@
 		IdProperty = @'
 Specifies the property mapped to the document field _id.
 '@
+		Discriminator = @'
+Specifies the type discriminator saved as the field _t, instead of the default class name.
+'@
+		DiscriminatorIsRequired = @'
+Tells to save the type discriminator _t.
+This may be useful for base classes of mixed top level documents.
+Derived classes inherit this and save their discriminators for later reading.
+'@
+		ExtraElementsProperty = @'
+Specifies the property which holds extra elements.
+Supported types: [Mdbc.Dictionary], [BsonDocument], [Dictionary[string, object]].
+'@
 		IgnoreExtraElements = @'
 Tells to ignore document elements that do not match the properties.
-'@
-		KnownTypes = @'
-For the base type specifies known derived types in order to resolve saved type
-discriminators _t to their types.
 '@
 	}
 }

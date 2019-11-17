@@ -283,4 +283,4 @@ task Test6 -If $env:powershell6 {
 }
 
 # Synopsis: Build, test and clean all.
-task . Build2, TestHelp, Test, Test6, Clean, CheckFiles
+task . Build2, CheckFiles, TestHelp, Test, Test6, Clean

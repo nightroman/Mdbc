@@ -3,8 +3,8 @@
 Mdbc is the PowerShell module based on the official [MongoDB C# driver](https://github.com/mongodb/mongo-csharp-driver).
 Mdbc makes MongoDB data and operations PowerShell friendly.
 
-- The PSGallery package is built for PowerShell v5.1 (.NET 4.7.1+) and PowerShell Core.
-- The NuGet package is built for PowerShell v3, v4, v5.
+- The PSGallery package is built for PowerShell Core and v5.1+ (.NET 4.7.1+).
+- The NuGet package is built for PowerShell v3, v4, v5 (any).
 
 ## Quick Start
 
@@ -12,9 +12,9 @@ Mdbc makes MongoDB data and operations PowerShell friendly.
 
 **Package from PSGallery**
 
-Mdbc for PowerShell v5.1+ (.NET 4.7.1+) is published as the PSGallery module [Mdbc](https://www.powershellgallery.com/packages/Mdbc).
+Mdbc for PowerShell Core and v5.1+ is published as the PSGallery module [Mdbc](https://www.powershellgallery.com/packages/Mdbc).
 
-Ensure your .NET is 4.7.1+, the number from this command should be greater or equal to 461308:
+In PowerShell v5.1 ensure .NET is 4.7.1+, this command should get a number >= 461308:
 
 ```powershell
 Get-ItemPropertyValue "HKLM:\SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full" Release
@@ -85,12 +85,18 @@ Get-MdbcData -Count
 ## Next Steps
 
 [HowTo.test.ps1]: https://github.com/nightroman/Mdbc/blob/master/Tests/HowTo.test.ps1
+[Classes.lib.ps1]: https://github.com/nightroman/Mdbc/blob/master/Tests/Classes.lib.ps1
+[Classes.test.ps1]: https://github.com/nightroman/Mdbc/blob/master/Tests/Classes.test.ps1
 
 Read cmdlet help topics and take a look at examples for some basic use cases.
 
 Use *Scripts/Mdbc.ArgumentCompleters.ps1* for database and collection name completion and property completion.
 *Scripts/Update-MongoFiles.ps1* is a toy for making test data but may be useful for tracking file changes.
-See also [HowTo.test.ps1] sample tasks and other tests for more technical examples.
+See also tests, for example:
+
+- [HowTo.test.ps1] - assorted how-to samples
+- [Classes.lib.ps1] - PowerShell classes for saving and reading
+- [Classes.test.ps1] - tests using the above classes are how-to samples
 
 Mdbc cmdlets are designed for rather basic tasks.
 For advanced tasks use the driver API directly.

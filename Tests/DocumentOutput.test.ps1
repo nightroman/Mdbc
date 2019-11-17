@@ -1,10 +1,9 @@
 <#
 .Synopsis
-	Common tests for Get-MdbcData, Import-MdbcData, Invoke-MdbcMapReduce
+	Common tests for cmdlets with parameter -As
 #>
 
-. .\Zoo.ps1
-Import-Module Mdbc
+. ./Zoo.ps1
 Connect-Mdbc -NewCollection
 Set-StrictMode -Version Latest
 

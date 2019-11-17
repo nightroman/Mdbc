@@ -218,6 +218,22 @@ task WhatAboutFoo {
 	equals $r.foo.GetType() ([MongoDB.Bson.BsonBinaryData])
 }
 
+# Use -Init if other parameters of Register-MdbcClassMap is not enough.
+task RegisterUsingInitScript {
+	class TBase {$id}
+	class TChild : TBase {$p1}
+
+	Register-MdbcClassMap TBase -Init {
+		# normally call this first
+		$_.AutoMap()
+		# this cannot be done by parameters
+		$_.AddKnownType([TChild])
+	}
+}
+
+##############################################################################
+### More technical, less how-to cases
+
 # Cover issues in serialized classes with container types.
 # - Untyped containers re-hydrate as lists and dynamics.
 # - Mdbc containers serialize as Mdbc types.
@@ -310,4 +326,33 @@ task RegisteredByDriverForce {
 	# repeat, check different verbose message
 	($r = Register-MdbcClassMap RegisteredByDriver -Force -Verbose 4>&1)
 	assert ("$r" -like 'Type *.RegisteredByDriver was registered by Mdbc, doing nothing.')
+}
+
+# Test parameters of Register-MdbcClassMap.
+task RegisterParameters {
+	class RegisterParameters {
+		$name
+		[System.Collections.Generic.Dictionary[string,object]]$extra
+	}
+
+	$param = @{
+		IdProperty = 'name'
+		Discriminator = 'z'
+		DiscriminatorIsRequired = $true
+		IgnoreExtraElements = $true
+		ExtraElementsProperty = 'extra'
+		Init = {
+			$_.AutoMap()
+			# ...
+		}
+	}
+
+	Register-MdbcClassMap RegisterParameters @param
+
+	$r = [MongoDB.Bson.Serialization.BsonClassMap]::LookupClassMap([RegisterParameters])
+	equals $r.IdMemberMap.MemberName name
+	equals $r.Discriminator z
+	equals $r.DiscriminatorIsRequired $true
+	equals $r.IgnoreExtraElements $true
+	equals $r.ExtraElementsMemberMap.MemberName extra
 }

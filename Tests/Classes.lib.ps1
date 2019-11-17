@@ -94,7 +94,8 @@ Register-MdbcClassMap PolyData -IdProperty name
 # - MyTypeBase
 #   This is the base class for all top level documents. It contains .id (driver
 #   maps to _id automatically). Top level documents are defined by child
-#   classes. Important: set DiscriminatorIsRequired
+#   classes. Important: set DiscriminatorIsRequired, so that derived types
+#   inherit it and save their discriminators _t for later typed reading.
 # - MyType1, MyType2
 #   Top level documents are classes derived from MyTypeBase.
 
@@ -110,18 +111,15 @@ class MyType2 : MyTypeBase {
 	$p2
 }
 
-Register-MdbcClassMap MyTypeBase -Init {
-	$_.AutoMap()
-	$_.SetDiscriminatorIsRequired($true)
-}
+Register-MdbcClassMap MyTypeBase -DiscriminatorIsRequired
 Register-MdbcClassMap MyType1
 Register-MdbcClassMap MyType2
 
 ##############################################################################
 ### Simple types
-# Simple types are not registered by Register-MdbcClassMap and should not have
-# Bson* attributes. On saving they are converted to documents by properties, on
-# reading with -As fields are literally mapped to properties.
+# Simple types are not registered and do not have Bson* attributes. On saving
+# they are converted to documents by properties, on reading with `-As` fields
+# are literally mapped to properties.
 
 # Trivial class: no types, no attributes, even one-liner.
 # (Array -> Mdbc.Collection, Document -> Mdbc.Dictionary)
@@ -148,16 +146,10 @@ class FooBsonValue {
 }
 
 ##############################################################################
-### More technical cases
+### More technical, less how-to cases
 
 class SerialWithContainers1 {$_id; $arr; $doc}
-Register-MdbcClassMap ([SerialWithContainers1])
-
 class SerialWithContainers2 {$_id; [Mdbc.Collection]$arr; [Mdbc.Dictionary]$doc}
 
-# Register using Init, just for testing in here.
-# In practice, this way is used for fine tuning.
-# See [MongoDB.Bson.Serialization.BsonClassMap]
-Register-MdbcClassMap ([SerialWithContainers2]) -Init {
-	$_.AutoMap()
-}
+Register-MdbcClassMap SerialWithContainers1
+Register-MdbcClassMap SerialWithContainers2
