@@ -9,6 +9,8 @@
 
 	For Bson* serialization attributes and type mapping, see:
 	https://mongodb.github.io/mongo-csharp-driver/2.9/reference/bson/mapping/
+
+	See Classes.test.ps1 for tests with this script classes.
 #>
 
 # To avoid long type names
@@ -57,7 +59,7 @@ Register-MdbcClassMap ([Address])
 Register-MdbcClassMap Person
 
 ##############################################################################
-### Polymorphic types
+### Polymorphic sub-documents
 # - PolyBase: base type for PolyType1 and PolyType2
 # - PolyData: document using mixed PolyType1 and PolyType2
 
@@ -86,6 +88,34 @@ Register-MdbcClassMap PolyBase
 Register-MdbcClassMap PolyType1 -Discriminator T1
 Register-MdbcClassMap PolyType2 -Discriminator T2
 Register-MdbcClassMap PolyData -IdProperty name
+
+##############################################################################
+### Polymorphic top documents
+# - MyTypeBase
+#   This is the base class for all top level documents. It contains .id (driver
+#   maps to _id automatically). Top level documents are defined by child
+#   classes. Important: set DiscriminatorIsRequired
+# - MyType1, MyType2
+#   Top level documents are classes derived from MyTypeBase.
+
+class MyTypeBase {
+	$id
+}
+
+class MyType1 : MyTypeBase {
+	$p1
+}
+
+class MyType2 : MyTypeBase {
+	$p2
+}
+
+Register-MdbcClassMap MyTypeBase -Init {
+	$_.AutoMap()
+	$_.SetDiscriminatorIsRequired($true)
+}
+Register-MdbcClassMap MyType1
+Register-MdbcClassMap MyType2
 
 ##############################################################################
 ### Simple types

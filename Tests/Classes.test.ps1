@@ -117,6 +117,33 @@ task PolymorphicRead {
 	equals ($r | ConvertTo-Json -Compress) '{"name":1,"data":[{"p1":1,"b1":1},{"p2":2,"b1":2}]}'
 }
 
+# Test saving and reading polymorphic types as top level documents.
+task PolymorphicTopLevel {
+	Connect-Mdbc -NewCollection
+
+	# MyType1
+	$d1 = [MyType1]::new()
+	$d1.id = 1
+	$d1.p1 = 1
+
+	# MyType2
+	$d2 = [MyType2]::new()
+	$d2.id = 2
+	$d2.p2 = 2
+
+	# add mixed documents
+	$d1, $d2 | Add-MdbcData
+
+	# get typed -As MyTypeBase
+	$r1, $r2 = Get-MdbcData -As MyTypeBase
+	equals $r1.GetType() ([MyType1])
+	equals $r2.GetType() ([MyType2])
+
+	# test raw
+	$r = Get-MdbcData
+	equals "$r" '{ "_id" : 1, "_t" : "MyType1", "p1" : 1 } { "_id" : 2, "_t" : "MyType2", "p2" : 2 }'
+}
+
 # Test work with simple classes and compare some alternatives.
 task AsObject_vs_AsPlainObject {
 	Connect-Mdbc -NewCollection
@@ -241,13 +268,13 @@ task RegisteredByMdbc {
 		equals $r $null
 	}
 
-	# repeat, check different verbose message
+	# repeat, check verbose message
 	($r = Register-MdbcClassMap RegisteredByMdbc -Verbose 4>&1)
 	assert ("$r" -like 'Type *.RegisteredByMdbc was registered by Mdbc, doing nothing.')
 }
 
-# It is not allowed to register a type already register by driver if the call
-# tries to tweak the map, i.e. uses parameters other than -Type and -Force.
+# It is not allowed to register a type already registered by driver if the call
+# tweaks the map by parameters other than -Type and -Force.
 
 task RegisteredByDriver {
 	# register by the driver, not Mdbc (pretend it is done in some assembly)
@@ -255,17 +282,17 @@ task RegisteredByDriver {
 	$null = [MongoDB.Bson.Serialization.BsonClassMap]::LookupClassMap([RegisteredByDriver])
 
 	# use some settings, e.g. -Discriminator -> both calls should fail, i.e. not registered by Mdbc
-	$msg = 'Class map is registered by driver. If this is expected invoke with just -Type and -Force.'
+	$text = 'Class map is registered by driver. If this is expected invoke with just -Type and -Force.'
 
 	Register-MdbcClassMap RegisteredByDriver -Discriminator Z -Verbose -ErrorAction Continue -ErrorVariable err1
-	equals "$err1" $msg
+	equals "$err1" $text
 
 	Register-MdbcClassMap RegisteredByDriver -Discriminator Z -Verbose -ErrorAction Continue -ErrorVariable err2
-	equals "$err2" $msg
+	equals "$err2" $text
 }
 
-# It is allowed to register a type already register by driver if the call uses
-# parameters -Type and -Force.
+# It is allowed to register a type already registered by driver if the call
+# uses parameters -Type and -Force.
 
 task RegisteredByDriverForce {
 	class RegisteredByDriver {$_id}

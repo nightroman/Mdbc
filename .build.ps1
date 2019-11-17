@@ -4,12 +4,13 @@
 #>
 
 param(
-	$Configuration = 'Release',
-
+	$Configuration = 'Release'
+	,
 	[ValidateSet('net452', 'netstandard2.0')]
 	$TargetFramework = 'net452'
 )
 
+Set-StrictMode -Version Latest
 $ModuleName = 'Mdbc'
 
 # module root for publish
@@ -262,9 +263,9 @@ task CheckFiles {
 # Synopsis: Remove test.test* collections
 task CleanTest {
 	Import-Module Mdbc
-	foreach($Collection in Connect-Mdbc . test *) {
-		if ($Collection.Name -like 'test*') {
-			$null = $Collection.Drop()
+	foreach($name in Connect-Mdbc . test *) {
+		if ($name -like 'test*') {
+			Remove-MdbcCollection $name
 		}
 	}
 }
