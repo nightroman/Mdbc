@@ -72,7 +72,7 @@ namespace Mdbc.Commands
 				}
 				else
 				{
-					var res = Actor.InvokeWithDollar(Init, cm);
+					var res = Actor.InvokeScript(Init, cm);
 					if (res.Count > 0)
 						throw new PSArgumentException("The Init script must not return anything.");
 				}

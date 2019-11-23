@@ -36,7 +36,7 @@ namespace Mdbc.Commands
 				if (ParameterSetName == nsAll)
 					throw new PSArgumentException(Api.TextParameterPipeline);
 
-				if (_Group.Contains(MyValue.Id))
+				if (_Group.Contains(BsonId.Name))
 				{
 					// with _id, just use input
 					var docGroup = new BsonDocument("$group", _Group);
@@ -45,12 +45,12 @@ namespace Mdbc.Commands
 				else
 				{
 					// make new doc with _id=null and input
-					var docIdNull = new BsonDocument(MyValue.Id, BsonNull.Value);
+					var docIdNull = new BsonDocument(BsonId.Element(BsonNull.Value));
 					docIdNull.AddRange(_Group);
 					var docGroup = new BsonDocument("$group", docIdNull);
 
 					// $project to remove _id
-					var docIdFalse = new BsonDocument(MyValue.Id, BsonBoolean.False);
+					var docIdFalse = new BsonDocument(BsonId.Element(BsonBoolean.False));
 					var docProject = new BsonDocument("$project", docIdFalse);
 
 					// combine stages

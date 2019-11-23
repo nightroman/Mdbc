@@ -369,7 +369,7 @@ namespace Mdbc
 				return serializer.Deserialize(context);
 			};
 		}
-		public static Collection<PSObject> InvokeWithDollar(ScriptBlock script, object value)
+		public static Collection<PSObject> InvokeScript(ScriptBlock script, object value)
 		{
 			var vars = new List<PSVariable>() { new PSVariable("_", value) };
 			return script.InvokeWithContext(null, vars);

@@ -1,5 +1,33 @@
 # Mdbc Release Notes
 
+## v6.2.0
+
+`Invoke-MdbcAggregate`
+
+- New parameter `Group` specifies the low ceremony aggregate pipeline of just
+  $group. It is particularly useful for $min, $max, $sum, etc. of all values.
+  For example:
+
+```powershell
+# max of x (... and other x or y statistics)
+Invoke-MdbcAggregate -Group '{max: {$max: "$x"} ... }'
+```
+
+It is arguably cleaner and more effective than the usual trick:
+
+```powershell
+# max of x
+Get-MdbcData -First 1 -Sort '{x: -1}' -Project '{x: 1, _id: 0}'
+```
+
+`Register-MdbcClassMap`
+
+- New switch `DiscriminatorIsRequired`, it is useful for base classes of mixed
+  top level documents.
+- Removed `KnownTypes`, it is not useful because Mdbc requires all serialized
+  types registered explicitly, i.e. "known". In special (unknown) cases, use
+  `-Init` with `$_.AddKnownType()`.
+
 ## v6.1.0
 
 New features and changes in serialization, some potentially incompatible.

@@ -33,7 +33,7 @@ namespace Mdbc
 		}
 		internal object GetValue(object value)
 		{
-			var r = Actor.InvokeWithDollar(_ScriptBlock, value);
+			var r = Actor.InvokeScript(_ScriptBlock, value);
 			switch (r.Count)
 			{
 				case 1: { return r[0]; }

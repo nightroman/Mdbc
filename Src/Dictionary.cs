@@ -45,7 +45,7 @@ namespace Mdbc
 				if (bson.BsonType == BsonType.Document)
 					_document = bson.AsBsonDocument;
 				else
-					_document = new BsonDocument { { MyValue.Id, bson } };
+					_document = new BsonDocument(BsonId.Element(bson));
 			}
 		}
 		public BsonDocument ToBsonDocument()

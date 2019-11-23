@@ -35,12 +35,13 @@ $PropertyParameter = @'
 Specifies properties or keys which values are included into documents or
 defines calculated fields. Missing input properties and keys are ignored.
 
-EXPERIMENTAL: Types registered by Register-MdbcClassMap are serialized, not
-converted. Use `-Property ..` (`*` for all) in order to save by properties.
+If Property is omitted then types registered by Register-MdbcClassMap are
+serialized. Use `-Property *` in order to convert by properties instead.
 
 Arguments:
 
-1. Strings define property or key names of input objects.
+1. Strings define property or key names of input objects. Wildcards are not
+supported but "*" may be used in order to tell "convert all properties".
 
 2. Hashtables @{Key=Value} define renamed and calculated fields. The key is the
 result document field name. The value is either a string (input object property
@@ -1101,14 +1102,12 @@ Tells to allow renaming if the target collection exists.
 ### Register-MdbcClassMap
 @{
 	command = 'Register-MdbcClassMap'
-	synopsis = 'Registers serialized types (EXPERIMENTAL).'
+	synopsis = 'Registers serialized types.'
 	description = @'
-*** EXPERIMENTAL, WORK IN PROGRESS, SUBJECT TO CHANGE ***
-
-The cmdlet registers the specified type and makes it serialized by the driver
-on saving and converting to documents. It should be called for each serialized
-type before the first serialization. Types cannot be unregistered, they are
-supposed to be either serialized or converted for the entire session.
+The cmdlet registers the specified type and makes it serialized by the driver.
+It should be called for each serialized type before the first serialization.
+Types cannot be unregistered, they are supposed to be either serialized or
+converted for the entire session.
 
 If a type is already registered by the driver, for example in another assembly,
 the command fails unless it is called with just Type and Force parameters.
@@ -1123,7 +1122,7 @@ or in addition.
 		Force = @'
 Tells that the type might be already registered by the driver and this is
 expected. The command registers the existing or auto created map.
-Parameters other than Type are not allowed with Force.
+Parameters other than Type are not allowed.
 '@
 		Init = @'
 Specifies the script which initializes the new class map defined by $_.
@@ -1134,15 +1133,16 @@ Usually, the script calls `$_.AutoMap()` first.
 Specifies the property mapped to the document field _id.
 '@
 		Discriminator = @'
-Specifies the type discriminator saved as the field _t, instead of the default class name.
+Specifies the type discriminator saved as the field _t.
+By default, the type name is used as the discriminator.
 '@
 		DiscriminatorIsRequired = @'
 Tells to save the type discriminator _t.
 This may be useful for base classes of mixed top level documents.
-Derived classes inherit this and save their discriminators for later reading.
+Derived classes inherit this attribute and save their discriminators.
 '@
 		ExtraElementsProperty = @'
-Specifies the property which holds extra elements.
+Specifies the property which holds elements that do not match other properties.
 Supported types: [Mdbc.Dictionary], [BsonDocument], [Dictionary[string, object]].
 '@
 		IgnoreExtraElements = @'
