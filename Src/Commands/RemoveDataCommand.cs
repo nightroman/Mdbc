@@ -25,18 +25,19 @@ namespace Mdbc.Commands
 
 		protected override void BeginProcessing()
 		{
-			if (_Filter == null) throw new PSArgumentException(Api.TextParameterFilter); //_131121_104038
+			if (_Filter == null)
+				throw new PSArgumentException(Api.TextParameterFilter); //_131121_104038
 
 			try
 			{
 				DeleteResult result;
 				if (Many)
 				{
-					result = Collection.DeleteMany(_Filter);
+					result = Collection.DeleteMany(Session, _Filter);
 				}
 				else
 				{
-					result = Collection.DeleteOne(_Filter);
+					result = Collection.DeleteOne(Session, _Filter);
 				}
 
 				if (Result)

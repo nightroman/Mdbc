@@ -9,7 +9,7 @@ using System.Management.Automation;
 namespace Mdbc.Commands
 {
 	[Cmdlet(VerbsLifecycle.Invoke, "MdbcCommand"), OutputType(typeof(Dictionary))]
-	public sealed class InvokeCommandCommand : AbstractDatabaseCommand
+	public sealed class InvokeCommandCommand : AbstractDatabaseCommand2
 	{
 		[Parameter(Position = 0)]
 		public object Command { set { if (value != null) _Command = Api.Command(value); } }
@@ -24,7 +24,7 @@ namespace Mdbc.Commands
 			if (_Command == null) throw new PSArgumentException(Api.TextParameterCommand);
 			try
 			{
-				var document = Database.RunCommand(_Command);
+				var document = Database.RunCommand(Session, _Command);
 				var convert = Actor.ConvertDocument(_As.Type);
 				WriteObject(convert(document));
 			}

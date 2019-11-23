@@ -19,6 +19,30 @@ namespace Mdbc.Commands
 		{
 			WriteError(new ErrorRecord(exception, "Mdbc", ErrorCategory.NotSpecified, target));
 		}
+		protected MongoClient ResolveClient()
+		{
+			var value = Actor.BaseObject(GetVariableValue(Actor.ClientVariable));
+			if (value is MongoClient client)
+				return client;
+
+			throw new PSInvalidOperationException("Specify a client by the parameter or variable Client.");
+		}
+		protected IMongoDatabase ResolveDatabase()
+		{
+			var value = Actor.BaseObject(GetVariableValue(Actor.DatabaseVariable));
+			if (value is IMongoDatabase database)
+				return database;
+
+			throw new PSInvalidOperationException("Specify a database by the parameter or variable Database.");
+		}
+		protected IMongoCollection<BsonDocument> ResolveCollection()
+		{
+			var value = Actor.BaseObject(GetVariableValue(Actor.CollectionVariable));
+			if (value is IMongoCollection<BsonDocument> collection)
+				return collection;
+
+			throw new PSInvalidOperationException("Specify a collection by the parameter or variable Collection.");
+		}
 	}
 	/// <summary>
 	/// Common parameter -As.

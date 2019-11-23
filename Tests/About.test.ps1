@@ -101,6 +101,8 @@ task PublicTypes {
 		'AbstractClientCommand'
 		'AbstractCollectionCommand'
 		'AbstractDatabaseCommand'
+		'AbstractDatabaseCommand2'
+		'AbstractSessionCommand'
 		'AddCollectionCommand'
 		'AddDataCommand'
 		'Api'

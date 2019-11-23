@@ -47,11 +47,11 @@ namespace Mdbc.Commands
 				UpdateResult result;
 				if (Many)
 				{
-					result = Collection.UpdateMany(_Filter, _Update, options);
+					result = Collection.UpdateMany(Session, _Filter, _Update, options);
 				}
 				else
 				{
-					result = Collection.UpdateOne(_Filter, _Update, options);
+					result = Collection.UpdateOne(Session, _Filter, _Update, options);
 				}
 
 				if (Result)

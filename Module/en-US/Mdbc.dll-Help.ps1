@@ -310,6 +310,12 @@ $AClient = @{
 	}
 }
 
+$ASession = @{
+	parameters = @{
+		Session = 'Specifies the client session which executes the command.'
+	}
+}
+
 ### ADatabase
 $ADatabase = @{
 	parameters = @{
@@ -318,7 +324,7 @@ $ADatabase = @{
 }
 
 ### ACollection
-$ACollection = @{
+$ACollection = Merge-Helps $ASession @{
 	parameters = @{
 		Collection = $CollectionParameter
 	}
@@ -682,7 +688,7 @@ capped collections. Ordinary collections do not have to be added explicitly.
 }
 
 ### Invoke-MdbcCommand
-Merge-Helps $ADatabase @{
+Merge-Helps (Merge-Helps $ADatabase $ASession) @{
 	command = 'Invoke-MdbcCommand'
 	synopsis = 'Invokes database commands.'
 	description = @'

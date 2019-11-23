@@ -9,30 +9,14 @@ using System.Management.Automation;
 
 namespace Mdbc.Commands
 {
-	public abstract class AbstractCollectionCommand : Abstract
+	public abstract class AbstractCollectionCommand : AbstractSessionCommand
 	{
 		IMongoCollection<BsonDocument> _Collection;
 		[Parameter]
 		[ValidateNotNull]
 		public IMongoCollection<BsonDocument> Collection
-		{
-			get
-			{
-				if (_Collection == null)
-				{
-					_Collection = Actor.BaseObject(GetVariableValue(Actor.CollectionVariable)) as IMongoCollection<BsonDocument>;
-					if (_Collection == null) throw new PSInvalidOperationException("Specify a collection by the parameter or variable Collection.");
-				}
-				return _Collection;
-			}
-			set
-			{
-				_Collection = value;
-			}
-		}
-		protected static void ThrowNotImplementedForFiles(string what)
-		{
-			throw new NotImplementedException(what + " is not implemented for data files.");
-		}
+		{ get { return _Collection ?? (_Collection = ResolveCollection()); } set { _Collection = value; } }
+
+		protected override IMongoClient MyClient => Collection.Database.Client;
 	}
 }

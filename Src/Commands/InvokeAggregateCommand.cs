@@ -59,7 +59,7 @@ namespace Mdbc.Commands
 			}
 
 			var convert = Actor.ConvertDocument(_As.Type);
-			foreach (var document in Collection.Aggregate(_Pipeline, Options).ToEnumerable())
+			foreach (var document in Collection.Aggregate(Session, _Pipeline, Options).ToEnumerable())
 			{
 				WriteObject(convert(document));
 			}

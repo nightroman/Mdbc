@@ -12,20 +12,6 @@ namespace Mdbc.Commands
 		MongoClient _Client;
 		[Parameter]
 		public MongoClient Client
-		{
-			get
-			{
-				if (_Client == null)
-				{
-					_Client = GetVariableValue(Actor.ClientVariable) as MongoClient;
-					if (_Client == null) throw new PSInvalidOperationException("Specify a client by the parameter or variable Client.");
-				}
-				return _Client;
-			}
-			set
-			{
-				_Client = value;
-			}
-		}
+		{ get { return _Client ?? (_Client = ResolveClient()); } set { _Client = value; } }
 	}
 }

@@ -40,7 +40,7 @@ namespace Mdbc.Commands
 				var document = DocumentInput.NewDocumentWithId(NewId, Id, InputObject);
 
 				document = Actor.ToBsonDocument(document, InputObject, Convert, _Selectors);
-				Collection.InsertOne(document);
+				Collection.InsertOne(Session, document);
 			}
 			catch (ArgumentException ex)
 			{

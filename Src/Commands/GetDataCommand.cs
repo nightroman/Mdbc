@@ -82,12 +82,12 @@ namespace Mdbc.Commands
 		void DoDistinct()
 		{
 			FieldDefinition<BsonDocument, BsonValue> field = Distinct;
-			foreach (var it in Collection.Distinct(field, _Filter).ToEnumerable())
+			foreach (var it in Collection.Distinct(Session, field, _Filter).ToEnumerable())
 				WriteObject(Actor.ToObject(it));
 		}
 		void DoRemove()
 		{
-			var document = Collection.MyFindOneAndDelete(_Filter, _Sort, _Project.Get(_As));
+			var document = Collection.MyFindOneAndDelete(Session, _Filter, _Sort, _Project.Get(_As));
 			if (document != null)
 			{
 				var convert = Actor.ConvertDocument(_As.Type);
@@ -96,7 +96,7 @@ namespace Mdbc.Commands
 		}
 		void DoSet()
 		{
-			var document = Collection.MyFindOneAndReplace(_Filter, _Set, _Sort, _Project.Get(_As), New, Add);
+			var document = Collection.MyFindOneAndReplace(Session, _Filter, _Set, _Sort, _Project.Get(_As), New, Add);
 			if (document != null)
 			{
 				var convert = Actor.ConvertDocument(_As.Type);
@@ -105,7 +105,7 @@ namespace Mdbc.Commands
 		}
 		void DoUpdate()
 		{
-			var document = Collection.MyFindOneAndUpdate(_Filter, _Update, _Sort, _Project.Get(_As), New, Add);
+			var document = Collection.MyFindOneAndUpdate(Session, _Filter, _Update, _Sort, _Project.Get(_As), New, Add);
 			if (document != null)
 			{
 				var convert = Actor.ConvertDocument(_As.Type);
@@ -117,7 +117,7 @@ namespace Mdbc.Commands
 			if (Last <= 0)
 				return false;
 
-			Skip = Collection.CountDocuments(_Filter) - Skip - Last;
+			Skip = Collection.CountDocuments(Session, _Filter) - Skip - Last;
 			First = Last;
 			if (Skip >= 0)
 				return false;
@@ -139,7 +139,7 @@ namespace Mdbc.Commands
 				switch (ParameterSetName)
 				{
 					case nsCount:
-						WriteObject(Collection.MyCount(_Filter, Skip, First));
+						WriteObject(Collection.MyCount(Session, _Filter, Skip, First));
 						return;
 
 					case nsDistinct:
@@ -165,7 +165,7 @@ namespace Mdbc.Commands
 
 				//_131018_160000 Do not use WriteObject(.., true), that seems to take a lot more memory
 				var convert = Actor.ConvertDocument(_As.Type);
-				foreach (var document in Collection.MyFind(_Filter, _Sort, Skip, First, _Project.Get(_As)))
+				foreach (var document in Collection.MyFind(Session, _Filter, _Sort, Skip, First, _Project.Get(_As)))
 				{
 					WriteObject(convert(document));
 				}

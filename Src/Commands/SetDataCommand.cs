@@ -41,7 +41,7 @@ namespace Mdbc.Commands
 
 			try
 			{
-				var result = Collection.ReplaceOne(_Filter, _Set, options);
+				var result = Collection.ReplaceOne(Session, _Filter, _Set, options);
 
 				if (Result)
 					WriteObject(result);
