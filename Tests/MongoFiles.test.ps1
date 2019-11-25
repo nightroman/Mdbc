@@ -141,11 +141,11 @@ task Get-MongoFile Update-MongoFiles, {
 	$r = @(Get-MongoFile -CollectionName test 'collectionext|documentinput' | Sort-Object)
 	$r
 	equals 3 $r.Count
-	assert ($r[0] -clike '*\Mdbc\Src\CollectionExt.cs')
+	assert ($r[0] -clike '*\Mdbc\Src\Commands\CollectionExt.cs')
 	assert ($r[1] -clike '*\Mdbc\Src\DocumentInput.cs')
 	assert ($r[2] -clike '*\Mdbc\Tests\DocumentInput.test.ps1')
 
 	$r = @(Get-MongoFile -CollectionName test 'CollectionExt.cs' -Name)
 	equals 1 $r.Count
-	assert ($r[0] -clike '*\Mdbc\Src\CollectionExt.cs')
+	assert ($r[0] -clike '*\Mdbc\Src\Commands\CollectionExt.cs')
 }

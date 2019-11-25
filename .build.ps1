@@ -220,12 +220,22 @@ task PushNuGet NuGet, {
 Clean
 
 # Synopsis: Make and push the PSGallery package.
-task PushPSGallery Package, Version, {
-	assert ($TargetFramework -eq 'netstandard2.0')
-	$NuGetApiKey = Read-Host NuGetApiKey
-	Publish-Module -Path z/tools/$ModuleName -NuGetApiKey $NuGetApiKey
-},
-Clean
+task PushPSGallery @(
+	if ($TargetFramework -eq 'netstandard2.0') {
+		'Package'
+		'Version'
+		{
+			$NuGetApiKey = Read-Host NuGetApiKey
+			Publish-Module -Path z/tools/$ModuleName -NuGetApiKey $NuGetApiKey
+		}
+		'Clean'
+	}
+	else {
+		{
+			Invoke-Build PushPSGallery -TargetFramework netstandard2.0
+		}
+	}
+)
 
 # Synopsis: Test synopsis of each cmdlet and warn about unexpected.
 task TestHelpSynopsis {

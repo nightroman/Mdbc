@@ -127,5 +127,6 @@ task PublicTypes {
 		'RenameCollectionCommand'
 		'SetDataCommand'
 		'UpdateDataCommand'
+		'UseTransactionCommand'
 	)
 }

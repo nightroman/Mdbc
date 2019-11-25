@@ -312,7 +312,12 @@ $AClient = @{
 
 $ASession = @{
 	parameters = @{
-		Session = 'Specifies the client session which executes the command.'
+		Session = @'
+Specifies the client session which invokes the command.
+
+If it is omitted then the cmdlet is invoked in the current default session,
+either its own or the transaction session created by Use-MdbcTransaction.
+'@
 	}
 }
 
@@ -1155,4 +1160,57 @@ Supported types: [Mdbc.Dictionary], [BsonDocument], [Dictionary[string, object]]
 Tells to ignore document elements that do not match the properties.
 '@
 	}
+}
+
+### Use-MdbcTransaction
+Merge-Helps $AClient @{
+	command = 'Use-MdbcTransaction'
+	synopsis = 'Invokes the script with a transaction.'
+	description = @'
+The cmdlet starts a transaction session and invokes the specified script. The
+script calls data cmdlets and either succeeds or fails. The cmdlet commits or
+aborts the transaction accordingly.
+
+The transaction session is default for cmdlets with the parameter Session.
+For the script the session is exposed as the automatic variable $Session.
+
+Nested calls are allowed but transactions and sessions are independent.
+In particular, they may not see changes made in parent or nested calls.
+'@
+	parameters = @{
+		Script = @'
+Specifies the script to be invoked with a transaction session.
+'@
+	}
+
+	outputs = @(
+		@{
+			type = '[object]'
+			description = 'Output of the specified script.'
+		}
+	)
+
+	examples = @(
+		@{
+			code = {
+				# add several documents using a transaction
+				$documents = ...
+				Use-MdbcTransaction {
+					$documents | Add-MdbcData
+				}
+			}
+		}
+		@{
+			code = {
+				# move a document using a transaction
+				$c1 = Get-MdbcCollection MyData1
+				$c2 = Get-MdbcCollection MyData2
+				Use-MdbcTransaction {
+					# get and remove from MyData1 | add to MyData2
+					Get-MdbcData @{_id = 1} -Remove -Collection $c1 |
+					Add-MdbcData -Collection $c2
+				}
+			}
+		}
+	)
 }

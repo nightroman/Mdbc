@@ -2,9 +2,9 @@
 // Copyright (c) Roman Kuzmin
 // http://www.apache.org/licenses/LICENSE-2.0
 
-using MongoDB.Bson;
 using MongoDB.Driver;
 using System;
+using System.Collections.Generic;
 using System.Management.Automation;
 
 namespace Mdbc.Commands
@@ -15,6 +15,13 @@ namespace Mdbc.Commands
 		bool _disposed;
 		IClientSessionHandle _Session;
 
+		//! ThreadStatic and `= new Stack()` fails in Split-Pipeline
+		[ThreadStatic]
+		static Stack<IClientSessionHandle> _DefaultSessions_;
+		static Stack<IClientSessionHandle> DefaultSessions { get { return _DefaultSessions_ ?? (_DefaultSessions_ = new Stack<IClientSessionHandle>()); } }
+		internal static void PushDefaultSession(IClientSessionHandle session) { DefaultSessions.Push(session); }
+		internal static IClientSessionHandle PopDefaultSession() { return DefaultSessions.Pop(); }
+
 		[Parameter]
 		public IClientSessionHandle Session
 		{
@@ -22,8 +29,17 @@ namespace Mdbc.Commands
 			{
 				if (_Session == null)
 				{
-					_Session = MyClient.StartSession();
-					_dispose = true;
+					if (DefaultSessions.Count == 0)
+					{
+						// temporary session
+						_Session = MyClient.StartSession();
+						_dispose = true;
+					}
+					else
+					{
+						// the current default session
+						_Session = DefaultSessions.Peek();
+					}
 				}
 				return _Session;
 			}

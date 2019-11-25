@@ -6,14 +6,14 @@ using MongoDB.Bson;
 using MongoDB.Driver;
 using System.Collections.Generic;
 
-namespace Mdbc
+namespace Mdbc.Commands
 {
 	static class CollectionExt
 	{
 		public static long MyCount(this IMongoCollection<BsonDocument> collection, IClientSessionHandle session, FilterDefinition<BsonDocument> filter, long skip, long first)
 		{
 			if (skip <= 0 && first <= 0)
-				return collection.CountDocuments(filter);
+				return collection.CountDocuments(session, filter);
 
 			var options = new CountOptions();
 			if (skip > 0)

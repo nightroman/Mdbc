@@ -13,6 +13,13 @@ $ErrorPipeline = [Mdbc.Api]::TextParameterPipeline
 $ErrorSet = [Mdbc.Api]::TextParameterSet
 $ErrorUpdate = [Mdbc.Api]::TextParameterUpdate
 
+function Get-MdbcCollectionNew($Name, $Database=$Database) {
+	$Collection = Get-MdbcCollection $Name -NewCollection
+	Add-MdbcData @{_id = 1}
+	Remove-MdbcData @{}
+	$Collection
+}
+
 function Zoo1 {
 	class T { $Version = [version]'0.0' }
 	[T]::new()
