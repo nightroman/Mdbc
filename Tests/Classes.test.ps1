@@ -40,7 +40,7 @@ task Person_Add_Update_Set {
 	$data.Name = 'Mary'
 	$data.Address.PostCode = 'aa1'
 	$data.Extra.p1 = 3
-	Set-MdbcData @{_id = 1} $data
+	$data | Set-MdbcData
 
 	# test raw
 	$r = Get-MdbcData
@@ -56,7 +56,7 @@ task Person_SetAdd_GetSet {
 	$data.Pin = 1
 	$data.Name = 'John'
 	$data.Extra = @{p1 = 1}
-	Set-MdbcData @{} $data -Add
+	$data | Set-MdbcData -Add
 
 	# change and replace the whole document by Get -Set and get old, i.e. added above
 	$address = [Address]::new()
@@ -191,7 +191,7 @@ task AsObject_vs_AsPlainObject {
 
 	#! save PlainObject using Set-MdbcData (replace)
 	$r.foo = 'bar2'
-	Set-MdbcData @{_id = 1} $r
+	$r | Set-MdbcData
 	$r = Get-MdbcData
 	equals "$r" '{ "_id" : 1, "foo" : "bar2", "arr" : [1, 2], "doc" : { "p1" : new BinData(0, "AQI=") } }'
 }
@@ -254,7 +254,7 @@ task SerialWithContainers {
 
 	# change and set
 	$r.doc.p1 = 2
-	Set-MdbcData @{_id = 1} $r
+	$r | Set-MdbcData
 	$r = Get-MdbcData
 	equals "$r" '{ "_id" : 1, "arr" : [1, 2], "doc" : { "p1" : 2 } }'
 
@@ -266,7 +266,7 @@ task SerialWithContainers {
 
 	# change and set
 	$r.doc.p1 = 3
-	Set-MdbcData @{_id = 1} $r
+	$r | Set-MdbcData
 	$r = Get-MdbcData
 	equals "$r" '{ "_id" : 1, "arr" : [1, 2], "doc" : { "p1" : 3 } }'
 }

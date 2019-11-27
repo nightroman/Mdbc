@@ -12,6 +12,8 @@ $ErrorFilter = [Mdbc.Api]::TextParameterFilter
 $ErrorPipeline = [Mdbc.Api]::TextParameterPipeline
 $ErrorSet = [Mdbc.Api]::TextParameterSet
 $ErrorUpdate = [Mdbc.Api]::TextParameterUpdate
+$TextInputDocId = [Mdbc.Api]::TextInputDocId
+$TextInputDocNull = [Mdbc.Api]::TextInputDocNull
 
 function Get-MdbcCollectionNew($Name, $Database=$Database) {
 	$Collection = Get-MdbcCollection $Name -NewCollection
@@ -76,7 +78,7 @@ function Test-Error([Parameter()]$Command, $Like, $Text) {
 		}
 	}
 	else {
-		throw
+		throw 'Test-Error: missing error pattern parameter.'
 	}
 }
 

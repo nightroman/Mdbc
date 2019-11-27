@@ -6,21 +6,8 @@
 	These cmdlets are similar and the command result is the same.
 #>
 
-. .\Zoo.ps1
-Import-Module Mdbc
+. ./Zoo.ps1
 Set-StrictMode -Version Latest
-
-#_131121_104038
-task BadSet {
-	Test-Error { Set-MdbcData } $ErrorFilter
-	Test-Error { Set-MdbcData '' } $ErrorFilter
-	Test-Error { Set-MdbcData $null } $ErrorFilter
-	Test-Error { Set-MdbcData @{} } $ErrorSet
-	Test-Error { Set-MdbcData @{} $null } $ErrorSet
-	Test-Error { Set-MdbcData @{} '' } -Text @'
-Cannot bind parameter 'Set' to the target. Exception setting "Set": "Cannot convert 'System.String' to 'BsonDocument'."
-'@
-}
 
 #_131121_104038
 task BadUpdate {

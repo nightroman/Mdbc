@@ -370,11 +370,6 @@ Getting values:
 	.. = $dictionary['key']
 	.. = $dictionary.key
 
-NOTE: In order to create an empty document with specified _id=X or a new filter
-expression for queries _id=X, use the following effective syntax:
-
-	[Mdbc.Dictionary] X
-
 NOTE: On getting values, `$dictionary.key` fails if the key is missing in the
 strict mode. Use Contains() in order to check for missing keys. Or get values
 using `$dictionary['key']`, it returns nulls for missing keys.
@@ -596,13 +591,28 @@ Merge-Helps $ACollection @{
 	command = 'Remove-MdbcData'
 	synopsis = 'Removes documents from collections.'
 	description = @'
-This cmdlet removes the specified documents from the specified or default collection.
+This cmdlet removes the specified documents.
+
+With pipeline input, documents are found by input document _id's, without using
+parameters Filter and Many:
+
+	... | Remove-MdbcData
+
+Otherwise, documents are specified by Filter with optional Many:
+
+	Remove-MdbcData [-Filter] <filter> [-Many]
+
 '@, $AboutResultAndErrors
 	parameters = @{
-		Filter = $FilterParameter, $FilterParameterMandatory
+		Filter = @'
+Specifies the documents to be removed. The argument is either JSON or similar dictionary.
+The parameter is mandatory unless documents with _id come from the pipeline.
+It does not accept nulls. To remove all, use an empty filter (@{}, '{}') and Many.
+'@
 		Many = @'
 Tells to remove all matching documents.
 By default the first matching document is removed.
+The parameter is not used if the documents come from the pipeline.
 '@
 		Result = $ResultParameter
 	}
@@ -620,12 +630,27 @@ Merge-Helps $ACollection @{
 	command = 'Set-MdbcData'
 	synopsis = 'Replaces documents in collections.'
 	description = @'
-Replaces the old document matching Filter with the new document specified by Set.
+This cmdlet replaces old documents with new documents.
+
+With pipeline input, old documents are found by input document _id's and
+replaced with input documents, without using parameters Filter and Set:
+
+	... | Set-MdbcData
+
+Otherwise, one old document is specified by Filter and the new document by Set:
+
+	Set-MdbcData [-Filter] <filter> [-Set] <new-document>
+
 '@, $AboutResultAndErrors
 	parameters = @{
-		Filter = $FilterParameter, $FilterParameterMandatory
+		Filter = @'
+Specifies the documents to be replaced. The argument is either JSON or similar dictionary.
+The parameter is mandatory unless documents with _id come from the pipeline.
+It does not accept nulls.
+'@
 		Set = @'
 Specifies the new document which replaces the old matching Filter.
+The parameter is not used if the documents come from the pipeline.
 '@
 		Add = @'
 Tells to add the new document if the old does not exist.

@@ -22,9 +22,13 @@ namespace Mdbc
 		public const string ErrorEmptyDocument = "Document must not be empty.";
 		public const string TextParameterCommand = "Parameter Command must be specified and cannot be null.";
 		public const string TextParameterFilter = "Parameter Filter must be specified and cannot be null or empty string. To match all, use an empty document.";
+		public const string TextParameterFilterInput = "Parameter Filter must be omitted with pipeline input.";
 		public const string TextParameterPipeline = "Parameter Pipeline must be specified and cannot be null.";
 		public const string TextParameterSet = "Parameter Set must be specified and cannot be null.";
 		public const string TextParameterUpdate = "Parameter Update must be specified and cannot be null.";
+		public const string TextInputDocNull = "Input document cannot be null.";
+		public const string TextInputDocId = "Input document must have _id.";
+
 		internal static string TextCannotConvert2(object from, object to)
 		{
 			return $"Cannot convert '{from}' to '{to}'.";
@@ -60,7 +64,7 @@ namespace Mdbc
 				throw new ArgumentException("Invalid JSON.", exn);
 			}
 		}
-		static BsonDocument JsonToBsonDocument(string json)
+		internal static BsonDocument JsonToBsonDocument(string json)
 		{
 			var bson = JsonToBsonValue(json);
 			if (bson.BsonType == BsonType.Document)
@@ -176,6 +180,41 @@ namespace Mdbc
 				return doc;
 
 			return (FilterDefinition<BsonDocument>)value;
+		}
+		public static FilterDefinition<BsonDocument> FilterDefinitionOfId(object value)
+		{
+			value = Actor.BaseObject(value);
+			return Builders<BsonDocument>.Filter.Eq(BsonId.Name, BsonValue.Create(value));
+		}
+		public static FilterDefinition<BsonDocument> FilterDefinitionOfInputId(object value)
+		{
+			value = Actor.BaseObject(value, out PSObject custom);
+			if (custom == null)
+			{
+				if (value is IConvertibleToBsonDocument cd)
+				{
+					var doc = cd.ToBsonDocument();
+					if (doc.TryGetElement(BsonId.Name, out BsonElement elem))
+						return new BsonDocument(elem);
+					else
+						throw new InvalidOperationException(TextInputDocId);
+				}
+
+				if (value is IDictionary dic)
+				{
+					if (!dic.Contains(BsonId.Name))
+						throw new InvalidOperationException(TextInputDocId);
+
+					return FilterDefinitionOfId(dic[BsonId.Name]);
+				}
+			}
+
+			var ps = custom ?? PSObject.AsPSObject(value);
+			var pi = ps.Properties[BsonId.Name];
+			if (pi == null)
+				throw new InvalidOperationException(TextInputDocId);
+			else
+				return FilterDefinitionOfId(pi.Value);
 		}
 		public static SortDefinition<BsonDocument> SortDefinition(object value)
 		{

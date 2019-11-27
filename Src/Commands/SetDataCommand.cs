@@ -11,14 +11,14 @@ namespace Mdbc.Commands
 	[Cmdlet(VerbsCommon.Set, "MdbcData"), OutputType(typeof(ReplaceOneResult))]
 	public sealed class SetDataCommand : AbstractCollectionCommand
 	{
-		//_131121_104038
 		[Parameter(Position = 0)]
-		public object Filter { set { _Filter = Api.FilterDefinition(value); } }
+		public object Filter { set { _FilterSet = true; _Filter = Api.FilterDefinition(value); } }
 		FilterDefinition<BsonDocument> _Filter;
+		bool _FilterSet;
 
-		//! keep it null, check later
-		[Parameter(Position = 1)]
-		public object Set { set { if (value != null) _Set = Actor.ToBsonDocument(value); } }
+		//! `get` is needed for PS
+		[Parameter(Position = 1, ValueFromPipeline = true)]
+		public object Set { get { return _Set; } set { if (value != null) _Set = Actor.ToBsonDocument(value); } }
 		BsonDocument _Set;
 
 		[Parameter]
@@ -32,23 +32,46 @@ namespace Mdbc.Commands
 
 		protected override void BeginProcessing()
 		{
-			if (_Filter == null) throw new PSArgumentException(Api.TextParameterFilter); //_131121_104038
-			if (_Set == null) throw new PSArgumentException(Api.TextParameterSet); //??
+			if (MyInvocation.ExpectingInput)
+			{
+				if (_FilterSet)
+					throw new PSArgumentException(Api.TextParameterFilterInput);
+			}
+			else
+			{
+				if (_Filter == null)
+					throw new PSArgumentException(Api.TextParameterFilter);
+			}
 
-			var options = Options ?? new UpdateOptions();
+			if (Options == null)
+				Options = new UpdateOptions();
 			if (Add)
-				options.IsUpsert = true;
+				Options.IsUpsert = true;
+		}
 
+		protected override void ProcessRecord()
+		{
 			try
 			{
-				var result = Collection.ReplaceOne(Session, _Filter, _Set, options);
+				if (Set == null)
+					throw new PSArgumentException(Api.TextInputDocNull);
+
+				if (MyInvocation.ExpectingInput)
+				{
+					if (_Set.TryGetElement(BsonId.Name, out BsonElement elem))
+						_Filter = new BsonDocument(elem);
+					else
+						throw new PSArgumentException(Api.TextInputDocId);
+				}
+
+				var result = Collection.ReplaceOne(Session, _Filter, _Set, Options);
 
 				if (Result)
 					WriteObject(result);
 			}
-			catch (MongoException ex)
+			catch (MongoException exn)
 			{
-				WriteException(ex, null);
+				WriteException(exn, _Set);
 			}
 		}
 	}

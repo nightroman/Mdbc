@@ -11,11 +11,10 @@ namespace Mdbc.Commands
 	[Cmdlet(VerbsCommon.Remove, "MdbcData"), OutputType(typeof(DeleteResult))]
 	public sealed class RemoveDataCommand : AbstractCollectionCommand
 	{
-		//_131121_104038 Not mandatory to avoid prompts. Manual null check is used instead for consistent messages.
-		// String values from prompts might imply unexpected results.
-		[Parameter(Position = 0)]
-		public object Filter { set { _Filter = Api.FilterDefinition(value); } }
-		FilterDefinition<BsonDocument> _Filter;
+		[Parameter(Position = 0, ValueFromPipeline = true)]
+		public object Filter { get { return _Filter; } set { _Filter = value; _FilterSet = true; } }
+		object _Filter;
+		bool _FilterSet;
 
 		[Parameter]
 		public SwitchParameter Many { get; set; }
@@ -25,19 +24,46 @@ namespace Mdbc.Commands
 
 		protected override void BeginProcessing()
 		{
-			if (_Filter == null)
-				throw new PSArgumentException(Api.TextParameterFilter); //_131121_104038
+			if (MyInvocation.ExpectingInput)
+			{
+				if (_FilterSet)
+					throw new PSArgumentException(Api.TextParameterFilterInput);
 
+				if (Many)
+					throw new PSArgumentException("Parameter Many is not supported with pipeline input.");
+			}
+			else
+			{
+				if (_Filter == null)
+					throw new PSArgumentException(Api.TextParameterFilter);
+			}
+		}
+
+		protected override void ProcessRecord()
+		{
 			try
 			{
-				DeleteResult result;
-				if (Many)
+				FilterDefinition<BsonDocument> filter;
+				if (MyInvocation.ExpectingInput)
 				{
-					result = Collection.DeleteMany(Session, _Filter);
+					if (_Filter == null)
+						throw new PSArgumentException(Api.TextInputDocNull);
+
+					filter = Api.FilterDefinitionOfInputId(_Filter);
 				}
 				else
 				{
-					result = Collection.DeleteOne(Session, _Filter);
+					filter = Api.FilterDefinition(_Filter); //TODO
+				}
+
+				DeleteResult result;
+				if (Many)
+				{
+					result = Collection.DeleteMany(Session, filter);
+				}
+				else
+				{
+					result = Collection.DeleteOne(Session, filter);
 				}
 
 				if (Result)

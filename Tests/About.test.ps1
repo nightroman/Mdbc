@@ -27,12 +27,12 @@ task README {
 		Update-MdbcData @{_id = 1} @{'$set' = @{value = 100}}
 
 		# Get the document again, 'value' is 100
-		Get-MdbcData @{_id = 1}
+		$doc = Get-MdbcData @{_id = 1}
 
 		# Remove the document
-		Remove-MdbcData @{_id = 1}
+		$doc | Remove-MdbcData
 
-		# Count documents, there is 1
+		# Count documents, 1
 		Get-MdbcData -Count
 	)
 	equals $r[-1] 1L

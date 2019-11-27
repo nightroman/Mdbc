@@ -40,7 +40,7 @@ namespace Mdbc
 		/// <summary>
 		/// null | PSCustomObject | PSObject.BaseObject | self
 		/// </summary>
-		static object BaseObject(object value, out PSObject custom)
+		public static object BaseObject(object value, out PSObject custom)
 		{
 			custom = null;
 

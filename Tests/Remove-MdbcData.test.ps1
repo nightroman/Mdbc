@@ -33,8 +33,10 @@ task NoFilter {
 	# omitted, empty, null
 	Connect-Mdbc -NewCollection
 	Test-Error { Remove-MdbcData } $ErrorFilter
-	Test-Error { Remove-MdbcData '' } $ErrorFilter
+	#Test-Error { Remove-MdbcData '' } $ErrorFilter #TODO
 	Test-Error { Remove-MdbcData $null } $ErrorFilter
+	Test-Error { $null | Remove-MdbcData } -Text $TextInputDocNull
+	Test-Error { @{} | Remove-MdbcData } -Text $TextInputDocId
 
 	$$ = {
 		Connect-Mdbc -NewCollection
@@ -52,4 +54,30 @@ task NoFilter {
 	$r = Remove-MdbcData '{_id : ""}' -Result
 	equals $r.DeletedCount 1L
 	equals (Get-MdbcData -Count) 1L
+}
+
+task TODO {
+	$d1 = [Mdbc.Dictionary]1
+	equals $d1._id.GetType().Name String # why, PS?
+
+	$d1 = [Mdbc.Dictionary]::new(1)
+	equals $d1._id.GetType().Name Int32
+}
+
+task Input {
+	Connect-Mdbc -NewCollection
+	@{_id = 1}, @{_id = 2}, @{_id = 3}, @{_id = 4} | Add-MdbcData
+
+	$d1 = [Mdbc.Dictionary]@{_id = 1}
+	$d2 = @{_id = 2}
+	$d3 = [PSCustomObject]@{_id = 3}
+	class T1 {$_id}
+	$d4 = [T1]::new()
+	$d4._id = 4
+
+ 	$r = $d1, $d2, $d3, $d4 | Remove-MdbcData -Result
+ 	foreach($_ in $r) {equals $_.DeletedCount 1L}
+
+ 	$r = Get-MdbcData
+ 	equals $r $null
 }
