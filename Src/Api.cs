@@ -3,14 +3,11 @@
 // http://www.apache.org/licenses/LICENSE-2.0
 
 using MongoDB.Bson;
-using MongoDB.Bson.IO;
 using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Management.Automation;
 
@@ -18,59 +15,10 @@ namespace Mdbc
 {
 	public static class Api
 	{
-		#region Messages
-		public const string ErrorEmptyDocument = "Document must not be empty.";
-		public const string TextParameterCommand = "Parameter Command must be specified and cannot be null.";
-		public const string TextParameterFilter = "Parameter Filter must be specified and cannot be null or empty string. To match all, use an empty document.";
-		public const string TextParameterFilterInput = "Parameter Filter must be omitted with pipeline input.";
-		public const string TextParameterPipeline = "Parameter Pipeline must be specified and cannot be null.";
-		public const string TextParameterSet = "Parameter Set must be specified and cannot be null.";
-		public const string TextParameterUpdate = "Parameter Update must be specified and cannot be null.";
-		public const string TextInputDocNull = "Input document cannot be null.";
-		public const string TextInputDocId = "Input document must have _id.";
-
-		internal static string TextCannotConvert2(object from, object to)
-		{
-			return $"Cannot convert '{from}' to '{to}'.";
-		}
-		internal static string TextCannotConvert3(object from, object to, string error)
-		{
-			return $"{TextCannotConvert2(from, to)} -- {error}";
-		}
-		#endregion
-
 		static object BaseObjectNotNull(object value)
 		{
 			if (value == null) throw new ArgumentNullException(nameof(value));
 			return value is PSObject ps ? ps.BaseObject : value;
-		}
-		static BsonValue JsonToBsonValue(string json)
-		{
-			Debug.Assert(json != null);
-			try
-			{
-				var serializer = BsonSerializer.LookupSerializer(typeof(BsonValue));
-				using (var reader1 = new StringReader(json))
-				{
-					using (var reader2 = new JsonReader(reader1))
-					{
-						var context = BsonDeserializationContext.CreateRoot(reader2);
-						return (BsonValue)serializer.Deserialize(context);
-					}
-				}
-			}
-			catch (Exception exn)
-			{
-				throw new ArgumentException("Invalid JSON.", exn);
-			}
-		}
-		internal static BsonDocument JsonToBsonDocument(string json)
-		{
-			var bson = JsonToBsonValue(json);
-			if (bson.BsonType == BsonType.Document)
-				return bson.AsBsonDocument;
-			else
-				throw new ArgumentException($"JSON: expected document, found {bson.BsonType}.");
 		}
 		/// <summary>
 		/// JSON, IConvertibleToBsonDocument, IDictionary.
@@ -81,7 +29,7 @@ namespace Mdbc
 			value = BaseObjectNotNull(value);
 
 			if (value is string json)
-				return JsonToBsonDocument(json);
+				return MyJson.ToBsonDocument(json);
 
 			//! before IDictionary, mind Mdbc.Dictionary
 			if (value is IConvertibleToBsonDocument cd)
@@ -91,7 +39,7 @@ namespace Mdbc
 			if (value is IDictionary dictionary)
 				return Actor.ToBsonDocumentFromDictionary(dictionary);
 
-			throw new InvalidOperationException(Api.TextCannotConvert2(value.GetType(), nameof(BsonDocument)));
+			throw new InvalidOperationException(Res.CannotConvert2(value.GetType(), nameof(BsonDocument)));
 		}
 		/// <summary>
 		/// JSON, IConvertibleToBsonDocument, IDictionary.
@@ -103,7 +51,7 @@ namespace Mdbc
 
 			if (value is string json)
 			{
-				result = JsonToBsonDocument(json);
+				result = MyJson.ToBsonDocument(json);
 				return true;
 			}
 
@@ -141,7 +89,7 @@ namespace Mdbc
 
 			if (value is string json)
 			{
-				result = json.Length == 0 ? null : JsonToBsonDocument(json);
+				result = json.Length == 0 ? null : MyJson.ToBsonDocument(json);
 				return true;
 			}
 
@@ -168,7 +116,7 @@ namespace Mdbc
 
 			if (TryBsonDocument(value, out var doc))
 			{
-				if (doc.ElementCount == 0) throw new ArgumentException(Api.ErrorEmptyDocument);
+				if (doc.ElementCount == 0) throw new ArgumentException(Res.ErrorEmptyDocument);
 				return doc;
 			}
 
@@ -197,22 +145,31 @@ namespace Mdbc
 					if (doc.TryGetElement(BsonId.Name, out BsonElement elem))
 						return new BsonDocument(elem);
 					else
-						throw new InvalidOperationException(TextInputDocId);
+						throw new InvalidOperationException(Res.InputDocId);
 				}
 
 				if (value is IDictionary dic)
 				{
 					if (!dic.Contains(BsonId.Name))
-						throw new InvalidOperationException(TextInputDocId);
+						throw new InvalidOperationException(Res.InputDocId);
 
-					return FilterDefinitionOfId(dic[BsonId.Name]);
+					var id = dic[BsonId.Name];
+					return FilterDefinitionOfId(id);
+				}
+
+				if (Actor.TypeIsDriverSerialized(value.GetType()))
+				{
+					var cm = BsonClassMap.LookupClassMap(value.GetType());
+					var mm = cm.GetMemberMapForElement(BsonId.Name);
+					var id = mm.Getter(value);
+					return FilterDefinitionOfId(id);
 				}
 			}
 
 			var ps = custom ?? PSObject.AsPSObject(value);
 			var pi = ps.Properties[BsonId.Name];
 			if (pi == null)
-				throw new InvalidOperationException(TextInputDocId);
+				throw new InvalidOperationException(Res.InputDocId);
 			else
 				return FilterDefinitionOfId(pi.Value);
 		}
@@ -230,7 +187,7 @@ namespace Mdbc
 			// JSON first because it looks very convenient for pipelines
 			if (value is string json)
 			{
-				var bson = JsonToBsonValue(json);
+				var bson = MyJson.ToBsonValue(json);
 				switch (bson.BsonType)
 				{
 					case BsonType.Array:
@@ -275,7 +232,7 @@ namespace Mdbc
 
 			if (TryBsonDocument(value, out var doc))
 			{
-				if (doc.ElementCount == 0) throw new ArgumentException(Api.ErrorEmptyDocument);
+				if (doc.ElementCount == 0) throw new ArgumentException(Res.ErrorEmptyDocument);
 				return doc;
 			}
 

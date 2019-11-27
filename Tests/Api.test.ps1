@@ -20,8 +20,8 @@ task Command {
 	Test-Error { [Mdbc.Api]::Command('') } '*: "Invalid JSON."'
 	Test-Error { [Mdbc.Api]::Command('bad') } '*: "Invalid JSON."'
 
-	Test-Error { [Mdbc.Api]::Command('{}') } "*""$ErrorEmptyDocument"""
-	Test-Error { [Mdbc.Api]::Command(@{}) } "*""$ErrorEmptyDocument"""
+	Test-Error { [Mdbc.Api]::Command('{}') } "*""$([Mdbc.Res]::ErrorEmptyDocument)"""
+	Test-Error { [Mdbc.Api]::Command(@{}) } "*""$([Mdbc.Res]::ErrorEmptyDocument)"""
 
 	Test-Error { [Mdbc.Api]::Command(1) } '*: "Unable to cast object of type ''System.Int32'' to type ''MongoDB.Driver.Command*'
 }
@@ -124,8 +124,8 @@ task UpdateDefinition {
 	Test-Error { [Mdbc.Api]::UpdateDefinition('') } '*: "Invalid JSON."'
 	Test-Error { [Mdbc.Api]::UpdateDefinition('bad') } '*: "Invalid JSON."'
 
-	Test-Error { [Mdbc.Api]::UpdateDefinition('{}') } "*""$ErrorEmptyDocument"""
-	Test-Error { [Mdbc.Api]::UpdateDefinition(@{}) } "*""$ErrorEmptyDocument"""
+	Test-Error { [Mdbc.Api]::UpdateDefinition('{}') } "*""$([Mdbc.Res]::ErrorEmptyDocument)"""
+	Test-Error { [Mdbc.Api]::UpdateDefinition(@{}) } "*""$([Mdbc.Res]::ErrorEmptyDocument)"""
 
 	Test-Error { [Mdbc.Api]::UpdateDefinition(1) } '*: "Unable to cast object of type ''System.Int32'' to type ''MongoDB.Driver.UpdateDefinition*'
 }

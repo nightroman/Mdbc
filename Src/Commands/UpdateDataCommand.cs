@@ -11,12 +11,10 @@ namespace Mdbc.Commands
 	[Cmdlet(VerbsData.Update, "MdbcData"), OutputType(typeof(UpdateResult))]
 	public sealed class UpdateDataCommand : AbstractCollectionCommand
 	{
-		//_131121_104038
 		[Parameter(Position = 0)]
 		public object Filter { set { _Filter = Api.FilterDefinition(value); } }
 		FilterDefinition<BsonDocument> _Filter;
 
-		//_131121_104038
 		[Parameter(Position = 1)]
 		public object Update { set { if (value != null) _Update = Api.UpdateDefinition(value); } }
 		UpdateDefinition<BsonDocument> _Update;
@@ -35,8 +33,11 @@ namespace Mdbc.Commands
 
 		protected override void BeginProcessing()
 		{
-			if (_Filter == null) throw new PSArgumentException(Api.TextParameterFilter); //_131121_104038
-			if (_Update == null) throw new PSArgumentException(Api.TextParameterUpdate);
+			if (_Filter == null)
+				throw new PSArgumentException(Res.ParameterFilter1);
+
+			if (_Update == null)
+				throw new PSArgumentException(Res.ParameterUpdate);
 
 			var options = Options ?? new UpdateOptions();
 			if (Add)

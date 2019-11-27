@@ -1,25 +1,20 @@
-<#
-.Synopsis
-	Tests Set-MdbcData.
-#>
-
 . ./Zoo.ps1
 
 task BadSet {
-	Test-Error { Set-MdbcData } -Text $ErrorFilter
-	Test-Error { Set-MdbcData '' } -Text $ErrorFilter
-	Test-Error { Set-MdbcData $null } -Text $ErrorFilter
-	Test-Error { Set-MdbcData @{} } -Text $TextInputDocNull
-	Test-Error { Set-MdbcData @{} $null } -Text $TextInputDocNull
+	Test-Error { Set-MdbcData } -Text ([Mdbc.Res]::ParameterFilter1)
+	Test-Error { Set-MdbcData '' } -Text ([Mdbc.Res]::ParameterFilter1)
+	Test-Error { Set-MdbcData $null } -Text ([Mdbc.Res]::ParameterFilter1)
+	Test-Error { Set-MdbcData @{} } -Text ([Mdbc.Res]::InputDocNull)
+	Test-Error { Set-MdbcData @{} $null } -Text ([Mdbc.Res]::InputDocNull)
 	Test-Error { Set-MdbcData @{} '' } -Text @'
 Cannot bind parameter 'Set' to the target. Exception setting "Set": "Cannot convert 'System.String' to 'BsonDocument'."
 '@
 }
 
 task BadInput {
-	Test-Error { @{} | Set-MdbcData $null } -Text 'Parameter Filter must be omitted with pipeline input.'
-	Test-Error { $null | Set-MdbcData } -Text $TextInputDocNull
-	Test-Error { @{} | Set-MdbcData } -Text $TextInputDocId
+	Test-Error { @{} | Set-MdbcData $null } -Text ([Mdbc.Res]::ParameterFilter2)
+	Test-Error { $null | Set-MdbcData } -Text ([Mdbc.Res]::InputDocNull)
+	Test-Error { @{} | Set-MdbcData } -Text ([Mdbc.Res]::InputDocId)
 }
 
 task PipelineSet {
@@ -45,4 +40,17 @@ task PipelineSetAddResult {
 
 	$r = Get-MdbcData
 	equals "$r" '{ "_id" : 1, "n" : 1 } { "_id" : 2, "n" : 2 }'
+}
+
+# Set-MdbcData -Add
+task SetAdd {
+	Connect-Mdbc -NewCollection
+
+	Set-MdbcData @{_id = 87} @{p2 = 2} -Add
+	$r = Get-MdbcData
+	equals "$r" '{ "_id" : 87, "p2" : 2 }'
+
+	Set-MdbcData @{_id = 87} @{p3 = 3} -Add
+	$r = Get-MdbcData
+	equals "$r" '{ "_id" : 87, "p3" : 3 }'
 }

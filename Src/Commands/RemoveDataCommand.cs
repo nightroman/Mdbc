@@ -4,6 +4,7 @@
 
 using MongoDB.Bson;
 using MongoDB.Driver;
+using System;
 using System.Management.Automation;
 
 namespace Mdbc.Commands
@@ -27,7 +28,7 @@ namespace Mdbc.Commands
 			if (MyInvocation.ExpectingInput)
 			{
 				if (_FilterSet)
-					throw new PSArgumentException(Api.TextParameterFilterInput);
+					throw new PSArgumentException(Res.ParameterFilter2);
 
 				if (Many)
 					throw new PSArgumentException("Parameter Many is not supported with pipeline input.");
@@ -35,7 +36,7 @@ namespace Mdbc.Commands
 			else
 			{
 				if (_Filter == null)
-					throw new PSArgumentException(Api.TextParameterFilter);
+					throw new PSArgumentException(Res.ParameterFilter1);
 			}
 		}
 
@@ -47,13 +48,24 @@ namespace Mdbc.Commands
 				if (MyInvocation.ExpectingInput)
 				{
 					if (_Filter == null)
-						throw new PSArgumentException(Api.TextInputDocNull);
+						throw new PSArgumentException(Res.InputDocNull);
 
 					filter = Api.FilterDefinitionOfInputId(_Filter);
 				}
 				else
 				{
-					filter = Api.FilterDefinition(_Filter); //TODO
+					try
+					{
+						filter = Api.FilterDefinition(_Filter);
+					}
+					catch(Exception exn)
+					{
+						var text = $"Parameter Filter: {exn.Message}";
+						throw new PSArgumentException(text, exn);
+					}
+
+					if (filter == null)
+						throw new PSArgumentException(Res.ParameterFilter1);
 				}
 
 				DeleteResult result;

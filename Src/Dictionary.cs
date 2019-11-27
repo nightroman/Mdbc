@@ -2,14 +2,11 @@
 // Copyright (c) Roman Kuzmin
 // http://www.apache.org/licenses/LICENSE-2.0
 
+using MongoDB.Bson;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using MongoDB.Bson;
-using MongoDB.Bson.IO;
-using MongoDB.Bson.Serialization;
 
 namespace Mdbc
 {
@@ -54,11 +51,7 @@ namespace Mdbc
 		}
 		public string Print()
 		{
-			var writer = new StringWriter();
-			var args = new JsonWriterSettings() { Indent = true };
-			using (var json = new JsonWriter(writer, args))
-				BsonSerializer.Serialize(json, typeof(BsonDocument), _document);
-			return writer.ToString();
+			return MyJson.PrintBsonDocument(_document);
 		}
 
 		#region Object

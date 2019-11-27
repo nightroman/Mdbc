@@ -35,12 +35,12 @@ namespace Mdbc.Commands
 			if (MyInvocation.ExpectingInput)
 			{
 				if (_FilterSet)
-					throw new PSArgumentException(Api.TextParameterFilterInput);
+					throw new PSArgumentException(Res.ParameterFilter2);
 			}
 			else
 			{
 				if (_Filter == null)
-					throw new PSArgumentException(Api.TextParameterFilter);
+					throw new PSArgumentException(Res.ParameterFilter1);
 			}
 
 			if (Options == null)
@@ -54,14 +54,14 @@ namespace Mdbc.Commands
 			try
 			{
 				if (Set == null)
-					throw new PSArgumentException(Api.TextInputDocNull);
+					throw new PSArgumentException(Res.InputDocNull);
 
 				if (MyInvocation.ExpectingInput)
 				{
 					if (_Set.TryGetElement(BsonId.Name, out BsonElement elem))
 						_Filter = new BsonDocument(elem);
 					else
-						throw new PSArgumentException(Api.TextInputDocId);
+						throw new PSArgumentException(Res.InputDocId);
 				}
 
 				var result = Collection.ReplaceOne(Session, _Filter, _Set, Options);

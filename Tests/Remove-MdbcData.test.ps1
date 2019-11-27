@@ -1,7 +1,34 @@
-
-. .\Zoo.ps1
-Import-Module Mdbc
+. ./Zoo.ps1
 Set-StrictMode -Version Latest
+
+task Pipeline {
+	# add docs to be removed
+	$nCases = 5
+	Connect-Mdbc -NewCollection
+	1..5 | .{process{ @{_id = $_} }} | Add-MdbcData
+
+	$d1 = [Mdbc.Dictionary]@{_id = 1}
+
+	$d2 = @{_id = 2}
+
+	$d3 = [PSCustomObject]@{_id = 3}
+
+	class T1 {$_id}
+	$d4 = [T1]::new()
+	$d4._id = 4
+
+	#! was error "must have _id"
+	class T2 {[int]$Pin}
+	Register-MdbcClassMap T2 -IdProperty Pin
+	$d5 = [T2]::new()
+	$d5.Pin = 5
+
+ 	$r = $d1, $d2, $d3, $d4, $d5 | Remove-MdbcData -Result
+ 	foreach($_ in $r) {equals $_.DeletedCount 1L}
+
+ 	$r = Get-MdbcData
+ 	equals $r $null
+}
 
 task Result {
 	$$ = {
@@ -28,56 +55,32 @@ task Result {
 	equals $r.DeletedCount 2L
 }
 
-#_131121_104038
-task NoFilter {
-	# omitted, empty, null
+task BadFilter {
 	Connect-Mdbc -NewCollection
-	Test-Error { Remove-MdbcData } $ErrorFilter
-	#Test-Error { Remove-MdbcData '' } $ErrorFilter #TODO
-	Test-Error { Remove-MdbcData $null } $ErrorFilter
-	Test-Error { $null | Remove-MdbcData } -Text $TextInputDocNull
-	Test-Error { @{} | Remove-MdbcData } -Text $TextInputDocId
 
-	$$ = {
-		Connect-Mdbc -NewCollection
-		@{_id=''}, @{_id=1} | Add-MdbcData
-	}
+	# omitted, empty, null, bad json
+	Test-Error { Remove-MdbcData } -Text ([Mdbc.Res]::ParameterFilter1)
+	Test-Error { Remove-MdbcData '' } -Text ([Mdbc.Res]::ParameterFilter1)
+	Test-Error { Remove-MdbcData $null } -Text ([Mdbc.Res]::ParameterFilter1)
+	Test-Error { Remove-MdbcData 'bar' } -Text "Parameter Filter: Invalid JSON."
 
-	# empty query is for all
-	. $$
+	# pipeline input issues
+	Test-Error { @{} | Remove-MdbcData } -Text ([Mdbc.Res]::InputDocId)
+	Test-Error { $null | Remove-MdbcData } -Text ([Mdbc.Res]::InputDocNull)
+}
+
+task EmptyFilterForAll {
+	Connect-Mdbc -NewCollection
+
+	# empty hashtable
+	@{_id = 1}, @{_id = 2} | Add-MdbcData
 	$r = Remove-MdbcData @{} -Many -Result
 	equals $r.DeletedCount 2L
-	equals (Get-MdbcData -Count) 0L
+	equals (Get-MdbcData) $null
 
-	# empty string _id
-	. $$
-	$r = Remove-MdbcData '{_id : ""}' -Result
-	equals $r.DeletedCount 1L
-	equals (Get-MdbcData -Count) 1L
-}
-
-task TODO {
-	$d1 = [Mdbc.Dictionary]1
-	equals $d1._id.GetType().Name String # why, PS?
-
-	$d1 = [Mdbc.Dictionary]::new(1)
-	equals $d1._id.GetType().Name Int32
-}
-
-task Input {
-	Connect-Mdbc -NewCollection
-	@{_id = 1}, @{_id = 2}, @{_id = 3}, @{_id = 4} | Add-MdbcData
-
-	$d1 = [Mdbc.Dictionary]@{_id = 1}
-	$d2 = @{_id = 2}
-	$d3 = [PSCustomObject]@{_id = 3}
-	class T1 {$_id}
-	$d4 = [T1]::new()
-	$d4._id = 4
-
- 	$r = $d1, $d2, $d3, $d4 | Remove-MdbcData -Result
- 	foreach($_ in $r) {equals $_.DeletedCount 1L}
-
- 	$r = Get-MdbcData
- 	equals $r $null
+	# empty json object
+	@{_id = 1}, @{_id = 2} | Add-MdbcData
+	$r = Remove-MdbcData '{}' -Many -Result
+	equals $r.DeletedCount 2L
+	equals (Get-MdbcData) $null
 }

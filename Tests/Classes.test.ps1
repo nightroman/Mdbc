@@ -45,6 +45,10 @@ task Person_Add_Update_Set {
 	# test raw
 	$r = Get-MdbcData
 	equals "$r" '{ "_id" : 1, "Name" : "Mary", "Address" : { "c" : "aa1", "a" : "Bar Street" }, "p1" : 3 }'
+
+	# remove
+	$r = $data | Remove-MdbcData -Result
+	equals $r.DeletedCount 1L
 }
 
 # Similar to the above with different commands and parameters.

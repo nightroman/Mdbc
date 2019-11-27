@@ -1,22 +1,13 @@
-<#
-.Synopsis
-	Test Set-MdbcData and Update-MdbcData.
-
-.Description
-	These cmdlets are similar and the command result is the same.
-#>
-
 . ./Zoo.ps1
 Set-StrictMode -Version Latest
 
-#_131121_104038
 task BadUpdate {
-	Test-Error { Update-MdbcData } $ErrorFilter
-	Test-Error { Update-MdbcData '' } $ErrorFilter
-	Test-Error { Update-MdbcData $null } $ErrorFilter
-	Test-Error { Update-MdbcData @{} } $ErrorUpdate
+	Test-Error { Update-MdbcData } -Text ([Mdbc.Res]::ParameterFilter1)
+	Test-Error { Update-MdbcData '' } -Text ([Mdbc.Res]::ParameterFilter1)
+	Test-Error { Update-MdbcData $null } -Text ([Mdbc.Res]::ParameterFilter1)
+	Test-Error { Update-MdbcData @{} } -Text ([Mdbc.Res]::ParameterUpdate)
 	Test-Error { Update-MdbcData @{} '' } '*"Invalid JSON."'
-	Test-Error { Update-MdbcData @{} $null } $ErrorUpdate
+	Test-Error { Update-MdbcData @{} $null } -Text ([Mdbc.Res]::ParameterUpdate)
 }
 
 task AddToSet {
@@ -328,17 +319,4 @@ task WriteConcernResult {
 	$r = Update-MdbcData @{_id = 1} @{'$push' = @{x=42}} -Result -ErrorAction 0 -ErrorVariable e
 	equals $r # Driver 1.10
 	assert ($e[0] -like "*The field 'x' must be an array but*")
-}
-
-# Set-MdbcData -Add
-task SetAdd {
-	Connect-Mdbc -NewCollection
-
-	Set-MdbcData @{_id = 87} @{p2 = 2} -Add
-	$r = Get-MdbcData
-	equals "$r" '{ "_id" : 87, "p2" : 2 }'
-
-	Set-MdbcData @{_id = 87} @{p3 = 3} -Add
-	$r = Get-MdbcData
-	equals "$r" '{ "_id" : 87, "p3" : 3 }'
 }

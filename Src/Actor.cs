@@ -146,7 +146,7 @@ namespace Mdbc
 			// no converter? die
 			if (convert == null)
 				//! use this type
-				throw new ArgumentException(Api.TextCannotConvert2(type, nameof(BsonValue)));
+				throw new ArgumentException(Res.CannotConvert2(type, nameof(BsonValue)));
 
 			try
 			{
@@ -202,7 +202,7 @@ namespace Mdbc
 
 			return document;
 		}
-		static bool TypeIsDriverSerialized(Type type)
+		internal static bool TypeIsDriverSerialized(Type type)
 		{
 			return ClassMap.Contains(type);
 		}
@@ -213,7 +213,7 @@ namespace Mdbc
 
 			var type = value.BaseObject.GetType();
 			if (type.IsPrimitive || type == typeof(string))
-				throw new InvalidOperationException(Api.TextCannotConvert2(type, nameof(BsonDocument)));
+				throw new InvalidOperationException(Res.CannotConvert2(type, nameof(BsonDocument)));
 
 			// propertied omitted (null) of all (0)?
 			if (properties == null || properties.Count == 0)
@@ -236,7 +236,7 @@ namespace Mdbc
 					}
 					catch (SystemException exn)
 					{
-						throw new InvalidOperationException(Api.TextCannotConvert3(type, nameof(BsonDocument), exn.Message), exn);
+						throw new InvalidOperationException(Res.CannotConvert3(type, nameof(BsonDocument), exn.Message), exn);
 					}
 				}
 				else
@@ -256,7 +256,7 @@ namespace Mdbc
 						catch (SystemException exn)
 						{
 							if (depth == 1)
-								throw new InvalidOperationException(Api.TextCannotConvert3(type, nameof(BsonDocument), exn.Message), exn);
+								throw new InvalidOperationException(Res.CannotConvert3(type, nameof(BsonDocument), exn.Message), exn);
 							else
 								throw;
 						}

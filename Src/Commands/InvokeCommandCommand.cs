@@ -21,7 +21,9 @@ namespace Mdbc.Commands
 
 		protected override void BeginProcessing()
 		{
-			if (_Command == null) throw new PSArgumentException(Api.TextParameterCommand);
+			if (_Command == null)
+				throw new PSArgumentException(Res.ParameterCommand);
+
 			try
 			{
 				var document = Database.RunCommand(Session, _Command);

@@ -49,7 +49,6 @@ namespace Mdbc.Commands
 			}
 
 			var client = ConnectionString == "." ? new MongoClient() : new MongoClient(ConnectionString);
-			client = (MongoClient)client.WithWriteConcern(WriteConcern.Acknowledged); //rk TODO
 			SessionState.PSVariable.Set(ClientVariable ?? Actor.ClientVariable, client);
 
 			if (DatabaseName == null)
@@ -78,7 +77,7 @@ namespace Mdbc.Commands
 			if (NewCollection)
 				database.DropCollection(CollectionName);
 
-			var collection = database.GetCollection<BsonDocument>(CollectionName).WithWriteConcern(WriteConcern.Acknowledged); //rk TODO
+			var collection = database.GetCollection<BsonDocument>(CollectionName);
 			SessionState.PSVariable.Set(CollectionVariable ?? Actor.CollectionVariable, collection);
 		}
 	}

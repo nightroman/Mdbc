@@ -125,6 +125,7 @@ task PublicTypes {
 		'RemoveDatabaseCommand'
 		'RemoveDataCommand'
 		'RenameCollectionCommand'
+		'Res'
 		'SetDataCommand'
 		'UpdateDataCommand'
 		'UseTransactionCommand'

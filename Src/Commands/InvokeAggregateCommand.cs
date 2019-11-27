@@ -34,7 +34,7 @@ namespace Mdbc.Commands
 			if (_Pipeline == null)
 			{
 				if (ParameterSetName == nsAll)
-					throw new PSArgumentException(Api.TextParameterPipeline);
+					throw new PSArgumentException(Res.ParameterPipeline);
 
 				if (_Group.Contains(BsonId.Name))
 				{

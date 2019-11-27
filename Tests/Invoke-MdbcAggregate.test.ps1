@@ -3,7 +3,7 @@
 
 task Invalid {
 	Connect-Mdbc
-	Test-Error { Invoke-MdbcAggregate $null } $ErrorPipeline
+	Test-Error { Invoke-MdbcAggregate $null } -Text ([Mdbc.Res]::ParameterPipeline)
 	Test-Error { Invoke-MdbcAggregate -Pipeline bad } '*: "Invalid JSON."'
 }
 

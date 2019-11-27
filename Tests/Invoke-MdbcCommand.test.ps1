@@ -4,8 +4,8 @@ Set-StrictMode -Version Latest
 
 task Invalid {
 	Connect-Mdbc . test
-	Test-Error { Invoke-MdbcCommand } $ErrorCommand
-	Test-Error { Invoke-MdbcCommand $null } $ErrorCommand
+	Test-Error { Invoke-MdbcCommand } -Text ([Mdbc.Res]::ParameterCommand)
+	Test-Error { Invoke-MdbcCommand $null } -Text ([Mdbc.Res]::ParameterCommand)
 }
 
 task GetVersion {

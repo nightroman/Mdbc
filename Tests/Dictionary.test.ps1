@@ -2,6 +2,14 @@
 . ./Zoo.ps1
 Set-StrictMode -Version Latest
 
+task TODO {
+	$d1 = [Mdbc.Dictionary]1
+	equals $d1._id.GetType().Name String # why, PS?
+
+	$d1 = [Mdbc.Dictionary]::new(1)
+	equals $d1._id.GetType().Name Int32
+}
+
 task BsonTypes {
 	$1 = New-BsonBag
 

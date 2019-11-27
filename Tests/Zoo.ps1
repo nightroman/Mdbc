@@ -1,19 +1,9 @@
 <#
 .Synopsis
-	Common tools used by tests.
+	Common test tools.
 #>
 
 Import-Module Mdbc
-
-# Error messages for Test-Error
-$ErrorEmptyDocument = [Mdbc.Api]::ErrorEmptyDocument
-$ErrorCommand = [Mdbc.Api]::TextParameterCommand
-$ErrorFilter = [Mdbc.Api]::TextParameterFilter
-$ErrorPipeline = [Mdbc.Api]::TextParameterPipeline
-$ErrorSet = [Mdbc.Api]::TextParameterSet
-$ErrorUpdate = [Mdbc.Api]::TextParameterUpdate
-$TextInputDocId = [Mdbc.Api]::TextInputDocId
-$TextInputDocNull = [Mdbc.Api]::TextInputDocNull
 
 function Get-MdbcCollectionNew($Name, $Database=$Database) {
 	$Collection = Get-MdbcCollection $Name -NewCollection
@@ -58,6 +48,7 @@ function Test-Type($Value, $TypeName) {
 # Invokes a command and checks the error and the sample.
 # Args: [0] script block [1] sample error wildcard.
 function Test-Error([Parameter()]$Command, $Like, $Text) {
+	trap {Write-Error -ErrorAction 1 -ErrorRecord $_}
 	Remove-Variable Command, Like, Text
 
 	${private:+result} = $null
@@ -65,16 +56,16 @@ function Test-Error([Parameter()]$Command, $Like, $Text) {
 	catch { ${+result} = "$_" }
 
 	if (!${+result}) {
-		Write-Error -ErrorAction 1 'Expected error.'
+		throw 'Expected error.'
 	}
 	elseif ($_ = $PSBoundParameters['Like']) {
 		if (${+result} -notlike $_) {
-			Write-Error -ErrorAction 1 "Sample/Result:`n$_`n${+result}"
+			throw "Sample/Result:`n$_`n${+result}"
 		}
 	}
 	elseif ($_ = $PSBoundParameters['Text']) {
 		if (${+result} -cne $_) {
-			Write-Error -ErrorAction 1 "Sample/Result:`n$_`n${+result}"
+			throw "Sample/Result:`n$_`n${+result}"
 		}
 	}
 	else {
