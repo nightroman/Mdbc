@@ -13,9 +13,7 @@ task Person_Add_Update_Set {
 	Connect-Mdbc -NewCollection
 
 	# add a person
-	$data = [Person]::new()
-	$data.Pin = 1
-	$data.Name = 'John'
+	$data = [Person] @{Pin = 1; Name = 'John'}
 	$data | Add-MdbcData
 
 	# test raw: .Pin ~ ._id, null .Address is not added
@@ -23,8 +21,7 @@ task Person_Add_Update_Set {
 	equals "$r" '{ "_id" : 1, "Name" : "John" }'
 
 	# update: $set address and some extra
-	$address = [Address]::new()
-	$address.Address = 'Bar Street'
+	$address = [Address] @{Address = 'Bar Street'}
 	Update-MdbcData @{_id = 1} @{'$set' = @{Address = $address; p1 = 2}}
 
 	# test raw: .PostCode ~ .c (null is added!), .Address ~ .a
@@ -56,16 +53,11 @@ task Person_SetAdd_GetSet {
 	Connect-Mdbc -NewCollection
 
 	# add person using Set -Add
-	$data = [Person]::new()
-	$data.Pin = 1
-	$data.Name = 'John'
-	$data.Extra = @{p1 = 1}
+	$data = [Person] @{Pin = 1; Name = 'John'; Extra = @{p1 = 1}}
 	$data | Set-MdbcData -Add
 
 	# change and replace the whole document by Get -Set and get old, i.e. added above
-	$address = [Address]::new()
-	$address.Address = 'Bar Street'
-	$data.Address = $address
+	$data.Address = [Address] @{Address = 'Bar Street'}
 	$old = Get-MdbcData @{_id = 1} -Set $data -As ([Person])
 	equals ($old | ConvertTo-Json -Compress) '{"Pin":1,"Name":"John","Address":null,"Extra":{"p1":1}}'
 
@@ -77,19 +69,13 @@ task Person_SetAdd_GetSet {
 # Save a typed object with an array of mixed typed data.
 task PolymorphicSave {
 	# item 1
-	$t1 = [PolyType1]::new()
-	$t1.b1 = 1
-	$t1.p1 = 1
+	$t1 = [PolyType1] @{b1 = 1; p1 = 1}
 
 	# item2
-	$t2 = [PolyType2]::new()
-	$t2.b1 = 2
-	$t2.p2 = 2
+	$t2 = [PolyType2] @{b1 = 2; p2 = 2}
 
 	# data with mixed items
-	$data = [PolyData]::new()
-	$data.name = 1
-	$data.data = $t1, $t2
+	$data = [PolyData] @{name = 1; data = $t1, $t2}
 
 	# save data
 	Connect-Mdbc -NewCollection
@@ -126,14 +112,10 @@ task PolymorphicTopLevel {
 	Connect-Mdbc -NewCollection
 
 	# MyType1
-	$d1 = [MyType1]::new()
-	$d1.id = 1
-	$d1.p1 = 1
+	$d1 = [MyType1] @{id = 1; p1 = 1}
 
 	# MyType2
-	$d2 = [MyType2]::new()
-	$d2.id = 2
-	$d2.p2 = 2
+	$d2 = [MyType2] @{id = 2; p2 = 2}
 
 	# add mixed documents
 	$d1, $d2 | Add-MdbcData

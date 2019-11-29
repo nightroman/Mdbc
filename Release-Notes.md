@@ -1,5 +1,29 @@
 # Mdbc Release Notes
 
+## v6.3.0
+
+**Transactions and Sessions**
+
+*Work in progress, API may change in v6.x, feedback is welcome.*
+
+New cmdlet `Use-MdbcTransaction` starts a transaction session and invokes the
+specified script. The script calls data cmdlets and either succeeds or fails.
+The cmdlet commits or aborts the transaction accordingly.
+
+Data cmdlets have the new parameter `Session`. If it is omitted then the cmdlet
+is invoked in the current default session, either its own or the transaction
+session created by `Use-MdbcTransaction`.
+
+Examples from help:
+
+- [add several documents using a transaction](https://github.com/nightroman/Mdbc/blob/6a05d3d1f1780ab1b80153adf2c9275c6087b420/Module/en-US/Mdbc.dll-Help.ps1#L1221-L1225)
+- [move a document using a transaction](https://github.com/nightroman/Mdbc/blob/6a05d3d1f1780ab1b80153adf2c9275c6087b420/Module/en-US/Mdbc.dll-Help.ps1#L1230-L1237)
+
+**Set-MdbcData, Remove-MdbcData**
+
+The cmdlets support pipeline input. Documents are found by input document
+`_id`'s. Parameters `Filter`, `Set`, `Many` are not used with pipeline.
+
 ## v6.2.0
 
 `Invoke-MdbcAggregate`

@@ -49,7 +49,7 @@ task Meta @MetaParam {
 	Author = 'Roman Kuzmin'
 	ModuleVersion = '$Version'
 	Description = '$Summary'
-	CompanyName = '$Project'
+	CompanyName = 'https://github.com/nightroman'
 	Copyright = '$Copyright'
 
 	RootModule = '$ModuleName.dll'
@@ -62,9 +62,9 @@ task Meta @MetaParam {
 	PrivateData = @{
 		PSData = @{
 			Tags = 'Mongo', 'MongoDB', 'Database'
+			ProjectUri = '$Project'
 			LicenseUri = 'http://www.apache.org/licenses/LICENSE-2.0'
-			ProjectUri = 'https://github.com/nightroman/Mdbc'
-			ReleaseNotes = 'https://github.com/nightroman/Mdbc/blob/master/Release-Notes.md'
+			ReleaseNotes = '$Project/blob/master/Release-Notes.md'
 		}
 	}
 }
