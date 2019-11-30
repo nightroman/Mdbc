@@ -92,7 +92,7 @@ function Update-Data {process{
 
 	# data with _id = FullName and main changing fields
 	# (omit LastWriteTime for folders and CreationTime)
-	$data = [Mdbc.Dictionary] $_.FullName
+	$data = New-MdbcData -Id $_.FullName
 	$data.mode = [int]$_.Attributes
 	if ($isFile) {
 		$data.time = $_.LastWriteTime

@@ -5,21 +5,22 @@ SHORT DESCRIPTION
     MongoDB cmdlets based on the official C# driver.
 
 LONG DESCRIPTION
-    The module provides the following cmdlets and tools:
+    The module provides the following cmdlets for various tasks:
 
     Connect, set the default client, database, and collection:
 
         Connect-Mdbc
 
-    Add, get, set, remove, and update documents:
+    Operate on documents, use transactions:
 
         Add-MdbcData
         Get-MdbcData
         Set-MdbcData
         Remove-MdbcData
         Update-MdbcData
+        Use-MdbcTransaction
 
-    Create new documents, e.g. for Add-MdbcData, Export-MdbcData:
+    Create PowerShell friendly documents for other cmdlets:
 
         New-MdbcData
 

@@ -56,7 +56,6 @@ task Meta @MetaParam {
 	RequiredAssemblies = 'MongoDB.Bson.dll', 'MongoDB.Driver.Core.dll', 'MongoDB.Driver.dll'
 
 	PowerShellVersion = '3.0'
-	DotNetFrameworkVersion = '4.5.2'
 	GUID = '12c81cd8-bde3-4c91-a292-e6c4f868106a'
 
 	PrivateData = @{
@@ -114,7 +113,6 @@ task Publish {
 		Import-Module PsdKit
 		$xml = Import-PsdXml $ModuleRoot\Mdbc.psd1
 		Set-Psd $xml '5.1' 'Data/Table/Item[@Key="PowerShellVersion"]'
-		Set-Psd $xml '4.7.1' 'Data/Table/Item[@Key="DotNetFrameworkVersion"]'
 		Export-PsdXml $ModuleRoot\Mdbc.psd1 $xml
 	}
 }

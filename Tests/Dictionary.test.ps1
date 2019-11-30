@@ -1,13 +1,33 @@
-
 . ./Zoo.ps1
 Set-StrictMode -Version Latest
 
-task TODO {
-	$d1 = [Mdbc.Dictionary]1
-	equals $d1._id.GetType().Name String # why, PS?
+# this whole test will go after phasing out Mdbc.Dictionary(object), TODO
+task MdbcDictionaryLegacy {
+	$old = $env:MdbcDictionaryLegacy
+	try {
+		## legacy ON
+		$(
+			$env:MdbcDictionaryLegacy = 1
 
-	$d1 = [Mdbc.Dictionary]::new(1)
-	equals $d1._id.GetType().Name Int32
+			$d1 = [Mdbc.Dictionary]1
+			equals $d1._id.GetType().Name String # why, PS?
+
+			$d1 = [Mdbc.Dictionary]::new(1)
+			equals $d1._id.GetType().Name Int32
+
+			Test-Error { [Mdbc.Dictionary]([version]1.1) } '* Error: "Cannot convert ''System.Version'' to ''BsonValue''."'
+		)
+		## legacy OFF
+		$(
+			$env:MdbcDictionaryLegacy = 0
+
+			Test-Error { [Mdbc.Dictionary]1 } "*Used deprecated Mdbc.Dictionary(object)*"
+			Test-Error { [Mdbc.Dictionary]([version]1.1) } '*Used deprecated Mdbc.Dictionary(object)*'
+		)
+	}
+	finally {
+		$env:MdbcDictionaryLegacy = $old
+	}
 }
 
 task BsonTypes {
@@ -68,19 +88,25 @@ task DictionaryConstructors {
 	equals $r.Count 0
 	assert $r.ToBsonDocument()
 
-	# from an object as _id
-	$r = [Mdbc.Dictionary]42
-	equals $r.Count 1
-	equals $r._id '42'
-
-	# from an existing document
+	# from BsonDocument (wrapper)
 	$d = New-Object MongoDB.Bson.BsonDocument
 	$r = [Mdbc.Dictionary]$d.Add('name', 'name1') # `Add` gets the document
 	equals $r.Count 1
 	equals $r.name name1
 
+	# from IDictionary
+	$r = [Mdbc.Dictionary]@{_id = 42}
+	equals $r.Count 1
+	equals $r._id 42
+
 	# from a bad object
-	Test-Error { [Mdbc.Dictionary]([version]1.1) } '* Error: "Cannot convert ''System.Version'' to ''BsonValue''."'
+	#! this will fail later differently on phasing out Mdbc.Dictionary(object), TODO
+	if ($env:MdbcDictionaryLegacy -eq 0) {
+		Test-Error { [Mdbc.Dictionary]([version]1.1) } '*Used deprecated Mdbc.Dictionary(object)*'
+	}
+	else {
+		Test-Error { [Mdbc.Dictionary]([version]1.1) } '* Error: "Cannot convert ''System.Version'' to ''BsonValue''."'
+	}
 
 	# Mdbc.Dictionary deep clone
 	$arr = [MongoDB.Bson.BsonArray]@(1)
@@ -206,24 +232,25 @@ task RawBson {
 # We used to map to byte[] then reverted to BsonBinaryData except Guid.
 task Binary {
 	# byte[] ~ BsonBinaryData
-	$data1 = [Mdbc.Dictionary]([byte[]](1..5))
+	$data1 = New-MdbcData
+	$data1._id = [byte[]](1..5)
 	$id1 = $data1._id
 	equals ($id1.ToString()) Binary:0x0102030405
 	equals ($id1.GetType().FullName) MongoDB.Bson.BsonBinaryData
 
 	# comparison operator works
-	$data2 = [Mdbc.Dictionary]([byte[]](1..5))
+	$data2 = New-MdbcData -Id ([byte[]](1..5))
 	assert ($id1 -eq $data2._id)
 
 	# but UUID ~ guid
-	$data3 = [Mdbc.Dictionary]([guid]'9c700f34-e28d-416d-8aa8-eb55f7781565')
+	$data3 = New-MdbcData -Id ([guid]'9c700f34-e28d-416d-8aa8-eb55f7781565')
 	equals ($data3._id.ToString()) 9c700f34-e28d-416d-8aa8-eb55f7781565
 	equals ($data3._id.GetType().FullName) System.Guid
 	$doc3 = $data3.ToBsonDocument()
 	equals ($doc3['_id'].SubType) ([MongoDB.Bson.BsonBinarySubType]::UuidStandard)
 
 	# assign from .NET to document
-	$data4 = [Mdbc.Dictionary]$id1
+	$data4 = New-MdbcData -Id $id1
 	$data4.p1 = $id1
 	equals $data4._id $id1
 	equals $data4.p1 $id1

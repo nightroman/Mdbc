@@ -25,9 +25,27 @@ namespace Mdbc
 		{
 			_document = document ?? throw new ArgumentNullException(nameof(document));
 		}
+		/// <summary>
+		/// Deep clone or convert dictionaries.
+		/// </summary>
+		//! IDictionary, not just Mdbc.Dictionary, for assigning @{...} to [Mdbc.Dictionary] typed variables and members.
+		[Obsolete("Designed for scripts.")]
+		public Dictionary(IDictionary document)
+		{
+			if (document == null)
+				throw new ArgumentNullException(nameof(document));
+
+			if (document is Dictionary that)
+				_document = (BsonDocument)that._document.DeepClone();
+			else
+				_document = Actor.ToBsonDocumentFromDictionary(document);
+		}
 		[Obsolete("Designed for scripts.")]
 		public Dictionary(object value)
 		{
+			if (Environment.GetEnvironmentVariable("MdbcDictionaryLegacy") == "0")
+				throw new InvalidOperationException("Used deprecated Mdbc.Dictionary(object)");
+
 			value = Actor.BaseObject(value);
 			if (value == null)
 				throw new ArgumentNullException(nameof(value));

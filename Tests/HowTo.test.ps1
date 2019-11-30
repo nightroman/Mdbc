@@ -80,8 +80,7 @@ task SHA1AsId {
 		$bytes = $hash.ComputeHash(([char[]]$_))
 
 		# new document with binary _id from bytes
-		$d = [Mdbc.Dictionary]$bytes
-		$d.data = $_
+		$d = New-MdbcData @{_id = $bytes; data = $_}
 
 		# how _id looks
 		"$($d._id)"
@@ -96,7 +95,7 @@ task SHA1AsId {
 	equals $r.data Hello
 
 	# query 'World' a bit simpler
-	$qId = [Mdbc.Dictionary]([MongoDB.Bson.BsonUtils]::ParseHexString('70c07ec18ef89c5309bbb0937f3a6342411e1fdd'))
+	$qId = New-MdbcData -Id ([MongoDB.Bson.BsonUtils]::ParseHexString('70c07ec18ef89c5309bbb0937f3a6342411e1fdd'))
 	$r = Get-MdbcData $qId
 	equals $r.data World
 

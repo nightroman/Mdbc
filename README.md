@@ -3,8 +3,8 @@
 Mdbc is the PowerShell module based on the official [MongoDB C# driver](https://github.com/mongodb/mongo-csharp-driver).
 Mdbc makes MongoDB data and operations PowerShell friendly.
 
-- The PSGallery package is built for PowerShell Core and v5.1+ (.NET 4.7.1+).
-- The NuGet package is built for PowerShell v3, v4, v5 (any).
+- The PSGallery package is built for PowerShell Core and v5.1 .NET 4.7.1.
+- The NuGet package is built for PowerShell v3-v5.1, .NET 4.5.2.
 
 ## Quick Start
 
@@ -12,9 +12,9 @@ Mdbc makes MongoDB data and operations PowerShell friendly.
 
 **Package from PSGallery**
 
-Mdbc for PowerShell Core and v5.1+ is published as the PSGallery module [Mdbc](https://www.powershellgallery.com/packages/Mdbc).
+Mdbc for PowerShell Core and v5.1 is published as the PSGallery module [Mdbc](https://www.powershellgallery.com/packages/Mdbc).
 
-In PowerShell v5.1 ensure .NET is 4.7.1+, this command should get a number >= 461308:
+In PowerShell v5.1 ensure .NET is 4.7.1, this command should get a number >= 461308:
 
 ```powershell
 Get-ItemPropertyValue "HKLM:\SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full" Release
@@ -28,7 +28,7 @@ Install-Module Mdbc
 
 **Package from NuGet**
 
-Mdbc for PowerShell v3, v4, v5 is published as the NuGet package [Mdbc](https://www.nuget.org/packages/Mdbc).
+Mdbc for PowerShell v3-v5.1 .NET 4.5.2 is published as the NuGet package [Mdbc](https://www.nuget.org/packages/Mdbc).
 Download it by NuGet tools or [directly](http://nuget.org/api/v2/package/Mdbc).
 In the latter case save it as *".zip"* and unzip. Use the package subdirectory *"tools/Mdbc"*.
 
@@ -98,9 +98,6 @@ See also tests, for example:
 - [Classes.lib.ps1] - PowerShell classes for saving and reading
 - [Classes.test.ps1] - tests using the above classes are how-to samples
 
-Mdbc cmdlets are designed for rather basic tasks.
-For advanced tasks use the driver API directly.
-
 ## Driver methods and module commands
 
 | Driver | Module  | Output
@@ -109,6 +106,7 @@ For advanced tasks use the driver API directly.
 | MongoClient | Connect-Mdbc | $Client $Database $Collection
 | GetDatabase | Get-MdbcDatabase | database(s)
 | DropDatabase | Remove-MdbcDatabase | none
+| Transactions | Use-MdbcTransaction | -
 | **Database** | |
 | RunCommand | Invoke-MdbcCommand | document
 | GetCollection | Get-MdbcCollection | collection(s)
@@ -121,8 +119,8 @@ For advanced tasks use the driver API directly.
 | CountDocuments | Get-MdbcData -Count | count
 | Distinct | Get-MdbcData -Distinct | values
 | FindOneAndDelete | Get-MdbcData -Remove | old document
-| FindOneAndReplace | Get-MdbcData -Set | old or new (-New) document
-| FindOneAndUpdate | Get-MdbcData -Update | old or new (-New) document
+| FindOneAndReplace | Get-MdbcData -Set | old or new document
+| FindOneAndUpdate | Get-MdbcData -Update | old or new document
 | DeleteOne | Remove-MdbcData | none or info (-Result)
 | DeleteMany | Remove-MdbcData -Many | none or info (-Result)
 | ReplaceOne | Set-MdbcData | none or info (-Result)

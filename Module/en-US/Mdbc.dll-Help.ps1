@@ -401,11 +401,11 @@ If the input object is omitted or null then an empty document is created.
 				New-Object Mdbc.Dictionary
 				[Mdbc.Dictionary]::new() # PowerShell v5
 
-				# How to create documents with specified _id=42
+				# How to create documents with specified _id
 				New-MdbcData -Id 42
-				[Mdbc.Dictionary] 42
-				New-Object Mdbc.Dictionary 42
-				[Mdbc.Dictionary]::new(42) # PowerShell v5
+
+				# How to create documents with generated _id
+				New-MdbcData -NewId
 			}
 			test = {
 				. $args[0]
