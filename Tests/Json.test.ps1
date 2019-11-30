@@ -11,6 +11,7 @@ function JsonFile($Text) {
 	[System.IO.File]::WriteAllText($json, $Text)
 }
 
+#! Use 2+ docs in this test to cover issues like missing EOL after docs.
 task PreserveTypes {
 	$1 = New-MdbcData -NewId
 	$1.String = 'string1'
@@ -36,6 +37,7 @@ task PreserveTypes {
 	Test-List $data $r
 
 	# use Strict and see loss of data types
+	#! cover EOL written after each document, or PS cannot convert
 	$old = [MongoDB.Bson.IO.JsonWriterSettings]::Defaults.OutputMode
 	[MongoDB.Bson.IO.JsonWriterSettings]::Defaults.OutputMode = 'Strict'
 	try {

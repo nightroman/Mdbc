@@ -40,27 +40,22 @@ namespace Mdbc.Commands
 			if (format == FileFormat.Json)
 			{
 				using (var stream = File.OpenText(filePath))
+				using (var reader = new JsonReader(stream))
 				{
-					using (var reader = new JsonReader(stream))
-					{
-						var context = BsonDeserializationContext.CreateRoot(reader);
-						while (!reader.IsAtEndOfFile())
-							yield return serializer.Deserialize(context);
-					}
+					var context = BsonDeserializationContext.CreateRoot(reader);
+					while (!reader.IsAtEndOfFile())
+						yield return serializer.Deserialize(context);
 				}
 			}
 			else
 			{
 				using (var stream = File.OpenRead(filePath))
+				using (var reader = new BsonBinaryReader(stream))
 				{
+					var context = BsonDeserializationContext.CreateRoot(reader);
 					long length = stream.Length;
-
 					while (stream.Position < length)
-						using (var reader = new BsonBinaryReader(stream))
-						{
-							var context = BsonDeserializationContext.CreateRoot(reader);
-							yield return serializer.Deserialize(context);
-						}
+						yield return serializer.Deserialize(context);
 				}
 			}
 		}

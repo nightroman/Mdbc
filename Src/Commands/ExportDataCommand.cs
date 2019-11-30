@@ -11,6 +11,7 @@ using System.Management.Automation;
 using System.Threading;
 using MongoDB.Bson.IO;
 using MongoDB.Bson.Serialization;
+using MongoDB.Bson.Serialization.Serializers;
 
 namespace Mdbc.Commands
 {
@@ -46,30 +47,17 @@ namespace Mdbc.Commands
 		[Parameter]
 		public SwitchParameter Append { get; set; }
 
-		StreamWriter _streamWriter;
-		FileStream _fileStream;
+		BsonSerializationContext _context;
 		BsonWriter _bsonWriter;
+		Action _endDocument;
+		Action _dispose;
 
 		public void Dispose()
 		{
-			if (_streamWriter != null)
-			{
-				_streamWriter.Close();
-				_streamWriter = null;
-			}
-
-			if (_bsonWriter != null)
-			{
-				_bsonWriter.Close();
-				_bsonWriter = null;
-			}
-
-			if (_fileStream != null)
-			{
-				_fileStream.Close();
-				_fileStream = null;
-			}
+			_bsonWriter?.Dispose();
+			_dispose?.Invoke();
 		}
+
 		protected override void BeginProcessing()
 		{
 			Path = GetUnresolvedProviderPathFromPSPath(Path);
@@ -84,13 +72,41 @@ namespace Mdbc.Commands
 				{
 					if (FileFormat == FileFormat.Json)
 					{
-						_streamWriter = new StreamWriter(Path, Append);
+						StreamWriter streamWriter = null;
+						try
+						{
+							streamWriter = new StreamWriter(Path, Append);
+							_bsonWriter = new JsonWriter(streamWriter, Actor.DefaultJsonWriterSettings);
+							_endDocument = () =>
+							{
+								streamWriter.WriteLine();
+							};
+						}
+						finally
+						{
+							_dispose = () =>
+							{
+								streamWriter?.Dispose();
+							};
+						}
 					}
 					else
 					{
-						_fileStream = File.Open(Path, (Append ? FileMode.Append : FileMode.Create));
-						_bsonWriter = new BsonBinaryWriter(_fileStream);
+						FileStream fileStream = null;
+						try
+						{
+							fileStream = File.Open(Path, (Append ? FileMode.Append : FileMode.Create));
+							_bsonWriter = new BsonBinaryWriter(fileStream);
+						}
+						finally
+						{
+							_dispose = () =>
+							{
+								fileStream?.Dispose();
+							};
+						}
 					}
+					_context = BsonSerializationContext.CreateRoot(_bsonWriter);
 					break;
 				}
 				catch (IOException)
@@ -121,19 +137,8 @@ namespace Mdbc.Commands
 				document = Actor.ToBsonDocument(document, InputObject, Convert, _Selectors);
 
 				// write
-				if (FileFormat == FileFormat.Json)
-				{
-					using (var stringWriter = new StringWriter(CultureInfo.InvariantCulture))
-					using (var jsonWriter = new JsonWriter(stringWriter, Actor.DefaultJsonWriterSettings))
-					{
-						BsonSerializer.Serialize(jsonWriter, document);
-						_streamWriter.WriteLine(stringWriter.ToString());
-					}
-				}
-				else
-				{
-					BsonSerializer.Serialize(_bsonWriter, document);
-				}
+				BsonDocumentSerializer.Instance.Serialize(_context, document);
+				_endDocument?.Invoke();
 			}
 			catch (ArgumentException ex)
 			{
