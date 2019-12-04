@@ -40,11 +40,11 @@ namespace Mdbc
 			else
 				_document = Actor.ToBsonDocumentFromDictionary(document);
 		}
-		[Obsolete("Designed for scripts.")]
+		[Obsolete("To be removed.")]
 		public Dictionary(object value)
 		{
-			if (Environment.GetEnvironmentVariable("MdbcDictionaryLegacy") == "0")
-				throw new InvalidOperationException("Used deprecated Mdbc.Dictionary(object)");
+			if (Environment.GetEnvironmentVariable("MdbcDictionaryLegacy") != "1")
+				throw new InvalidOperationException("Constructor Mdbc.Dictionary(object) will be removed. To use temporarily, set $env:MdbcDictionaryLegacy=1");
 
 			value = Actor.BaseObject(value);
 			if (value == null)

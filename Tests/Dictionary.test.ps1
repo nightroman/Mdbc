@@ -21,8 +21,8 @@ task MdbcDictionaryLegacy {
 		$(
 			$env:MdbcDictionaryLegacy = 0
 
-			Test-Error { [Mdbc.Dictionary]1 } "*Used deprecated Mdbc.Dictionary(object)*"
-			Test-Error { [Mdbc.Dictionary]([version]1.1) } '*Used deprecated Mdbc.Dictionary(object)*'
+			Test-Error { [Mdbc.Dictionary]1 } '*Constructor * will be removed. To use temporarily,*'
+			Test-Error { [Mdbc.Dictionary]([version]1.1) } '*Constructor * will be removed. To use temporarily,*'
 		)
 	}
 	finally {
@@ -101,12 +101,7 @@ task DictionaryConstructors {
 
 	# from a bad object
 	#! this will fail later differently on phasing out Mdbc.Dictionary(object), TODO
-	if ($env:MdbcDictionaryLegacy -eq 0) {
-		Test-Error { [Mdbc.Dictionary]([version]1.1) } '*Used deprecated Mdbc.Dictionary(object)*'
-	}
-	else {
-		Test-Error { [Mdbc.Dictionary]([version]1.1) } '* Error: "Cannot convert ''System.Version'' to ''BsonValue''."'
-	}
+	Test-Error { [Mdbc.Dictionary]([version]1.1) } '*Constructor * will be removed. To use temporarily,*'
 
 	# Mdbc.Dictionary deep clone
 	$arr = [MongoDB.Bson.BsonArray]@(1)
