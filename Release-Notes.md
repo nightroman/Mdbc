@@ -1,5 +1,31 @@
 # Mdbc Release Notes
 
+## v6.3.1
+
+**Fixes**
+
+- Work around the regression [#33](https://github.com/nightroman/Mdbc/issues/33).
+- PSGallery package help was missing.
+
+**Deprecated constructor `Mdbc.Dictionary(object)`**
+
+Phase 1, just the announcement. Review your scripts, consider removing constructs:
+
+```powershell
+[Mdbc.Dictionary]X
+[Mdbc.Dictionary]::new(X)
+New-Object Mdbc.Dictionary X
+```
+
+where `X` is not `Mdbc.Dictionary`, `IDictionary`, or `BsonDocument`.
+
+By the old convention, this constructor creates documents with `_id = X` or
+converts objects. This is cryptic, ambiguous, and PowerShell may convert X to
+unexpected types. Use `New-MdbcData [-Id]` instead.
+
+If you set `$env:MdbcDictionaryLegacy = 0` and run your code then deprecated
+constructs fail with errors "Used deprecated Mdbc.Dictionary(object)".
+
 ## v6.3.0
 
 **Transactions and Sessions**

@@ -157,7 +157,7 @@ task Version {
 }
 
 # Synopsis: Make the package in z\tools.
-task Package Markdown, ?UpdateScript, {
+task Package {equals $Configuration Release}, UpdateScript, Build, Help, TestHelp, Test, Markdown, {
 	remove z
 	$null = mkdir z\tools\$ModuleName\Scripts
 
@@ -218,22 +218,12 @@ task PushNuGet NuGet, {
 Clean
 
 # Synopsis: Make and push the PSGallery package.
-task PushPSGallery @(
-	if ($TargetFramework -eq 'netstandard2.0') {
-		'Package'
-		'Version'
-		{
-			$NuGetApiKey = Read-Host NuGetApiKey
-			Publish-Module -Path z/tools/$ModuleName -NuGetApiKey $NuGetApiKey
-		}
-		'Clean'
-	}
-	else {
-		{
-			Invoke-Build PushPSGallery -TargetFramework netstandard2.0
-		}
-	}
-)
+task PushPSGallery Package, Version, {
+	equals $TargetFramework netstandard2.0
+	$NuGetApiKey = Read-Host NuGetApiKey
+	Publish-Module -Path z/tools/$ModuleName -NuGetApiKey $NuGetApiKey
+},
+Clean
 
 # Synopsis: Test synopsis of each cmdlet and warn about unexpected.
 task TestHelpSynopsis {
