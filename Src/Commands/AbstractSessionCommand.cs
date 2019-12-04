@@ -6,6 +6,8 @@ using MongoDB.Driver;
 using System;
 using System.Collections.Generic;
 using System.Management.Automation;
+using System.Reflection;
+using System.Threading;
 
 namespace Mdbc.Commands
 {
@@ -22,6 +24,14 @@ namespace Mdbc.Commands
 		internal static void PushDefaultSession(IClientSessionHandle session) { DefaultSessions.Push(session); }
 		internal static IClientSessionHandle PopDefaultSession() { return DefaultSessions.Pop(); }
 
+		//! #33 Do not use MongoClient.StartSession(), i.e. true session as implicit, some servers do not support sessions.
+		//! For now follow the driver and hack its internal method.
+		static MethodInfo _StartImplicitSession = typeof(MongoClient).GetMethod("StartImplicitSession", BindingFlags.NonPublic | BindingFlags.Instance, null, new Type[] { typeof(CancellationToken) }, null);
+		IClientSessionHandle StartImplicitSession()
+		{
+			return (IClientSessionHandle)_StartImplicitSession.Invoke(MyClient, new object[] { default(CancellationToken) });
+		}
+
 		[Parameter]
 		public IClientSessionHandle Session
 		{
@@ -31,13 +41,13 @@ namespace Mdbc.Commands
 				{
 					if (DefaultSessions.Count == 0)
 					{
-						// temporary session
-						_Session = MyClient.StartSession();
+						// create implicit session
+						_Session = StartImplicitSession();
 						_dispose = true;
 					}
 					else
 					{
-						// the current default session
+						// use current default session
 						_Session = DefaultSessions.Peek();
 					}
 				}
