@@ -76,7 +76,7 @@ namespace Mdbc.Commands
 						try
 						{
 							streamWriter = new StreamWriter(Path, Append);
-							_bsonWriter = new JsonWriter(streamWriter, Actor.DefaultJsonWriterSettings);
+							_bsonWriter = new JsonWriter(streamWriter, MyJson.DefaultJsonWriterSettings);
 							_endDocument = () =>
 							{
 								streamWriter.WriteLine();

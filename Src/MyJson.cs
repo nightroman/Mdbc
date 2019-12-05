@@ -10,10 +10,20 @@ using System;
 using System.Diagnostics;
 using System.IO;
 
+// NB: Change of the global defaults affects ToString(). `Strict` (like
+// mongoexport) is tempting, other tools may read it. But `Strict` is not
+// suitable for reading and searching. Also, it looses number types (numbers
+// are double). `Shell` (default) keeps types and readable for _id, dates,
+// GUID. Let's use `Shell` not directly but via defaults.
+
 namespace Mdbc
 {
 	static class MyJson
 	{
+		public static JsonWriterSettings DefaultJsonWriterSettings
+		{
+			get { return JsonWriterSettings.Defaults; }
+		}
 		internal static BsonValue ToBsonValue(string json)
 		{
 			Debug.Assert(json != null);

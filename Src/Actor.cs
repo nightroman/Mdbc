@@ -19,17 +19,6 @@ namespace Mdbc
 		public const string DatabaseVariable = "Database";
 		public const string CollectionVariable = "Collection";
 
-		// NB: Change of the global defaults affects ToString().
-		// `Strict` (like mongoexport) is tempting, other tools may read it.
-		// But `Strict` is not suitable for reading and searching. Also, it
-		// looses number types (numbers are double). `Shell` (default) keeps
-		// types and readable for _id, dates, GUID. So let's use `Shell` not
-		// directly but via defaults. If needed defaults can be changed by a
-		// user.
-		public static JsonWriterSettings DefaultJsonWriterSettings
-		{
-			get { return JsonWriterSettings.Defaults; }
-		}
 		/// <summary>
 		/// null | PSObject.BaseObject | self
 		/// </summary>

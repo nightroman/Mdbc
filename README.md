@@ -14,10 +14,10 @@ Mdbc makes MongoDB data and operations PowerShell friendly.
 
 Mdbc for PowerShell Core and v5.1 is published as the PSGallery module [Mdbc](https://www.powershellgallery.com/packages/Mdbc).
 
-In PowerShell v5.1 ensure .NET is 4.7.1, this command should get a number >= 461308:
+It requires .NET 4.7.1, this command should return true:
 
 ```powershell
-Get-ItemPropertyValue "HKLM:\SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full" Release
+(Get-ItemProperty "HKLM:SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full").Release -ge 461308
 ```
 
 You can install the module by this command:

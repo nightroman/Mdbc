@@ -66,9 +66,9 @@ task Distinct {
 	)
 
 	$data | Add-MdbcData
-	$r = Get-MdbcData -Distinct x
+	$r = Get-MdbcData -Distinct x | Sort-Object {$_.ToString()}
 	"$r"
-	equals "$r" '1 True 2 { "y" : 3 }'
+	equals "$r" '{ "y" : 3 } 1 2 True'
 }
 
 task Remove {
