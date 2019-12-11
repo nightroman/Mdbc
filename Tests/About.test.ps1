@@ -129,5 +129,6 @@ task PublicTypes {
 		'SetDataCommand'
 		'UpdateDataCommand'
 		'UseTransactionCommand'
+		'WatchChangeCommand'
 	)
 }

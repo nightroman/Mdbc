@@ -182,6 +182,10 @@ namespace Mdbc
 		}
 		public static PipelineDefinition<BsonDocument, BsonDocument> PipelineDefinition(object value)
 		{
+			return PipelineDefinition<BsonDocument, BsonDocument>(value);
+		}
+		internal static PipelineDefinition<TInput, TOutput> PipelineDefinition<TInput, TOutput>(object value)
+		{
 			value = BaseObjectNotNull(value);
 
 			// JSON first because it looks very convenient for pipelines
@@ -217,7 +221,7 @@ namespace Mdbc
 			}
 
 			// either PipelineDefinition (unlikely but possible) or "Cannot cast X to Y"
-			return (PipelineDefinition<BsonDocument, BsonDocument>)value;
+			return (PipelineDefinition<TInput, TOutput>)value;
 		}
 		public static ProjectionDefinition<BsonDocument> ProjectionDefinition(object value)
 		{

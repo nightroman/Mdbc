@@ -25,7 +25,7 @@ namespace Mdbc.Commands
 		public SwitchParameter Add { get; set; }
 
 		[Parameter]
-		public UpdateOptions Options { get; set; }
+		public ReplaceOptions Options { get; set; }
 
 		[Parameter]
 		public SwitchParameter Result { get; set; }
@@ -44,7 +44,7 @@ namespace Mdbc.Commands
 			}
 
 			if (Options == null)
-				Options = new UpdateOptions();
+				Options = new ReplaceOptions();
 			if (Add)
 				Options.IsUpsert = true;
 		}

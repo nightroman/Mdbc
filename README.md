@@ -107,12 +107,14 @@ See also tests, for example:
 | GetDatabase | Get-MdbcDatabase | database(s)
 | DropDatabase | Remove-MdbcDatabase | none
 | Transactions | Use-MdbcTransaction | -
+| Watch | Watch-MdbcChange -Client | cursor
 | **Database** | |
 | RunCommand | Invoke-MdbcCommand | document
 | GetCollection | Get-MdbcCollection | collection(s)
 | CreateCollection | Add-MdbcCollection | none
 | RenameCollection | Rename-MdbcCollection | none
 | DropCollection | Remove-MdbcCollection | none
+| Watch | Watch-MdbcChange -Database | cursor
 | **Collection** | |
 | InsertOne | Add-MdbcData | none
 | Find | Get-MdbcData | documents
@@ -127,5 +129,6 @@ See also tests, for example:
 | UpdateOne | Update-MdbcData | none or info (-Result)
 | UpdateMany | Update-MdbcData -Many | none or info (-Result)
 | Aggregate | Invoke-MdbcAggregate | documents
+| Watch | Watch-MdbcChange -Collection | cursor
 
 See also [about_Mdbc](https://github.com/nightroman/Mdbc/blob/master/Module/en-US/about_Mdbc.help.txt)

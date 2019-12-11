@@ -1,5 +1,35 @@
 # Mdbc Release Notes
 
+## v6.4.0
+
+C# driver 2.10.0
+
+**`Watch-MdbcChange`**
+
+New cmdlet. It gets the cursor for watching changes in the specified
+collection, database, or client. NOTE: For replicas and shards only.
+
+**`Set-MdbcData`**
+
+Changed the parameter `Options` type from `UpdateOptions` (deprecated by the
+driver) to `ReplaceOptions` (added in 2.10.0).
+
+**Deprecated constructor `Mdbc.Dictionary(object)`**
+
+Phase 2. By default, the following constructs now fail:
+
+```powershell
+[Mdbc.Dictionary]X
+[Mdbc.Dictionary]::new(X)
+New-Object Mdbc.Dictionary X
+```
+
+where `X` is not `Mdbc.Dictionary`, `IDictionary`, or `BsonDocument`.
+Replace them with `New-MdbcData [-Id]`.
+
+If you set `$env:MdbcDictionaryLegacy = 1` then the deprecated code still
+works. This temporary fallback will be removed in the next release.
+
 ## v6.3.1
 
 **Fixes**

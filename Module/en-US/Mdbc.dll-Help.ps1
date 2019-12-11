@@ -655,7 +655,7 @@ The parameter is not used if the documents come from the pipeline.
 		Add = @'
 Tells to add the new document if the old does not exist.
 '@
-		Options = 'Extra options, see MongoDB.Driver.UpdateOptions'
+		Options = 'Extra options, see MongoDB.Driver.ReplaceOptions'
 		Result = $ResultParameter
 	}
 	outputs = @{
@@ -1192,6 +1192,8 @@ Merge-Helps $AClient @{
 	command = 'Use-MdbcTransaction'
 	synopsis = 'Invokes the script with a transaction.'
 	description = @'
+** For replicas and shards only **
+
 The cmdlet starts a transaction session and invokes the specified script. The
 script calls data cmdlets and either succeeds or fails. The cmdlet commits or
 aborts the transaction accordingly.
@@ -1238,4 +1240,67 @@ Specifies the script to be invoked with a transaction session.
 			}
 		}
 	)
+}
+
+### Watch-MdbcChange
+Merge-Helps $ASession @{
+	command = 'Watch-MdbcChange'
+	synopsis = 'Gets the cursor for watching change events.'
+	description = @'
+** For replicas and shards only **
+
+The cmdlet returns the cursor for watching changes in the specified collection,
+database, or client.
+
+Cursor members:
+
+	MoveNext() - Moves to the next batch of documents.
+	Current    - Gets the current batch of documents.
+	Dispose()  - Disposes the cursor after use.
+'@
+
+	parameters = @{
+		Pipeline = @'
+One or more aggregation pipeline operations represented by JSON or similar dictionaries.
+'@
+		Collection = 'Specifies the collection and tells to watch its changes.'
+		Database = 'Specifies the database and tells to watch its changes.'
+		Client = 'Specifies the client and tells to watch its changes.'
+		Options = 'Extra options, see MongoDB.Driver.ChangeStreamOptions'
+		As = $AsParameter
+	}
+
+	outputs = @(
+		@{
+			type = '[MongoDB.Driver.IAsyncCursor[object]]'
+			description = 'Cursor of documents describing changes.'
+		}
+	)
+
+	examples = @{
+		code = {
+			# get a new collection and watch its changes
+			Connect-Mdbc -NewCollection
+			$watch = Watch-MdbcChange -Collection $Collection
+			try {
+				# the first MoveNext "gets it ready"
+				$null = $watch.MoveNext()
+
+				# add and update some data
+				@{_id = 'count'; value = 0} | Add-MdbcData
+				Update-MdbcData @{_id = 'count'} @{'$inc' = @{value = 1}}
+
+				# get two documents about insert and update
+				if ($watch.MoveNext()) {
+					foreach($change in $watch.Current) {
+						"$change"
+					}
+				}
+			}
+			finally {
+				# dispose after use
+				$watch.Dispose()
+			}
+		}
+	}
 }

@@ -88,7 +88,8 @@ using System.Runtime.InteropServices;
 # Synopsis: Build the project (and post-build Publish).
 task Build Meta, {
 	exec { dotnet build Src\$ModuleName.csproj -c $Configuration -f $TargetFramework }
-}
+},
+Help
 
 # Synopsis: Build all frameworks.
 task Build2 {
@@ -132,11 +133,24 @@ task Help @{
 	}
 }
 
-# Synopsis: Build and test help.
+# Synopsis: Test help script examples.
 task TestHelpExample {
 	. Helps.ps1
 	Test-Helps Module\en-US\$ModuleName.dll-Help.ps1
 }
+
+# Synopsis: Test synopsis of each cmdlet and warn about unexpected.
+task TestHelpSynopsis {
+	Import-Module Mdbc
+	Get-Command *-Mdbc* -CommandType cmdlet | Get-Help | .{process{
+		if (!$_.Synopsis.EndsWith('.')) {
+			Write-Warning "$($_.Name) : unexpected/missing synopsis"
+		}
+	}}
+}
+
+# Synopsis: Update help then run help tests.
+task TestHelp Help, TestHelpExample, TestHelpSynopsis
 
 # Synopsis: Convert markdown files to HTML.
 # <http://johnmacfarlane.net/pandoc/>
@@ -157,7 +171,7 @@ task Version {
 }
 
 # Synopsis: Make the package in z\tools.
-task Package {equals $Configuration Release}, UpdateScript, Build, Help, TestHelp, Test, Markdown, {
+task Package {equals $Configuration Release}, UpdateScript, Build, TestHelp, Test, Markdown, {
 	remove z
 	$null = mkdir z\tools\$ModuleName\Scripts
 
@@ -225,30 +239,28 @@ task PushPSGallery Package, Version, {
 },
 Clean
 
-# Synopsis: Test synopsis of each cmdlet and warn about unexpected.
-task TestHelpSynopsis {
-	Import-Module Mdbc
-	Get-Command *-Mdbc* -CommandType cmdlet | Get-Help | .{process{
-		if (!$_.Synopsis.EndsWith('.')) {
-			Write-Warning "$($_.Name) : unexpected/missing synopsis"
+# Synopsis: Copy external scripts to the project.
+task UpdateScript @{
+	Partial = $true
+	Inputs = {
+		Get-Command Mdbc.ArgumentCompleters.ps1, Update-MongoFiles.ps1 |
+		.{process{ $_.Definition }}
+	}
+	Outputs = {process{
+		$2 = "Scripts\$(Split-Path -Leaf $_)"
+		$item1 = Get-Item -LiteralPath $_
+		$item2 = Get-Item -LiteralPath $2
+		if ($item1.LastWriteTimeUtc -lt $item2.LastWriteTimeUtc) {
+			Write-Warning "Input is older: $_ $2"
+			Assert-SameFile $_ $2
+			Copy-Item $_ $2
 		}
+		$2
+	}}
+	Jobs = {process{
+		Copy-Item $_ $2
 	}}
 }
-
-# Synopsis: Update help then run help tests.
-task TestHelp Help, TestHelpExample, TestHelpSynopsis
-
-$UpdateScriptInputs = @(
-	'Mdbc.ArgumentCompleters.ps1'
-	'Update-MongoFiles.ps1'
-)
-
-# Synopsis: Copy external scripts to the project.
-# It fails if a script is missing.
-task UpdateScript -Partial `
--Inputs { Get-Command $UpdateScriptInputs | .{process{ $_.Definition }} } `
--Outputs {process{ "Scripts\$(Split-Path -Leaf $_)" }} `
-{process{ Copy-Item $_ $2 }}
 
 # Synopsis: Check expected files.
 task CheckFiles {
