@@ -60,12 +60,12 @@ function Test-Error([Parameter()]$Command, $Like, $Text) {
 	}
 	elseif ($_ = $PSBoundParameters['Like']) {
 		if (${+result} -notlike $_) {
-			throw "Actual error:`n${+result}`nExpected error like:`n$_"
+			throw "Expected error like:`n$_`nActual error:`n${+result}"
 		}
 	}
 	elseif ($_ = $PSBoundParameters['Text']) {
 		if (${+result} -cne $_) {
-			throw "Actual error:`n${+result}`nExpected error like:`n$_"
+			throw "Expected error like:`n$_`nActual error:`n${+result}"
 		}
 	}
 	else {

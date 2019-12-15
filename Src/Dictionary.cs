@@ -28,7 +28,7 @@ namespace Mdbc
 		/// <summary>
 		/// Deep clone or convert dictionaries.
 		/// </summary>
-		//! IDictionary, not just Mdbc.Dictionary, for assigning @{...} to [Mdbc.Dictionary] typed variables and members.
+		//! IDictionary, not just Mdbc.Dictionary, for assigning @{...} to typed Mdbc.Dictionary variables and members.
 		[Obsolete("Designed for scripts.")]
 		public Dictionary(IDictionary document)
 		{
@@ -39,29 +39,6 @@ namespace Mdbc
 				_document = (BsonDocument)that._document.DeepClone();
 			else
 				_document = Actor.ToBsonDocumentFromDictionary(document);
-		}
-		[Obsolete("To be removed.")]
-		public Dictionary(object value)
-		{
-			if (Environment.GetEnvironmentVariable("MdbcDictionaryLegacy") != "1")
-				throw new InvalidOperationException("Constructor Mdbc.Dictionary(object) will be removed. To use temporarily, set $env:MdbcDictionaryLegacy=1");
-
-			value = Actor.BaseObject(value);
-			if (value == null)
-				throw new ArgumentNullException(nameof(value));
-
-			if (value is Dictionary that)
-			{
-				_document = (BsonDocument)that._document.DeepClone();
-			}
-			else
-			{
-				var bson = Actor.ToBsonValue(value);
-				if (bson.BsonType == BsonType.Document)
-					_document = bson.AsBsonDocument;
-				else
-					_document = new BsonDocument(BsonId.Element(bson));
-			}
 		}
 		public BsonDocument ToBsonDocument()
 		{

@@ -1,5 +1,24 @@
 # Mdbc Release Notes
 
+## v6.4.1
+
+**Deprecated constructor `Mdbc.Dictionary(object)`**
+
+Phase 3, retired. The following constructs now fail:
+
+```powershell
+[Mdbc.Dictionary]X
+[Mdbc.Dictionary]::new(X)
+New-Object Mdbc.Dictionary X
+```
+
+where `X` is not `IDictionary` or `BsonDocument`.
+Replace them with `New-MdbcData [-Id]`.
+
+**Module BsonFile**
+
+Take a look at the related work, [BsonFile module](https://github.com/nightroman/BsonFile).
+
 ## v6.4.0
 
 C# driver 2.10.0

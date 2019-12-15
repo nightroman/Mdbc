@@ -1,35 +1,6 @@
 . ./Zoo.ps1
 Set-StrictMode -Version Latest
 
-# this whole test will go after phasing out Mdbc.Dictionary(object), TODO
-task MdbcDictionaryLegacy {
-	$old = $env:MdbcDictionaryLegacy
-	try {
-		## legacy ON
-		$(
-			$env:MdbcDictionaryLegacy = 1
-
-			$d1 = [Mdbc.Dictionary]1
-			equals $d1._id.GetType().Name String # why, PS?
-
-			$d1 = [Mdbc.Dictionary]::new(1)
-			equals $d1._id.GetType().Name Int32
-
-			Test-Error { [Mdbc.Dictionary]([version]1.1) } '* Error: "Cannot convert ''System.Version'' to ''BsonValue''."'
-		)
-		## legacy OFF
-		$(
-			$env:MdbcDictionaryLegacy = 0
-
-			Test-Error { [Mdbc.Dictionary]1 } '*Constructor * will be removed. To use temporarily,*'
-			Test-Error { [Mdbc.Dictionary]([version]1.1) } '*Constructor * will be removed. To use temporarily,*'
-		)
-	}
-	finally {
-		$env:MdbcDictionaryLegacy = $old
-	}
-}
-
 task BsonTypes {
 	$1 = New-BsonBag
 
@@ -99,10 +70,6 @@ task DictionaryConstructors {
 	equals $r.Count 1
 	equals $r._id 42
 
-	# from a bad object
-	#! this will fail later differently on phasing out Mdbc.Dictionary(object), TODO
-	Test-Error { [Mdbc.Dictionary]([version]1.1) } '*Constructor * will be removed. To use temporarily,*'
-
 	# Mdbc.Dictionary deep clone
 	$arr = [MongoDB.Bson.BsonArray]@(1)
 	$r1 = [Mdbc.Dictionary]@{p1 = $arr}
@@ -118,25 +85,21 @@ task DictionaryConstructors {
 	equals $arr2.ToString() [1]
 	assert (!([object]::ReferenceEquals($arr2, $arr)))
 	equals $arr2 $arr
+
+	# from bad object, retired Mdbc.Dictionary(object)
+	Test-Error { [Mdbc.Dictionary]1 } -Text 'Cannot convert the "1" value of type "System.Int32" to type "Mdbc.Dictionary".'
+	Test-Error { [Mdbc.Dictionary]([version]1.1) } -Text 'Cannot convert the "1.1" value of type "System.Version" to type "Mdbc.Dictionary".'
 }
 
 task CollectionConstructors {
-	# [object], IEnumerable, not string
-	$r = [Mdbc.Collection](1, 2)
-	equals "$r" '1 2' # PowerShell does not .ToString()
-	equals $r.ToString() '[1, 2]'
+	# [object], used to allow this -- bad idea, PS converts [int] to [string]
+	Test-Error {[Mdbc.Collection]1} -Text 'Cannot convert the "1" value of type "System.Int32" to type "Mdbc.Collection".'
 
-	# [object], IEnumerable, string
-	$r = [Mdbc.Collection]'bar'
-	equals $r.ToString() '[bar]'
-
-	# [object], not IEnumerable
-	$r = [Mdbc.Collection]42
-	equals $r.ToString() '[42]'
-
-	# [object] IEnumerable
-	$r = [Mdbc.Collection](1, 2)
-	equals $r.Count 2
+	# ICollection
+	$r = [Mdbc.Collection](1, @{x = 1})
+	equals $r.ToString() '[1, { "x" : 1 }]'
+	#! PowerShell does not call .ToString() on collection but calls on items
+	equals "$r" '1 { "x" : 1 }'
 
 	# BsonArray
 	$arr = [MongoDB.Bson.BsonArray](1, 2)
@@ -147,7 +110,7 @@ task CollectionConstructors {
 	$arr1 = [MongoDB.Bson.BsonArray]@(1)
 	$arr2 = [MongoDB.Bson.BsonArray]@(, $arr1)
 	$r1 = [Mdbc.Collection]$arr2
-	$r2 = [Mdbc.Collection]$r1 #! trap, it's copy
+	$r2 = [Mdbc.Collection]$r1 #! trap, it's cast, not copy
 	assert ([object]::ReferenceEquals($r1, $r2))
 	# so use true constructor
 	$r2 = [Mdbc.Collection]::new($r1)

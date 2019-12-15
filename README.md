@@ -1,3 +1,7 @@
+
+[![NuGet](https://buildstats.info/nuget/Mdbc)](https://www.nuget.org/packages/Mdbc)
+[![PSGallery](https://img.shields.io/powershellgallery/dt/Mdbc.svg)](https://www.powershellgallery.com/packages/Mdbc)
+
 # MongoDB Cmdlets for PowerShell
 
 Mdbc is the PowerShell module based on the official [MongoDB C# driver](https://github.com/mongodb/mongo-csharp-driver).
@@ -87,6 +91,7 @@ Get-MdbcData -Count
 [HowTo.test.ps1]: https://github.com/nightroman/Mdbc/blob/master/Tests/HowTo.test.ps1
 [Classes.lib.ps1]: https://github.com/nightroman/Mdbc/blob/master/Tests/Classes.lib.ps1
 [Classes.test.ps1]: https://github.com/nightroman/Mdbc/blob/master/Tests/Classes.test.ps1
+[BsonFile]: https://github.com/nightroman/BsonFile
 
 Read cmdlet help topics and take a look at examples for some basic use cases.
 
@@ -97,6 +102,7 @@ See also tests, for example:
 - [HowTo.test.ps1] - assorted how-to samples
 - [Classes.lib.ps1] - PowerShell classes for saving and reading
 - [Classes.test.ps1] - tests using the above classes are how-to samples
+- [BsonFile] - Mdbc based script module for BSON/JSON file collections
 
 ## Driver methods and module commands
 

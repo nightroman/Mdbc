@@ -25,28 +25,20 @@ namespace Mdbc
 			_array = array ?? throw new ArgumentNullException(nameof(array));
 		}
 		[Obsolete("Designed for scripts.")]
-		public Collection(object value)
+		public Collection(ICollection collection)
 		{
-			value = Actor.BaseObject(value);
-			if (value == null)
-				throw new ArgumentNullException(nameof(value));
+			if (collection == null)
+				throw new ArgumentNullException(nameof(collection));
 
-			if (value is IEnumerable en && !(value is string))
+			if (collection is Collection that)
 			{
-				if (en is Collection that)
-				{
-					_array = (BsonArray)that._array.DeepClone();
-				}
-				else
-				{
-					_array = new BsonArray();
-					foreach (var item in en)
-						_array.Add(Actor.ToBsonValue(item));
-				}
+				_array = (BsonArray)that._array.DeepClone();
 			}
 			else
 			{
-				_array = new BsonArray() { Actor.ToBsonValue(value) };
+				_array = new BsonArray(collection.Count);
+				foreach (var item in collection)
+					_array.Add(Actor.ToBsonValue(item));
 			}
 		}
 		public BsonArray ToBsonArray()
