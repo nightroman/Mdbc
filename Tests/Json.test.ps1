@@ -115,3 +115,13 @@ task BadJson {
 	JsonFile '{x=1}'
 	Test-Error { Import-MdbcData $json } "Invalid JSON input ''."
 }
+
+task Example.Import-MdbcData {
+	$r = $(
+		# Import data produced by ConvertTo-Json (PowerShell V3)
+		$Host | ConvertTo-Json | Set-Content z.json
+		Import-MdbcData z.json
+	)
+	equals $r.Name $Host.Name
+	remove z.json
+}

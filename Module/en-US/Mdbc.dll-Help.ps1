@@ -998,9 +998,9 @@ Specifies the path to the BSON file where objects will be restored from.
 	examples = @(
 		@{code=$ExampleIOCode}
 		@{code={
-	# Import data produced by ConvertTo-Json (PowerShell V3)
-	Get-Process | ConvertTo-Json | Set-Content process.json
-	Import-MdbcData process.json
+			# Import data produced by ConvertTo-Json (PowerShell V3)
+			$Host | ConvertTo-Json | Set-Content z.json
+			Import-MdbcData z.json
 		}}
 	)
 
