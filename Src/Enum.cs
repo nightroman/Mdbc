@@ -8,7 +8,9 @@ namespace Mdbc
 	{
 		Auto,
 		Bson,
-		Json
+		Json,
+		JsonShell,
+		JsonStrict
 	}
 	public enum OutputType
 	{

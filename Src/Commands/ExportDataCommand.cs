@@ -58,39 +58,28 @@ namespace Mdbc.Commands
 			_dispose?.Invoke();
 		}
 
+		static FileFormat ResolveFileFormat(FileFormat fileFormat, string path)
+		{
+			if (fileFormat != FileFormat.Auto)
+				return fileFormat;
+			if (path.EndsWith(".JSON", StringComparison.Ordinal))
+				return FileFormat.JsonStrict;
+			if (path.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+				return FileFormat.JsonShell;
+			return FileFormat.Bson;
+		}
+
 		protected override void BeginProcessing()
 		{
+			FileFormat = ResolveFileFormat(FileFormat, Path);
 			Path = GetUnresolvedProviderPathFromPSPath(Path);
-
-			if (FileFormat == FileFormat.Auto)
-				FileFormat = Path.EndsWith(".json", StringComparison.OrdinalIgnoreCase) ? FileFormat.Json : FileFormat.Bson;
 
 			var time = Stopwatch.StartNew();
 			for (; ; )
 			{
 				try
 				{
-					if (FileFormat == FileFormat.Json)
-					{
-						StreamWriter streamWriter = null;
-						try
-						{
-							streamWriter = new StreamWriter(Path, Append);
-							_bsonWriter = new JsonWriter(streamWriter, MyJson.DefaultJsonWriterSettings);
-							_endDocument = () =>
-							{
-								streamWriter.WriteLine();
-							};
-						}
-						finally
-						{
-							_dispose = () =>
-							{
-								streamWriter?.Dispose();
-							};
-						}
-					}
-					else
+					if (FileFormat == FileFormat.Bson)
 					{
 						FileStream fileStream = null;
 						try
@@ -103,6 +92,39 @@ namespace Mdbc.Commands
 							_dispose = () =>
 							{
 								fileStream?.Dispose();
+							};
+						}
+					}
+					else
+					{
+						StreamWriter streamWriter = null;
+						try
+						{
+							var settings = JsonWriterSettings.Defaults;
+							switch (FileFormat)
+							{
+								case FileFormat.JsonShell:
+									settings = settings.Clone();
+									settings.OutputMode = JsonOutputMode.Shell;
+									break;
+								case FileFormat.JsonStrict:
+									settings = settings.Clone();
+									settings.OutputMode = JsonOutputMode.Strict;
+									break;
+							}
+
+							streamWriter = new StreamWriter(Path, Append);
+							_bsonWriter = new JsonWriter(streamWriter, settings);
+							_endDocument = () =>
+							{
+								streamWriter.WriteLine();
+							};
+						}
+						finally
+						{
+							_dispose = () =>
+							{
+								streamWriter?.Dispose();
 							};
 						}
 					}

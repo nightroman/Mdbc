@@ -1,5 +1,21 @@
 # Mdbc Release Notes
 
+## v6.5.0
+
+**Export-MdbcData**
+
+Supports so called "Strict" JSON. It is less friendly and may not preserve all
+data types. But it is suitable for reading by other applications, for example
+by PowerShell `ConvertFrom-Json`.
+
+`FileFormat` parameter supports two new values: `JsonShell` and `JsonStrict`.
+When the default `Auto` is used and the file extension is ".JSON" (all caps)
+then the new `JsonStrict` is assumed. When the old `Json` is used then output
+depends on global settings, the same behaviour as before, default is "Shell".
+
+This change is potentially breaking if you used all caps ".JSON" extensions.
+Either change the extensions or use `-FileFormat JsonShell` in the commands.
+
 ## v6.4.1
 
 **Deprecated constructor `Mdbc.Dictionary(object)`**

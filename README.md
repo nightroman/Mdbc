@@ -137,4 +137,7 @@ See also tests, for example:
 | Aggregate | Invoke-MdbcAggregate | documents
 | Watch | Watch-MdbcChange -Collection | cursor
 
-See also [about_Mdbc](https://github.com/nightroman/Mdbc/blob/master/Module/en-US/about_Mdbc.help.txt)
+## See also
+
+- [about_Mdbc](https://github.com/nightroman/Mdbc/blob/master/Module/en-US/about_Mdbc.help.txt)
+- [Release Notes](https://github.com/nightroman/Mdbc/blob/master/Release-Notes.md)

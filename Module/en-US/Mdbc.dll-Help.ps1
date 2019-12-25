@@ -169,14 +169,23 @@ Specifies the data file format:
  		BSON format
 
  	Json
- 		JSON format
+ 		JSON format with global output mode, default is Shell
+
+ 	JsonShell
+ 		JSON format with output mode Shell
+
+ 	JsonStrict
+ 		JSON format with output mode Strict
 
  	Auto (default)
- 		The format is defined by the file extension: ".json" is for JSON,
- 		other extensions are for BSON.
+ 		The format is defined by the file extension:
+ 		- ".JSON" (all caps) is for JSON Strict,
+ 		- ".json" (others) is for JSON Shell,
+ 		- other extensions are for BSON.
 
 Input JSON is a sequence of objects and arrays of objects. Arrays are unrolled.
 Top objects and arrays are optionally separated by spaces, tabs, and new lines.
+Input formats Json, JsonShell, and JsonStrict just mean JSON.
 '@
 
 ### Connect-Mdbc

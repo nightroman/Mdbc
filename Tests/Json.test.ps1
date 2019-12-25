@@ -1,4 +1,3 @@
-
 . .\Zoo.ps1
 Import-Module Mdbc
 Set-StrictMode -Version Latest
@@ -36,25 +35,18 @@ task PreserveTypes {
 	$r = Import-MdbcData $json
 	Test-List $data $r
 
-	# use Strict and see loss of data types
+	# use Strict and see loss of some data types
 	#! cover EOL written after each document, or PS cannot convert
-	$old = [MongoDB.Bson.IO.JsonWriterSettings]::Defaults.OutputMode
-	[MongoDB.Bson.IO.JsonWriterSettings]::Defaults.OutputMode = 'Strict'
-	try {
-		$data | Export-MdbcData $json
-		($r = Get-Content -LiteralPath $json)
-		$r1, $r2 = $r | ConvertFrom-Json
-		if ($PSVersionTable.PSVersion.Major -ge 6) {
-			equals Double ($r1.Double.GetType().Name)
-			equals Int64 ($r2.Int64.GetType().Name)
-		}
-		else {
-			equals Decimal ($r1.Double.GetType().Name)
-			equals Int32 ($r2.Int64.GetType().Name)
-		}
+	$data | Export-MdbcData $json -FileFormat JsonStrict
+	($r = Get-Content -LiteralPath $json)
+	$r1, $r2 = $r | ConvertFrom-Json
+	if ($PSVersionTable.PSVersion.Major -ge 6) {
+		equals Double ($r1.Double.GetType().Name)
+		equals Int64 ($r2.Int64.GetType().Name)
 	}
-	finally {
-		[MongoDB.Bson.IO.JsonWriterSettings]::Defaults.OutputMode = $old
+	else {
+		equals Decimal ($r1.Double.GetType().Name)
+		equals Int32 ($r2.Int64.GetType().Name)
 	}
 }
 

@@ -120,7 +120,7 @@ task Publish {
 
 # Synopsis: Remove temp files.
 task Clean {
-	remove "$ModuleName.*.nupkg", z, Src\bin, Src\obj, README.htm, Release-Notes.htm
+	remove *.nupkg, z, Src\bin, Src\obj, README.htm
 }
 
 # Synopsis: Build help by Helps (https://github.com/nightroman/Helps).
@@ -157,7 +157,6 @@ task TestHelp Help, TestHelpExample, TestHelpSynopsis
 task Markdown {
 	function Convert-Markdown($Name) {pandoc.exe --standalone --from=gfm "--output=$Name.htm" "--metadata=pagetitle=$Name" "$Name.md"}
 	exec { Convert-Markdown README }
-	exec { Convert-Markdown Release-Notes }
 }
 
 # Synopsis: Set $script:Version.
@@ -175,15 +174,16 @@ task Package {equals $Configuration Release}, UpdateScript, Build, TestHelp, Tes
 	remove z
 	$null = mkdir z\tools\$ModuleName\Scripts
 
-	Copy-Item -Recurse -Destination z\tools\$ModuleName `
-	LICENSE.txt,
-	README.htm,
-	Release-Notes.htm,
-	$ModuleRoot\*
+	Copy-Item -Recurse -Destination z\tools\$ModuleName $(
+		'LICENSE.txt'
+		'README.htm'
+		"$ModuleRoot\*"
+	)
 
-	Copy-Item -Destination z\tools\$ModuleName\Scripts `
-	.\Scripts\Mdbc.ArgumentCompleters.ps1,
-	.\Scripts\Update-MongoFiles.ps1
+	Copy-Item -Destination z\tools\$ModuleName\Scripts $(
+		'.\Scripts\Mdbc.ArgumentCompleters.ps1'
+		'.\Scripts\Update-MongoFiles.ps1'
+	)
 }
 
 # Synopsis: Make NuGet package.

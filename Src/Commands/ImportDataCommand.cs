@@ -37,17 +37,7 @@ namespace Mdbc.Commands
 				format = filePath.EndsWith(".json", StringComparison.OrdinalIgnoreCase) ? FileFormat.Json : FileFormat.Bson;
 
 			var serializer = BsonSerializer.LookupSerializer(documentType);
-			if (format == FileFormat.Json)
-			{
-				using (var stream = File.OpenText(filePath))
-				using (var reader = new JsonReader(stream))
-				{
-					var context = BsonDeserializationContext.CreateRoot(reader);
-					while (!reader.IsAtEndOfFile())
-						yield return serializer.Deserialize(context);
-				}
-			}
-			else
+			if (format == FileFormat.Bson)
 			{
 				using (var stream = File.OpenRead(filePath))
 				using (var reader = new BsonBinaryReader(stream))
@@ -55,6 +45,16 @@ namespace Mdbc.Commands
 					var context = BsonDeserializationContext.CreateRoot(reader);
 					long length = stream.Length;
 					while (stream.Position < length)
+						yield return serializer.Deserialize(context);
+				}
+			}
+			else
+			{
+				using (var stream = File.OpenText(filePath))
+				using (var reader = new JsonReader(stream))
+				{
+					var context = BsonDeserializationContext.CreateRoot(reader);
+					while (!reader.IsAtEndOfFile())
 						yield return serializer.Deserialize(context);
 				}
 			}
