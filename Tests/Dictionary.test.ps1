@@ -87,6 +87,8 @@ task DictionaryConstructors {
 	equals $arr2 $arr
 
 	# from bad object, retired Mdbc.Dictionary(object)
+	#! keep `[Mdbc.Dictionary]1`, ensure the error is this, not "cannot
+	#! deserialize", see comments for .FromJson (why .Parse is not used)
 	Test-Error { [Mdbc.Dictionary]1 } -Text 'Cannot convert the "1" value of type "System.Int32" to type "Mdbc.Dictionary".'
 	Test-Error { [Mdbc.Dictionary]([version]1.1) } -Text 'Cannot convert the "1.1" value of type "System.Version" to type "Mdbc.Dictionary".'
 }
@@ -289,4 +291,16 @@ task Decimal {
 	equals $1.p1 $2.p1
 
 	remove z.bson
+}
+
+# v6.5.1
+task FromJsonAndEnsureId {
+	$r = [Mdbc.Dictionary]::FromJson('{"name": "bar"}')
+	equals $r.GetType() ([Mdbc.Dictionary])
+	equals $r.Count 1
+	equals $r.name bar
+
+	$r.EnsureId()
+	equals ($r.Keys -join '|') '_id|name'
+	equals $r._id.GetType() ([MongoDB.Bson.ObjectId])
 }

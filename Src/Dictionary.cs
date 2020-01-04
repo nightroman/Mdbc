@@ -48,6 +48,19 @@ namespace Mdbc
 		{
 			return MyJson.PrintBsonDocument(_document);
 		}
+		//! Do not use name Parse or PS converts all types to strings and produces not clear errors.
+		//! This would be fine on .Parse(X), but PS calls Parse on `[Mdbc.Dictionary]X`, bad.
+		//! And do not use constructor of string for the same reason.
+		static public Dictionary FromJson(string json)
+		{
+			var doc = BsonDocument.Parse(json);
+			return new Dictionary(doc);
+		}
+		public void EnsureId()
+		{
+			if (!_document.Contains(BsonId.Name))
+				_document.InsertAt(0, BsonId.Element(new BsonObjectId(ObjectId.GenerateNewId())));
+		}
 
 		#region Object
 		public override bool Equals(object obj)

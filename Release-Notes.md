@@ -1,5 +1,10 @@
 # Mdbc Release Notes
 
+## v6.5.1
+
+Add `Mdbc.Dictionary` methods `FromJson` and `EnsureId` to avoid unnatural use
+of driver methods and simplify known use cases.
+
 ## v6.5.0
 
 **Export-MdbcData**
