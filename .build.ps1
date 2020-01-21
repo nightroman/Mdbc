@@ -152,11 +152,16 @@ task TestHelpSynopsis {
 # Synopsis: Update help then run help tests.
 task TestHelp Help, TestHelpExample, TestHelpSynopsis
 
-# Synopsis: Convert markdown files to HTML.
-# <http://johnmacfarlane.net/pandoc/>
+# Synopsis: Convert markdown to HTML.
 task Markdown {
-	function Convert-Markdown($Name) {pandoc.exe --standalone --from=gfm "--output=$Name.htm" "--metadata=pagetitle=$Name" "$Name.md"}
-	exec { Convert-Markdown README }
+	assert (Test-Path $env:MarkdownCss)
+	exec { pandoc.exe @(
+		'README.md'
+		'--output=README.htm'
+		'--from=gfm'
+		'--self-contained', "--css=$env:MarkdownCss"
+		'--standalone', "--metadata=pagetitle=$ModuleName"
+	)}
 }
 
 # Synopsis: Set $script:Version.

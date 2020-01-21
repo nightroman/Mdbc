@@ -1,5 +1,9 @@
 # Mdbc Release Notes
 
+## v6.5.2
+
+C# driver 2.10.1
+
 ## v6.5.1
 
 Add `Mdbc.Dictionary` methods `FromJson` and `EnsureId` to avoid unnatural use
