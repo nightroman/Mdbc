@@ -42,7 +42,7 @@ task Meta @MetaParam {
 	$Version = Get-Version
 	$Project = 'https://github.com/nightroman/Mdbc'
 	$Summary = 'Mdbc module - MongoDB Cmdlets for PowerShell'
-	$Copyright = 'Copyright (c) 2011-2019 Roman Kuzmin'
+	$Copyright = 'Copyright (c) Roman Kuzmin'
 
 	Set-Content Module\$ModuleName.psd1 @"
 @{
