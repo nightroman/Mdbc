@@ -212,6 +212,7 @@ Mdbc makes MongoDB data and operations PowerShell friendly.
 		<summary>$text</summary>
 		<description>$text</description>
 		<tags>Mongo MongoDB PowerShell Module Database</tags>
+		<releaseNotes>https://github.com/nightroman/Mdbc/blob/master/Release-Notes.md</releaseNotes>
 	</metadata>
 </package>
 "@
