@@ -268,14 +268,6 @@ task UpdateScript @{
 	}}
 }
 
-# Synopsis: Check expected files.
-task CheckFiles {
-	$Pattern = '\.(cs|csproj|lock|md|ps1|psd1|psm1|ps1xml|sln|txt|xml|gitignore)$'
-	foreach ($file in git status -s) { if ($file -notmatch $Pattern) {
-		Write-Warning "Illegal file: '$file'."
-	}}
-}
-
 # Synopsis: Remove test.test* collections
 task CleanTest {
 	Import-Module Mdbc
@@ -299,4 +291,4 @@ task Test6 -If $env:powershell6 {
 }
 
 # Synopsis: Build, test and clean all.
-task . Build2, CheckFiles, TestHelp, Test, Test6, Clean
+task . Build2, TestHelp, Test, Test6, Clean
