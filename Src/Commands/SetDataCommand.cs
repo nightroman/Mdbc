@@ -16,7 +16,7 @@ namespace Mdbc.Commands
 		FilterDefinition<BsonDocument> _Filter;
 		bool _FilterSet;
 
-		//! `get` is needed for PS
+		//! `get` is needed for PS, check null later =1=
 		[Parameter(Position = 1, ValueFromPipeline = true)]
 		public object Set { get { return _Set; } set { if (value != null) _Set = Actor.ToBsonDocument(value); } }
 		BsonDocument _Set;
@@ -51,11 +51,11 @@ namespace Mdbc.Commands
 
 		protected override void ProcessRecord()
 		{
+			if (Set == null) //=1=
+				throw new PSArgumentException(Res.InputDocNull);
+
 			try
 			{
-				if (Set == null)
-					throw new PSArgumentException(Res.InputDocNull);
-
 				if (MyInvocation.ExpectingInput)
 				{
 					if (_Set.TryGetElement(BsonId.Name, out BsonElement elem))

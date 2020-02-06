@@ -1,5 +1,13 @@
 # Mdbc Release Notes
 
+## v6.5.4
+
+C# driver 2.10.2
+
+`Mdbc.Collection` - replace troublemaker `int IList.Add()` with PS friendly `void Add()`.
+
+Get rid of unnecessary use of PSObject in some parameters.
+
 ## v6.5.3
 
 C# driver 2.10.1

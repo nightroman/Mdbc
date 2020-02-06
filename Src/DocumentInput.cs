@@ -27,7 +27,7 @@ namespace Mdbc
 					throw new RuntimeException($"Converter script should return one value or none but it returns {result.Count}.");
 			}
 		}
-		public static BsonDocument NewDocumentWithId(bool newId, PSObject id, PSObject input)
+		public static BsonDocument NewDocumentWithId(bool newId, object id, object input)
 		{
 			if (newId && id != null)
 				throw new PSInvalidOperationException("Parameters Id and NewId cannot be used together.");
@@ -38,8 +38,9 @@ namespace Mdbc
 			if (id == null)
 				return null;
 
-			if (!(id.BaseObject is ScriptBlock sb))
-				return new BsonDocument(BsonId.Element(BsonValue.Create(id.BaseObject)));
+			id = Actor.BaseObject(id);
+			if (!(id is ScriptBlock sb))
+				return new BsonDocument(BsonId.Element(BsonValue.Create(id)));
 
 			var arr = Actor.InvokeScript(sb, input);
 			if (arr.Count != 1)

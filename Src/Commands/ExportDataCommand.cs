@@ -2,16 +2,15 @@
 // Copyright (c) Roman Kuzmin
 // http://www.apache.org/licenses/LICENSE-2.0
 
-using System;
-using System.Diagnostics;
-using System.Collections.Generic;
-using System.Globalization;
-using System.IO;
-using System.Management.Automation;
-using System.Threading;
 using MongoDB.Bson.IO;
 using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Serializers;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Management.Automation;
+using System.Threading;
 
 namespace Mdbc.Commands
 {
@@ -22,10 +21,10 @@ namespace Mdbc.Commands
 		public string Path { get; set; }
 
 		[Parameter(Position = 1, ValueFromPipeline = true)]
-		public PSObject InputObject { get; set; }
+		public object InputObject { get; set; }
 
 		[Parameter]
-		public PSObject Id { get; set; }
+		public object Id { get; set; }
 
 		[Parameter]
 		public SwitchParameter NewId { get; set; }

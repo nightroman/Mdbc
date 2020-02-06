@@ -91,7 +91,6 @@ function Update-Data {process{
 	$isFile = !$_.PSIsContainer
 
 	# data with _id = FullName and main changing fields
-	# (omit LastWriteTime for folders and CreationTime)
 	$data = New-MdbcData -Id $_.FullName
 	$data.mode = [int]$_.Attributes
 	if ($isFile) {
@@ -102,7 +101,7 @@ function Update-Data {process{
 		$data.time = $_.CreationTime
 	}
 
-	# query by main changing data and set Seen
+	# query by main changing data and set .seen
 	$r = Update-MdbcData $data $Update -Result
 
 	# modified means $data is found, i.e. the same -> done

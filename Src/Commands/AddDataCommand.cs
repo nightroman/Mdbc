@@ -14,10 +14,10 @@ namespace Mdbc.Commands
 	public sealed class AddDataCommand : AbstractCollectionCommand
 	{
 		[Parameter(Position = 0, ValueFromPipeline = true)]
-		public PSObject InputObject { get; set; }
+		public object InputObject { get; set; }
 
 		[Parameter]
-		public PSObject Id { get; set; }
+		public object Id { get; set; }
 
 		[Parameter]
 		public SwitchParameter NewId { get; set; }

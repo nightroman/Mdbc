@@ -143,5 +143,6 @@ See also tests, for example:
 
 ## See also
 
-- [about_Mdbc](https://github.com/nightroman/Mdbc/blob/master/Module/en-US/about_Mdbc.help.txt)
-- [Release Notes](https://github.com/nightroman/Mdbc/blob/master/Release-Notes.md)
+- [Mdbc Release Notes](https://github.com/nightroman/Mdbc/blob/master/Release-Notes.md)
+- [about_Mdbc.help.txt](https://github.com/nightroman/Mdbc/blob/master/Module/en-US/about_Mdbc.help.txt)
+- [Ldbc, similar project for LiteDB](https://github.com/nightroman/Ldbc)

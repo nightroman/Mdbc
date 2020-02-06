@@ -115,7 +115,13 @@ namespace Mdbc
 		{
 			return _array.Contains(Actor.ToBsonValue(value));
 		}
-		public int Add(object value)
+		// PS friendly Add
+		public void Add(object value)
+		{
+			_array.Add(Actor.ToBsonValue(value));
+		}
+		// IList.Add, bad in PS
+		int IList.Add(object value)
 		{
 			_array.Add(Actor.ToBsonValue(value));
 			return _array.Count - 1;
