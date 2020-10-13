@@ -241,7 +241,7 @@ task conflicting-transactions {
 			throw
 		}
 		catch {
-			equals "$_" "Command findAndModify failed: WriteConflict."
+			assert("$_" -match '^Command findAndModify failed: WriteConflict')
 		}
 
 		# commit 2 -> error

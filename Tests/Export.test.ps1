@@ -2,6 +2,7 @@
 . .\Zoo.ps1
 Import-Module Mdbc
 
+# v4.4.1 no more mongodump and mongorestore
 task Basics {
 	# test relative paths
 	Set-Location C:\TEMP
@@ -36,40 +37,17 @@ task Basics {
 		Test-Table $data1[2] $data2[2]
 	}
 
-	# dump by mongodump
-	Connect-Mdbc -NewCollection
-	$1, $2, $3 | Add-MdbcData
-	Set-Alias mongodump ([IO.Path]::GetDirectoryName((Get-Process mongod).Path) + '\mongodump.exe')
-	exec {mongodump -d test -c test}
-
 	# dump by mdbc
-	$1, $2 | Export-MdbcData test2.bson
-	Export-MdbcData test2.bson $3 -Append #! positional InputObject
-	Import-MdbcData test2.bson -As PS | Format-Table -AutoSize | Out-String
-
-	# the same file size
-	$file1 = Get-Item dump\test\test.bson
-	$file2 = Get-Item test2.bson
-	equals $file1.Length $file2.Length
+	$1, $2 | Export-MdbcData z.bson
+	Export-MdbcData z.bson $3 -Append #! positional InputObject
+	Import-MdbcData z.bson -As PS | Format-Table -AutoSize | Out-String
 
 	# import both data for comparison
-	$data1 = Import-MdbcData dump\test\test.bson
-	$data2 = Import-MdbcData test2.bson
+	$data1 = $1, $2, $3
+	$data2 = Import-MdbcData z.bson
 	Test-Dictionary3 $data1 $data2
 
-	# restore from our dump
-	Connect-Mdbc -NewCollection
-	equals (Get-MdbcData -Count) 0L
-	Set-Alias mongorestore ([IO.Path]::GetDirectoryName((Get-Process mongod).Path) + '\mongorestore.exe')
-	exec { $ErrorActionPreference = 0; mongorestore -d test -c test test2.bson }
-	$data2 = Get-MdbcData
-	#! WiredTiger Win8: data restored not in the original order; Win7: fine.
-	#! Weird? Maybe it's not guaranteed. Anyway, let's use SortBy.
-	$data2 = Get-MdbcData -Sort '{_id : 1}'
-	Test-Dictionary3 $data1 $data2
-
-	# end
-	Remove-Item test2.bson, dump -Recurse -Force
+	remove z.bson
 }
 
 task Retry {
