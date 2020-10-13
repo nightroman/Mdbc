@@ -10,7 +10,9 @@ namespace Mdbc
 		Bson,
 		Json,
 		JsonShell,
-		JsonStrict
+		JsonStrict,
+		JsonCanonicalExtended,
+		JsonRelaxedExtended
 	}
 	public enum OutputType
 	{

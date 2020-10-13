@@ -38,7 +38,7 @@ $MetaParam = @{
 }
 
 # Synopsis: Generate or update meta files.
-task Meta @MetaParam {
+task meta @MetaParam {
 	$Version = Get-Version
 	$Project = 'https://github.com/nightroman/Mdbc'
 	$Summary = 'Mdbc module - MongoDB Cmdlets for PowerShell'
@@ -86,19 +86,19 @@ using System.Runtime.InteropServices;
 }
 
 # Synopsis: Build the project (and post-build Publish).
-task Build Meta, {
+task build meta, {
 	exec { dotnet build Src\$ModuleName.csproj -c $Configuration -f $TargetFramework }
 },
 Help
 
 # Synopsis: Build all frameworks.
-task Build2 {
+task build2 {
 	Invoke-Build Build -Configuration $Configuration -TargetFramework net452
 	Invoke-Build Build -Configuration $Configuration -TargetFramework netstandard2.0
 }
 
 # Synopsis: Publish the module (post-build).
-task Publish {
+task publish {
 	if ($TargetFramework -eq 'net452') {
 		remove $ModuleRoot
 		exec { robocopy Module $ModuleRoot /s /np /r:0 /xf *-Help.ps1 } (0..3)
@@ -119,12 +119,12 @@ task Publish {
 }
 
 # Synopsis: Remove temp files.
-task Clean {
+task clean {
 	remove *.nupkg, z, Src\bin, Src\obj, README.htm
 }
 
 # Synopsis: Build help by Helps (https://github.com/nightroman/Helps).
-task Help @{
+task help @{
 	Inputs = {Get-Item Src\Commands\*, Module\en-US\$ModuleName.dll-Help.ps1}
 	Outputs = {"$ModuleRoot\en-US\$ModuleName.dll-Help.xml"}
 	Jobs = {
@@ -134,13 +134,13 @@ task Help @{
 }
 
 # Synopsis: Test help script examples.
-task TestHelpExample {
+task testHelpExample {
 	. Helps.ps1
 	Test-Helps Module\en-US\$ModuleName.dll-Help.ps1
 }
 
 # Synopsis: Test synopsis of each cmdlet and warn about unexpected.
-task TestHelpSynopsis {
+task testHelpSynopsis {
 	Import-Module Mdbc
 	Get-Command *-Mdbc* -CommandType cmdlet | Get-Help | .{process{
 		if (!$_.Synopsis.EndsWith('.')) {
@@ -150,10 +150,10 @@ task TestHelpSynopsis {
 }
 
 # Synopsis: Update help then run help tests.
-task TestHelp Help, TestHelpExample, TestHelpSynopsis
+task testHelp help, testHelpExample, testHelpSynopsis
 
 # Synopsis: Convert markdown to HTML.
-task Markdown {
+task markdown {
 	assert (Test-Path $env:MarkdownCss)
 	exec { pandoc.exe @(
 		'README.md'
@@ -165,7 +165,7 @@ task Markdown {
 }
 
 # Synopsis: Set $script:Version.
-task Version {
+task version {
 	($script:Version = Get-Version)
 	# manifest version
 	$data = & ([scriptblock]::Create([IO.File]::ReadAllText("$ModuleRoot\$ModuleName.psd1")))
@@ -175,7 +175,7 @@ task Version {
 }
 
 # Synopsis: Make the package in z\tools.
-task Package {equals $Configuration Release}, UpdateScript, Build, TestHelp, Test, Markdown, {
+task package {equals $Configuration Release}, updateScript, build, testHelp, test, markdown, {
 	remove z
 	$null = mkdir z\tools\$ModuleName\Scripts
 
@@ -192,7 +192,7 @@ task Package {equals $Configuration Release}, UpdateScript, Build, TestHelp, Tes
 }
 
 # Synopsis: Make NuGet package.
-task NuGet Package, Version, {
+task nuget package, version, {
 	$text = @'
 Mdbc is the PowerShell module based on the official MongoDB C# driver.
 Mdbc makes MongoDB data and operations PowerShell friendly.
@@ -221,7 +221,7 @@ Mdbc makes MongoDB data and operations PowerShell friendly.
 }
 
 # Synopsis: Push to the repository with a version tag.
-task PushRelease Version, {
+task pushRelease version, {
 	$changes = exec { git status --short }
 	assert (!$changes) "Please, commit changes."
 
@@ -231,14 +231,15 @@ task PushRelease Version, {
 }
 
 # Synopsis: Make and push the NuGet package.
-task PushNuGet NuGet, {
+task pushNuGet nuget, {
 	assert ($TargetFramework -eq 'net452')
-	exec { NuGet push "$ModuleName.$Version.nupkg" -Source nuget.org }
+	$ApiKey = Read-Host nuget.org-ApiKey
+	exec { NuGet push "$ModuleName.$Version.nupkg" -Source nuget.org -ApiKey $ApiKey }
 },
-Clean
+clean
 
 # Synopsis: Make and push the PSGallery package.
-task PushPSGallery Package, Version, {
+task pushPSGallery package, version, {
 	equals $TargetFramework netstandard2.0
 	$NuGetApiKey = Read-Host NuGetApiKey
 	Publish-Module -Path z/tools/$ModuleName -NuGetApiKey $NuGetApiKey
@@ -246,7 +247,7 @@ task PushPSGallery Package, Version, {
 Clean
 
 # Synopsis: Copy external scripts to the project.
-task UpdateScript @{
+task updateScript @{
 	Partial = $true
 	Inputs = {
 		Get-Command Mdbc.ArgumentCompleters.ps1, Update-MongoFiles.ps1 |
@@ -269,7 +270,7 @@ task UpdateScript @{
 }
 
 # Synopsis: Remove test.test* collections
-task CleanTest {
+task cleanTest {
 	Import-Module Mdbc
 	foreach($name in Connect-Mdbc . test *) {
 		if ($name -like 'test*') {
@@ -279,16 +280,16 @@ task CleanTest {
 }
 
 # Synopsis: Test in the current PowerShell.
-task Test {
+task test {
 	$ErrorView = 'NormalView'
 	Invoke-Build ** Tests
 },
-CleanTest
+cleanTest
 
 # Synopsis: Test in PowerShell v6.
-task Test6 -If $env:powershell6 {
+task test6 -If $env:powershell6 {
 	exec {& $env:powershell6 -NoProfile -Command Invoke-Build Test}
 }
 
 # Synopsis: Build, test and clean all.
-task . Build2, TestHelp, Test, Test6, Clean
+task . build2, testHelp, test, test6, clean

@@ -108,7 +108,17 @@ namespace Mdbc.Commands
 									break;
 								case FileFormat.JsonStrict:
 									settings = settings.Clone();
+#pragma warning disable 618 // obsolete JsonOutputMode.Strict
 									settings.OutputMode = JsonOutputMode.Strict;
+#pragma warning restore 618
+									break;
+								case FileFormat.JsonCanonicalExtended:
+									settings = settings.Clone();
+									settings.OutputMode = JsonOutputMode.CanonicalExtendedJson;
+									break;
+								case FileFormat.JsonRelaxedExtended:
+									settings = settings.Clone();
+									settings.OutputMode = JsonOutputMode.RelaxedExtendedJson;
 									break;
 							}
 

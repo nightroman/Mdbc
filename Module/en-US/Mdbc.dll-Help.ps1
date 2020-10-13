@@ -176,6 +176,13 @@ Specifies the data file format:
 
  	JsonStrict
  		JSON format with output mode Strict
+ 		(obsolete, similar to CanonicalExtendedJson)
+
+ 	JsonCanonicalExtended
+ 		JSON format with output mode CanonicalExtendedJson
+
+ 	JsonRelaxedExtended
+ 		JSON format with output mode RelaxedExtendedJson
 
  	Auto (default)
  		The format is defined by the file extension:
@@ -185,7 +192,7 @@ Specifies the data file format:
 
 Input JSON is a sequence of objects and arrays of objects. Arrays are unrolled.
 Top objects and arrays are optionally separated by spaces, tabs, and new lines.
-Input formats Json, JsonShell, and JsonStrict just mean JSON.
+Input formats Json* just mean JSON.
 '@
 
 ### Connect-Mdbc

@@ -1,5 +1,11 @@
 # Mdbc Release Notes
 
+## v6.5.7
+
+C# driver 2.11.2
+
+`Export-MdbcData` - new `-FileFormat` values `JsonCanonicalExtended` and `JsonRelaxedExtended`.
+
 ## v6.5.6
 
 C# driver 2.10.4

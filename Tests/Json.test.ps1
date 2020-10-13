@@ -35,8 +35,34 @@ task PreserveTypes {
 	$r = Import-MdbcData $json
 	Test-List $data $r
 
+	# driver v2.11.2
+	# use JsonCanonicalExtended (data look preserved better)
+	Write-Build Cyan JsonCanonicalExtended
+	$data | Export-MdbcData $json -FileFormat JsonCanonicalExtended
+	($r = Get-Content -LiteralPath $json)
+	$r1, $r2 = $r | ConvertFrom-Json
+	equals PSCustomObject ($r1.Double.GetType().Name)
+	equals PSCustomObject ($r2.Int64.GetType().Name)
+
+	# driver v2.11.2
+	# use JsonRelaxedExtended and see loss of some data types
+	Write-Build Cyan JsonRelaxedExtended
+	$data | Export-MdbcData $json -FileFormat JsonRelaxedExtended
+	($r = Get-Content -LiteralPath $json)
+	$r1, $r2 = $r | ConvertFrom-Json
+	if ($PSVersionTable.PSVersion.Major -ge 6) {
+		equals Double ($r1.Double.GetType().Name)
+		equals Int64 ($r2.Int64.GetType().Name)
+	}
+	else {
+		equals Decimal ($r1.Double.GetType().Name)
+		equals Int32 ($r2.Int64.GetType().Name)
+	}
+
+	# obsolete in driver v2.11.2
 	# use Strict and see loss of some data types
 	#! cover EOL written after each document, or PS cannot convert
+	Write-Build Cyan JsonStrict
 	$data | Export-MdbcData $json -FileFormat JsonStrict
 	($r = Get-Content -LiteralPath $json)
 	$r1, $r2 = $r | ConvertFrom-Json

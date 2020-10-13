@@ -27,6 +27,7 @@ namespace Mdbc
 			BsonTypeMapper.RegisterCustomTypeMapper(typeof(PSObject), new PSObjectTypeMapper());
 
 			var strGuidRepresentation = Environment.GetEnvironmentVariable("Mdbc_GuidRepresentation");
+#pragma warning disable 618 // obsolete BsonDefaults.GuidRepresentation
 			if (strGuidRepresentation == null)
 			{
 				BsonDefaults.GuidRepresentation = GuidRepresentation.Standard;
@@ -38,6 +39,7 @@ namespace Mdbc
 				else
 					throw new InvalidOperationException($"Invalid environment variable Mdbc_GuidRepresentation = {strGuidRepresentation}");
 			}
+#pragma warning restore 618
 		}
 	}
 }
