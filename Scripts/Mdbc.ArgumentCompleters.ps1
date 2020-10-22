@@ -29,11 +29,6 @@
 	* TabExpansion2.ps1 https://www.powershellgallery.com/packages/TabExpansion2
 	Put Mdbc.ArgumentCompleters.ps1 to the path.
 	Or invoke after TabExpansion2.ps1, e.g. in a profile.
-
-	* TabExpansionPlusPlus https://github.com/lzybkr/TabExpansionPlusPlus
-	Put Mdbc.ArgumentCompleters.ps1 to TabExpansionPlusPlus directory.
-	Or invoke after importing the module, e.g. in a profile.
-	NOTE: Not all completers work in TabExpansionPlusPlus.
 #>
 
 Register-ArgumentCompleter -CommandName Connect-Mdbc -ParameterName DatabaseName -ScriptBlock {
