@@ -505,9 +505,19 @@ Merge-Helps $ACollection @{
 	description = @'
 This command adds strictly new documents to the database collection.
 If an input document has the field _id which already exists then the command writes an error.
+
+In order to add several documents, use the pipeline input or specify an
+IEnumerable collection of documents as the parameter InputObject.
 '@
 	parameters = @{
-		InputObject = 'Document or a similar object, see INPUTS.'
+		InputObject = @'
+Document or a similar object, see INPUTS.
+
+This parameter is used implicitly with the pipeline input.
+
+If the parameter is specified explicitly then it accepts either one document or
+an IEnumerable collection of documents.
+'@
 		Id = $IdParameter
 		NewId = $NewIdParameter
 		Convert = $ConvertParameter

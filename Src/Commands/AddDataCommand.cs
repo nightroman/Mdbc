@@ -29,7 +29,29 @@ namespace Mdbc.Commands
 		public object[] Property { set { if (value == null) throw new PSArgumentNullException(nameof(value)); _Selectors = Selector.Create(value); } }
 		IList<Selector> _Selectors;
 
+		bool _done;
+
+		protected override void BeginProcessing()
+		{
+			if (!MyInvocation.ExpectingInput)
+			{
+				var collection = LanguagePrimitives.GetEnumerable(InputObject);
+				if (collection != null)
+				{
+					_done = true;
+					foreach (var value in collection)
+						Process(value);
+				}
+			}
+		}
+
 		protected override void ProcessRecord()
+		{
+			if (!_done)
+				Process(InputObject);
+		}
+
+		void Process(object InputObject)
 		{
 			if (InputObject == null)
 				return;

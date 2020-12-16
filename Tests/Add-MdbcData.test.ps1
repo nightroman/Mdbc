@@ -65,3 +65,13 @@ task BadSameId {
 	equals $data.Count 1
 	equals $data[0].Name 'Hello'
 }
+
+# https://github.com/nightroman/Mdbc/issues/51
+task AddArray {
+	Connect-Mdbc -NewCollection
+	Add-MdbcData @{_id=1}, @{_id=2}
+	$r = Get-MdbcData
+	equals $r.Count 2
+	equals ($r[0].ToString()) '{ "_id" : 1 }'
+	equals ($r[1].ToString()) '{ "_id" : 2 }'
+}

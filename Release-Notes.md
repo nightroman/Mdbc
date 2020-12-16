@@ -1,4 +1,11 @@
 # Mdbc Release Notes
+[C# driver releases]: https://github.com/mongodb/mongo-csharp-driver/releases
+
+## v6.5.8
+
+C# driver 2.11.5
+
+`Add-MdbcData` supports `IEnumerable` collections of documents as the explicitly specified parameter `InputObject`.
 
 ## v6.5.7
 
