@@ -1,6 +1,6 @@
 <#
 .Synopsis
-	Build script (https://github.com/nightroman/Invoke-Build)
+	Build script, https://github.com/nightroman/Invoke-Build
 #>
 
 param(
@@ -180,7 +180,7 @@ task package {equals $Configuration Release}, updateScript, build, testHelp, tes
 	$null = mkdir z\tools\$ModuleName\Scripts
 
 	Copy-Item -Recurse -Destination z\tools\$ModuleName $(
-		'LICENSE.txt'
+		'LICENSE'
 		'README.htm'
 		"$ModuleRoot\*"
 	)
@@ -287,9 +287,9 @@ task test {
 cleanTest
 
 # Synopsis: Test in PowerShell v6.
-task test6 -If $env:powershell6 {
-	exec {& $env:powershell6 -NoProfile -Command Invoke-Build Test}
+task test7 -If $env:pwsh {
+	exec {& $env:pwsh -NoProfile -Command Invoke-Build Test}
 }
 
 # Synopsis: Build, test and clean all.
-task . build2, testHelp, test, test6, clean
+task . build2, testHelp, test, test7, clean

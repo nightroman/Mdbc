@@ -577,6 +577,12 @@ The special value `*` used together with `-As <type>` tells to infer
 projected fields from the type.
 
 Otherwise, the argument is either JSON or similar dictionary.
+
+Example. To include Field1, Field2 and exclude _id, use one of:
+
+	@{Field1=1; Field2=1; _id=0}
+	'{Field1:1, Field2:1, _id:0}'
+
 '@
 		Sort = $SortParameter
 		First = @'

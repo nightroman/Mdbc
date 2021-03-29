@@ -70,16 +70,12 @@ _id @{count=3}
 		reduce = $reduce
 		out = @{ inline = 1 }
 	})
-	$r.Print()
-	$data = $r.results
+	$data = $r.results | Sort-Object {$_._id}, {$_.value.count}
+	$data.Print()
 
 	equals $data.Count 5
-	equals $data[1]._id 'B'
-	equals $data[1].value.count 3.0
-
-	equals $r.counts.emit 9
-	equals $r.counts.input 3
-	equals $r.counts.output 5
+	equals $data[2]._id 'B'
+	equals $data[2].value.count 3.0
 
 	### collection output, Replace
 
