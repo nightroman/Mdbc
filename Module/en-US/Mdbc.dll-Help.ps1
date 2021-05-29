@@ -567,7 +567,7 @@ Tells to return new documents on Replace and Update.
 By default old documents are returned if they exist.
 '@
 		Add = @'
-Tells to add new documents on Replace and Update if old documents do not exist.
+With Set or Update, tells to add a new document if the specified does not exist.
 '@
 		Project = @'
 Specifies the projection expression, i.e. fields to be retrieved.

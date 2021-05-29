@@ -244,7 +244,7 @@ task pushPSGallery package, version, {
 	$NuGetApiKey = Read-Host NuGetApiKey
 	Publish-Module -Path z/tools/$ModuleName -NuGetApiKey $NuGetApiKey
 },
-Clean
+clean
 
 # Synopsis: Copy external scripts to the project.
 task updateScript @{

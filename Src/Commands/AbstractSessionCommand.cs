@@ -29,7 +29,17 @@ namespace Mdbc.Commands
 		static MethodInfo _StartImplicitSession = typeof(MongoClient).GetMethod("StartImplicitSession", BindingFlags.NonPublic | BindingFlags.Instance, null, new Type[] { typeof(CancellationToken) }, null);
 		IClientSessionHandle StartImplicitSession()
 		{
-			return (IClientSessionHandle)_StartImplicitSession.Invoke(MyClient, new object[] { default(CancellationToken) });
+			try
+			{
+				return (IClientSessionHandle)_StartImplicitSession.Invoke(MyClient, new object[] { default(CancellationToken) });
+			}
+			catch (TargetInvocationException ex)
+			{
+				if (ex.InnerException == null)
+					throw;
+				else
+					throw ex.InnerException;
+			}
 		}
 
 		[Parameter]
