@@ -20,7 +20,7 @@ task CreateAndGetIndex {
 					'my-index' = 1
 				}
 				name = "my-index"
-				unique = "true"
+				unique = $true
 			}
 		)
 	})

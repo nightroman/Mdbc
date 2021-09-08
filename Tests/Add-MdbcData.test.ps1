@@ -6,7 +6,7 @@ Set-StrictMode -Version Latest
 task BadId {
 	Connect-Mdbc -NewCollection
 	$d = @{_id = 1,2}
-	Test-Error { $d | Add-MdbcData } "*Can't use an array for _id*"
+	Test-Error { $d | Add-MdbcData } "*The '_id' value cannot be of type array*"
 }
 
 #_131119_113717

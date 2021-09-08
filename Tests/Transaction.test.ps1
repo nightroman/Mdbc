@@ -241,7 +241,8 @@ task conflicting-transactions {
 			throw
 		}
 		catch {
-			assert("$_" -match '^Command findAndModify failed: WriteConflict')
+			"$_"
+			assert ("$_" -match 'WriteConflict error: this operation conflicted with another operation')
 		}
 
 		# commit 2 -> error
@@ -250,6 +251,7 @@ task conflicting-transactions {
 			throw
 		}
 		catch {
+			"$_"
 			assert ("$_" -match 'Command commitTransaction failed: Transaction \d+ has been aborted')
 		}
 
