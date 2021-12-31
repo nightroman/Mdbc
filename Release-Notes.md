@@ -1,6 +1,13 @@
 # Mdbc Release Notes
 [C# driver releases]: https://github.com/mongodb/mongo-csharp-driver/releases
 
+## v6.6.0
+
+C# driver 2.14.1
+
+- Minimum .NET Framework version is 4.7.2
+- Minimum MongoDB server version is 3.6
+
 ## v6.5.12
 
 C# driver 2.13.2

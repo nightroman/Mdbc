@@ -21,24 +21,21 @@ namespace Mdbc.Commands
 		}
 		protected MongoClient ResolveClient()
 		{
-			var value = Actor.BaseObject(GetVariableValue(Actor.ClientVariable));
-			if (value is MongoClient client)
+			if (PS2.BaseObject(GetVariableValue(Actor.ClientVariable)) is MongoClient client)
 				return client;
 
 			throw new PSInvalidOperationException("Specify a client by the parameter or variable Client.");
 		}
 		protected IMongoDatabase ResolveDatabase()
 		{
-			var value = Actor.BaseObject(GetVariableValue(Actor.DatabaseVariable));
-			if (value is IMongoDatabase database)
+			if (PS2.BaseObject(GetVariableValue(Actor.DatabaseVariable)) is IMongoDatabase database)
 				return database;
 
 			throw new PSInvalidOperationException("Specify a database by the parameter or variable Database.");
 		}
 		protected IMongoCollection<BsonDocument> ResolveCollection()
 		{
-			var value = Actor.BaseObject(GetVariableValue(Actor.CollectionVariable));
-			if (value is IMongoCollection<BsonDocument> collection)
+			if (PS2.BaseObject(GetVariableValue(Actor.CollectionVariable)) is IMongoCollection<BsonDocument> collection)
 				return collection;
 
 			throw new PSInvalidOperationException("Specify a collection by the parameter or variable Collection.");
@@ -57,11 +54,11 @@ namespace Mdbc.Commands
 
 		internal void Set(object value)
 		{
-			value = Actor.BaseObject(value);
 			if (value == null)
 				return;
 
 			IsSet = true;
+			value = PS2.BaseObject(value);
 
 			if (value is Type type)
 			{
@@ -70,7 +67,7 @@ namespace Mdbc.Commands
 				return;
 			}
 
-			if (LanguagePrimitives.TryConvertTo(value, out OutputType alias))
+			if (value is OutputType alias || value is string str && Enum.TryParse(str, out alias))
 			{
 				switch (alias)
 				{
@@ -83,7 +80,7 @@ namespace Mdbc.Commands
 				}
 			}
 
-			Type = (Type)LanguagePrimitives.ConvertTo(value, typeof(Type), null);
+			Type = LanguagePrimitives.ConvertTo<Type>(value);
 			IsType = true;
 		}
 	}
@@ -99,7 +96,7 @@ namespace Mdbc.Commands
 
 		internal void Set(object value)
 		{
-			value = Actor.BaseObject(value);
+			value = PS2.BaseObject(value);
 			if (value is string s && s == "*")
 				_IsAll = true;
 			else

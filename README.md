@@ -11,8 +11,8 @@ MongoDB Cmdlets for PowerShell
 Mdbc is the PowerShell module based on the official [MongoDB C# driver](https://github.com/mongodb/mongo-csharp-driver).
 Mdbc makes MongoDB data and operations PowerShell friendly.
 
-- The PSGallery package is built for PowerShell Core and v5.1 .NET 4.7.1.
-- The NuGet package is built for PowerShell v3-v5.1, .NET 4.5.2.
+- The PSGallery package is for PowerShell Core and PowerShell v5.1 .NET 4.7.2
+- The NuGet package is for PowerShell v3-v5.1, .NET 4.7.2
 
 ## Quick start
 
@@ -22,12 +22,6 @@ Mdbc makes MongoDB data and operations PowerShell friendly.
 
 Mdbc for PowerShell Core and v5.1 is published as the PSGallery module [Mdbc](https://www.powershellgallery.com/packages/Mdbc).
 
-It requires .NET 4.7.1, this command should return true:
-
-```powershell
-(Get-ItemProperty "HKLM:SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full").Release -ge 461308
-```
-
 You can install the module by this command:
 
 ```powershell
@@ -36,7 +30,7 @@ Install-Module Mdbc
 
 **Package from NuGet**
 
-Mdbc for PowerShell v3-v5.1 .NET 4.5.2 is published as the NuGet package [Mdbc](https://www.nuget.org/packages/Mdbc).
+Mdbc for PowerShell v3-v5.1 is published as the NuGet package [Mdbc](https://www.nuget.org/packages/Mdbc).
 Download it by NuGet tools or [directly](http://nuget.org/api/v2/package/Mdbc).
 In the latter case save it as *".zip"* and unzip. Use the package subdirectory *"tools/Mdbc"*.
 

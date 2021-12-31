@@ -6,8 +6,8 @@
 param(
 	$Configuration = 'Release'
 	,
-	[ValidateSet('net452', 'netstandard2.0')]
-	$TargetFramework = 'net452'
+	[ValidateSet('net472', 'netstandard2.0')]
+	$TargetFramework = 'net472'
 )
 
 Set-StrictMode -Version Latest
@@ -20,7 +20,7 @@ $ModuleRoot1 = "$ModuleRoot1\WindowsPowerShell\Modules\$ModuleName"
 # netstandardX
 $ModuleRoot2 = Join-Path ([Environment]::GetFolderPath('MyDocuments')) PowerShell\Modules\$ModuleName
 # current
-if ($TargetFramework -eq 'net452') {
+if ($TargetFramework -eq 'net472') {
 	$ModuleRoot = $ModuleRoot1
 }
 else {
@@ -93,13 +93,13 @@ Help
 
 # Synopsis: Build all frameworks.
 task build2 {
-	Invoke-Build Build -Configuration $Configuration -TargetFramework net452
+	Invoke-Build Build -Configuration $Configuration -TargetFramework net472
 	Invoke-Build Build -Configuration $Configuration -TargetFramework netstandard2.0
 }
 
 # Synopsis: Publish the module (post-build).
 task publish {
-	if ($TargetFramework -eq 'net452') {
+	if ($TargetFramework -eq 'net472') {
 		remove $ModuleRoot
 		exec { robocopy Module $ModuleRoot /s /np /r:0 /xf *-Help.ps1 } (0..3)
 		exec { robocopy Src\bin\$Configuration\$TargetFramework $ModuleRoot /s /np /r:0 } (0..3)
@@ -232,7 +232,7 @@ task pushRelease version, {
 
 # Synopsis: Make and push the NuGet package.
 task pushNuGet nuget, {
-	assert ($TargetFramework -eq 'net452')
+	assert ($TargetFramework -eq 'net472')
 	$ApiKey = Read-Host nuget.org-ApiKey
 	exec { NuGet push "$ModuleName.$Version.nupkg" -Source nuget.org -ApiKey $ApiKey }
 },

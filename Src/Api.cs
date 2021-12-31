@@ -85,7 +85,7 @@ namespace Mdbc
 				return true;
 			}
 
-			value = Actor.BaseObject(value);
+			value = PS2.BaseObject(value);
 
 			if (value is string json)
 			{
@@ -131,12 +131,12 @@ namespace Mdbc
 		}
 		public static FilterDefinition<BsonDocument> FilterDefinitionOfId(object value)
 		{
-			value = Actor.BaseObject(value);
+			value = PS2.BaseObject(value);
 			return Builders<BsonDocument>.Filter.Eq(BsonId.Name, BsonValue.Create(value));
 		}
 		public static FilterDefinition<BsonDocument> FilterDefinitionOfInputId(object value)
 		{
-			value = Actor.BaseObject(value, out PSObject custom);
+			value = PS2.BaseObject(value, out PSObject custom);
 			if (custom == null)
 			{
 				if (value is IConvertibleToBsonDocument cd)

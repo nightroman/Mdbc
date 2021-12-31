@@ -8,7 +8,6 @@ using MongoDB.Bson.Serialization;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Management.Automation;
 
 namespace Mdbc
@@ -19,32 +18,6 @@ namespace Mdbc
 		public const string DatabaseVariable = "Database";
 		public const string CollectionVariable = "Collection";
 
-		/// <summary>
-		/// null | PSObject.BaseObject | self
-		/// </summary>
-		public static object BaseObject(object value)
-		{
-			return value == null ? null : value is PSObject ps ? ps.BaseObject : value;
-		}
-		/// <summary>
-		/// null | PSCustomObject | PSObject.BaseObject | self
-		/// </summary>
-		public static object BaseObject(object value, out PSObject custom)
-		{
-			custom = null;
-
-			if (value == null)
-				return null;
-
-			if (!(value is PSObject ps))
-				return value;
-
-			if (!(ps.BaseObject is PSCustomObject))
-				return ps.BaseObject;
-
-			custom = ps;
-			return ps;
-		}
 		public static object ToObject(BsonValue value) //_120509_173140 sync, test
 		{
 			if (value == null)
@@ -88,7 +61,7 @@ namespace Mdbc
 			if (value == null)
 				return BsonNull.Value;
 
-			value = BaseObject(value, out PSObject custom);
+			value = PS2.BaseObject(value, out PSObject custom);
 
 			// case: custom
 			if (custom != null)
@@ -299,7 +272,7 @@ namespace Mdbc
 		}
 		static BsonDocument ToBsonDocument(BsonDocument source, object value, ScriptBlock convert, IList<Selector> properties, int depth)
 		{
-			value = BaseObject(value, out PSObject custom);
+			value = PS2.BaseObject(value, out PSObject custom);
 
 			//_131013_155413 reuse existing document or wrap
 			if (value is IConvertibleToBsonDocument cd)
@@ -357,11 +330,6 @@ namespace Mdbc
 
 				return serializer.Deserialize(context);
 			};
-		}
-		public static Collection<PSObject> InvokeScript(ScriptBlock script, object value)
-		{
-			var vars = new List<PSVariable>() { new PSVariable("_", value) };
-			return script.InvokeWithContext(null, vars);
 		}
 	}
 }

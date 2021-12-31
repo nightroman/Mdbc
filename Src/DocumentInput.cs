@@ -12,7 +12,7 @@ namespace Mdbc
 	{
 		public static object ConvertValue(ScriptBlock convert, object value)
 		{
-			var result = Actor.InvokeScript(convert, value);
+			var result = PS2.InvokeWithContext(convert, value);
 			switch (result.Count)
 			{
 				case 0:
@@ -38,11 +38,11 @@ namespace Mdbc
 			if (id == null)
 				return null;
 
-			id = Actor.BaseObject(id);
-			if (!(id is ScriptBlock sb))
+			id = PS2.BaseObject(id);
+			if (id is not ScriptBlock sb)
 				return new BsonDocument(BsonId.Element(BsonValue.Create(id)));
 
-			var arr = Actor.InvokeScript(sb, input);
+			var arr = PS2.InvokeWithContext(sb, input);
 			if (arr.Count != 1)
 				throw new ArgumentException("-Id script must return a single object."); //! use this type
 
