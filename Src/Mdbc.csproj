@@ -1,6 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <PostBuildEvent>ib publish -Configuration $(Configuration) -TargetFramework $(TargetFramework)</PostBuildEvent>
     <TargetFramework>net472</TargetFramework>
     <TargetFrameworks>net472; netstandard2.0</TargetFrameworks>
     <LangVersion>9.0</LangVersion>
@@ -14,16 +15,11 @@
     </Reference>
   </ItemGroup>
   <ItemGroup Condition="$(TargetFramework) == 'netstandard2.0'">
-    <PackageReference Include="PowerShellStandard.Library" Version="5.1.0" />
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="MongoDB.Bson" Version="2.16.1" />
-    <PackageReference Include="MongoDB.Driver" Version="2.16.1" />
-    <PackageReference Include="MongoDB.Driver.Core" Version="2.16.1" />
     <PackageReference Include="PowerShellStandard.Library" Version="5.1.1" />
   </ItemGroup>
-  <PropertyGroup>
-    <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
-    <PostBuildEvent>ib Publish -Configuration $(Configuration) -TargetFramework $(TargetFramework)</PostBuildEvent>
-  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="MongoDB.Bson" Version="2.18.0" />
+    <PackageReference Include="MongoDB.Driver" Version="2.18.0" />
+    <PackageReference Include="MongoDB.Driver.Core" Version="2.18.0" />
+  </ItemGroup>
 </Project>

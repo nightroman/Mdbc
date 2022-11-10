@@ -100,13 +100,11 @@ task build2 {
 # Synopsis: Publish the module (post-build).
 task publish {
 	if ($TargetFramework -eq 'net472') {
-		remove $ModuleRoot
 		exec { robocopy Module $ModuleRoot /s /np /r:0 /xf *-Help.ps1 } (0..3)
 		exec { robocopy Src\bin\$Configuration\$TargetFramework $ModuleRoot /s /np /r:0 } (0..3)
 	}
 	else {
 		exec { dotnet publish Src\$ModuleName.csproj -c $Configuration -f $TargetFramework --no-build }
-		remove $ModuleRoot
 		exec { robocopy Module $ModuleRoot /s /np /r:0 /xf *-Help.ps1 } (0..3)
 		exec { robocopy Src\bin\$Configuration\$TargetFramework\publish $ModuleRoot /s /np /r:0 } (0..3)
 
