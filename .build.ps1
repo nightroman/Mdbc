@@ -63,7 +63,7 @@ task meta @MetaParam {
 			Tags = 'Mongo', 'MongoDB', 'Database'
 			ProjectUri = '$Project'
 			LicenseUri = 'http://www.apache.org/licenses/LICENSE-2.0'
-			ReleaseNotes = '$Project/blob/master/Release-Notes.md'
+			ReleaseNotes = '$Project/blob/main/Release-Notes.md'
 		}
 	}
 }
@@ -173,7 +173,7 @@ task version {
 }
 
 # Synopsis: Make the package in z\tools.
-task package {equals $Configuration Release}, updateScript, build, testHelp, test, markdown, {
+task package {equals $Configuration Release}, updateScript, build, testHelp, test5, markdown, {
 	remove z
 	$null = mkdir z\tools\$ModuleName\Scripts
 
@@ -210,7 +210,7 @@ Mdbc makes MongoDB data and operations PowerShell friendly.
 		<summary>$text</summary>
 		<description>$text</description>
 		<tags>Mongo MongoDB PowerShell Module Database</tags>
-		<releaseNotes>https://github.com/nightroman/Mdbc/blob/master/Release-Notes.md</releaseNotes>
+		<releaseNotes>https://github.com/nightroman/Mdbc/blob/main/Release-Notes.md</releaseNotes>
 	</metadata>
 </package>
 "@
@@ -278,16 +278,15 @@ task cleanTest {
 }
 
 # Synopsis: Test in the current PowerShell.
-task test {
-	$ErrorView = 'NormalView'
+task test5 {
 	Invoke-Build ** Tests
 },
 cleanTest
 
-# Synopsis: Test in PowerShell v6.
+# Synopsis: Test in PowerShell Core.
 task test7 -If $env:pwsh {
-	exec {& $env:pwsh -NoProfile -Command Invoke-Build Test}
+	exec { & $env:pwsh -NoProfile -Command Invoke-Build test5 }
 }
 
 # Synopsis: Build, test and clean all.
-task . build2, testHelp, test, test7, clean
+task . build2, testHelp, test5, test7, clean

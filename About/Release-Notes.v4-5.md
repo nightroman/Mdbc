@@ -400,4 +400,4 @@ Fixed false positive cyclic reference errors.
 
 ----
 
-[Other versions](https://github.com/nightroman/Mdbc/tree/master/About)
+[Other versions](https://github.com/nightroman/Mdbc/tree/main/About)

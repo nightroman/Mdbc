@@ -1,12 +1,11 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <PostBuildEvent>ib publish -Configuration $(Configuration) -TargetFramework $(TargetFramework)</PostBuildEvent>
     <TargetFramework>net472</TargetFramework>
     <TargetFrameworks>net472; netstandard2.0</TargetFrameworks>
     <LangVersion>9.0</LangVersion>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <PostBuildEvent>ib publish -Configuration $(Configuration) -TargetFramework $(TargetFramework)</PostBuildEvent>
   </PropertyGroup>
   <ItemGroup Condition="$(TargetFramework) == 'net472'">
     <Reference Include="System.Management.Automation">

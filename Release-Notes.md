@@ -1,6 +1,10 @@
 # Mdbc Release Notes
 [C# driver releases]: https://github.com/mongodb/mongo-csharp-driver/releases
 
+## v6.6.3
+
+Add `Settings` and `Url` to `Connect-Mdbc`.
+
 ## v6.6.2
 
 C# driver 2.18.0
@@ -253,8 +257,8 @@ converted. Use `-Property` (use `*` for all) in order to convert by properties.
 See [Classes.lib.ps1] for examples of classes with `Bson*` attributes and
 [Classes.test.ps1] for saving and reading typed data.
 
-[Classes.lib.ps1]: https://github.com/nightroman/Mdbc/blob/master/Tests/Classes.lib.ps1
-[Classes.test.ps1]: https://github.com/nightroman/Mdbc/blob/master/Tests/Classes.test.ps1
+[Classes.lib.ps1]: https://github.com/nightroman/Mdbc/blob/main/Tests/Classes.lib.ps1
+[Classes.test.ps1]: https://github.com/nightroman/Mdbc/blob/main/Tests/Classes.test.ps1
 
 ## v6.0.3
 
@@ -293,7 +297,7 @@ expressions, standard in MongoDB and literally translated to PowerShell.
 
 **v2 driver methods and v6 module commands**
 
-See [README](https://github.com/nightroman/Mdbc/blob/master/README.md)
+See [README](https://github.com/nightroman/Mdbc/blob/main/README.md)
 
 **Mdbc.Dictionary**
 
@@ -358,4 +362,4 @@ as `_id` and comparison operators work properly in PowerShell.
 
 ***
 
-[Other versions](https://github.com/nightroman/Mdbc/tree/master/About)
+[Other versions](https://github.com/nightroman/Mdbc/tree/main/About)

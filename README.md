@@ -86,9 +86,9 @@ Get-MdbcData -Count
 
 ## Next Steps
 
-[HowTo.test.ps1]: https://github.com/nightroman/Mdbc/blob/master/Tests/HowTo.test.ps1
-[Classes.lib.ps1]: https://github.com/nightroman/Mdbc/blob/master/Tests/Classes.lib.ps1
-[Classes.test.ps1]: https://github.com/nightroman/Mdbc/blob/master/Tests/Classes.test.ps1
+[HowTo.test.ps1]: https://github.com/nightroman/Mdbc/blob/main/Tests/HowTo.test.ps1
+[Classes.lib.ps1]: https://github.com/nightroman/Mdbc/blob/main/Tests/Classes.lib.ps1
+[Classes.test.ps1]: https://github.com/nightroman/Mdbc/blob/main/Tests/Classes.test.ps1
 [BsonFile]: https://github.com/nightroman/BsonFile
 
 Read cmdlet help topics and take a look at examples for some basic use cases.
@@ -137,6 +137,6 @@ See also tests, for example:
 
 ## See also
 
-- [Mdbc Release Notes](https://github.com/nightroman/Mdbc/blob/master/Release-Notes.md)
-- [about_Mdbc.help.txt](https://github.com/nightroman/Mdbc/blob/master/Module/en-US/about_Mdbc.help.txt)
+- [Mdbc Release Notes](https://github.com/nightroman/Mdbc/blob/main/Release-Notes.md)
+- [about_Mdbc.help.txt](https://github.com/nightroman/Mdbc/blob/main/Module/en-US/about_Mdbc.help.txt)
 - [Ldbc, similar project for LiteDB](https://github.com/nightroman/Ldbc)

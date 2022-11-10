@@ -1,10 +1,10 @@
 <#
 .Synopsis
-	Help script (https://github.com/nightroman/Helps)
+	Help script, https://github.com/nightroman/Helps
 #>
 
+Set-StrictMode -Version 3
 Import-Module Mdbc
-Set-StrictMode -Version Latest
 
 ### Shared descriptions
 
@@ -219,6 +219,15 @@ specified then they are assumed to be ".", "test", "test" respectively.
 		mongodb://localhost:27017
 		mongodb://myaccount:mypass@remotehost.example.com
 '@
+		Settings = @'
+		Tells to connect using the specified MongoClientSettings.
+		https://github.com/mongodb/mongo-csharp-driver/blob/master/src/MongoDB.Driver/MongoClientSettings.cs
+'@
+		Url = @'
+		Tells to connect using the specified MongoUrl or MongoUrlBuilder.
+		https://github.com/mongodb/mongo-csharp-driver/blob/master/src/MongoDB.Driver/MongoUrl.cs
+		https://github.com/mongodb/mongo-csharp-driver/blob/master/src/MongoDB.Driver/MongoUrlBuilder.cs
+'@
 		DatabaseName = 'Database name. Use * in order to get available names.'
 		CollectionName = 'Collection name. Use * in order to get available names.'
 		NewCollection = 'Tells to remove an existing collection before connecting the specified.'
@@ -315,7 +324,6 @@ Cmdlets with the parameter Collection use it as the default value.
 		@{ text = 'Get-MdbcData' }
 		@{ text = 'Remove-MdbcData' }
 		@{ text = 'Update-MdbcData' }
-		@{ text = 'MongoDB'; URI = 'http://www.mongodb.org' }
 	)
 }
 
@@ -792,9 +800,6 @@ Mdbc.Dictionary, ordered by definition:
 			type = '[object]'
 			description = 'Other object type depending on As.'
 		}
-	)
-	links = @(
-		@{ text = 'MongoDB'; URI = 'http://www.mongodb.org' }
 	)
 	examples = @(
 		@{

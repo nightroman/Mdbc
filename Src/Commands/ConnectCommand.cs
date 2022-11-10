@@ -8,12 +8,25 @@ using System.Management.Automation;
 
 namespace Mdbc.Commands
 {
-	[Cmdlet(VerbsCommunications.Connect, "Mdbc")]
+	[Cmdlet(VerbsCommunications.Connect, "Mdbc", DefaultParameterSetName = "ConnectionString")]
 	public sealed class ConnectCommand : Abstract
 	{
-		[Parameter(Position = 0)]
+		const string
+			nsConnectionString = "ConnectionString",
+			nsSettings = "Settings",
+			nsUrl = "Url";
+
+		[Parameter(Position = 0, ParameterSetName = nsConnectionString)]
 		[ValidateNotNullOrEmpty]
 		public string ConnectionString { get; set; }
+
+		[Parameter(Position = 0, ParameterSetName = nsSettings)]
+		[ValidateNotNull]
+		public MongoClientSettings Settings { get; set; }
+
+		[Parameter(Position = 0, ParameterSetName = nsUrl)]
+		[ValidateNotNull]
+		public MongoUrl Url { get; set; }
 
 		[Parameter(Position = 1)]
 		[ValidateNotNullOrEmpty]
@@ -40,15 +53,36 @@ namespace Mdbc.Commands
 
 		protected override void BeginProcessing()
 		{
-			if (ConnectionString == null)
+			MongoClient client;
+			switch (ParameterSetName)
 			{
-				if (DatabaseName != null || CollectionName != null) throw new PSArgumentException("ConnectionString parameter is null or missing.");
-				ConnectionString = ".";
-				DatabaseName = "test";
-				CollectionName = "test";
+				case nsConnectionString:
+					{
+						if (ConnectionString == null)
+						{
+							if (DatabaseName != null || CollectionName != null) throw new PSArgumentException("ConnectionString parameter is null or missing.");
+							ConnectionString = ".";
+							DatabaseName = "test";
+							CollectionName = "test";
+						}
+
+						client = ConnectionString == "." ? new MongoClient() : new MongoClient(ConnectionString);
+						break;
+					}
+				case nsSettings:
+					{
+						client = new MongoClient(Settings);
+						break;
+					}
+				case nsUrl:
+					{
+						client = new MongoClient(Url);
+						break;
+					}
+				default:
+					return;
 			}
 
-			var client = ConnectionString == "." ? new MongoClient() : new MongoClient(ConnectionString);
 			SessionState.PSVariable.Set(ClientVariable ?? Actor.ClientVariable, client);
 
 			if (DatabaseName == null)
