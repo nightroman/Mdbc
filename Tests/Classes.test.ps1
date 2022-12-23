@@ -342,3 +342,20 @@ task RegisterParameters {
 	equals $r.IgnoreExtraElements $true
 	equals $r.ExtraElementsMemberMap.MemberName extra
 }
+
+# Default class map seems to ignore `get` only properties.
+# `MapProperty` tells to save a property anyway.
+# https://github.com/nightroman/Mdbc/issues/74
+task MapProperty {
+	Register-MdbcClassMap -Type ([System.Management.Automation.PSDriveInfo]) -Init {
+		$_.AutoMap()
+		$null = $_.MapProperty('Name')
+	}
+
+	Connect-Mdbc -NewCollection
+
+	Get-PSDrive C | Add-MdbcData
+
+	$r = Get-MdbcData
+	equals $r.Name C
+}
