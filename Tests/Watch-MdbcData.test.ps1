@@ -62,7 +62,7 @@ task Basic {
 		# test [1], "update"
 		$r = @($watch.Current)[1]
 		equals $r.operationType update
-		equals "$($r.updateDescription)" '{ "updatedFields" : { "value" : 1 }, "removedFields" : [] }'
+		equals "$($r.updateDescription)" '{ "updatedFields" : { "value" : 1 }, "removedFields" : [], "truncatedArrays" : [] }'
 
 		# set data, test "replace"
 		@{_id = 'count'; value = 2} | Set-MdbcData

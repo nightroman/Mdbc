@@ -252,7 +252,7 @@ task conflicting-transactions {
 		}
 		catch {
 			"$_"
-			assert ("$_" -match 'Command commitTransaction failed: Transaction \d+ has been aborted')
+			assert ("$_" -match 'Command commitTransaction failed: Transaction with { txnNumber: \d+ } has been aborted')
 		}
 
 		# commit 1
