@@ -58,6 +58,32 @@ task meta @MetaParam {
 	PowerShellVersion = '3.0'
 	GUID = '12c81cd8-bde3-4c91-a292-e6c4f868106a'
 
+	AliasesToExport = @()
+	VariablesToExport = @()
+	FunctionsToExport = @()
+	CmdletsToExport = @(
+		'Add-MdbcCollection'
+		'Add-MdbcData'
+		'Connect-Mdbc'
+		'Export-MdbcData'
+		'Get-MdbcCollection'
+		'Get-MdbcData'
+		'Get-MdbcDatabase'
+		'Import-MdbcData'
+		'Invoke-MdbcAggregate'
+		'Invoke-MdbcCommand'
+		'New-MdbcData'
+		'Register-MdbcClassMap'
+		'Remove-MdbcCollection'
+		'Remove-MdbcData'
+		'Remove-MdbcDatabase'
+		'Rename-MdbcCollection'
+		'Set-MdbcData'
+		'Update-MdbcData'
+		'Use-MdbcTransaction'
+		'Watch-MdbcChange'
+	)
+
 	PrivateData = @{
 		PSData = @{
 			Tags = 'Mongo', 'MongoDB', 'Database'
