@@ -1,6 +1,21 @@
 # Mdbc Release Notes
 [C# driver releases]: https://github.com/mongodb/mongo-csharp-driver/releases
 
+## v6.7.0
+
+C# driver 2.23.1
+
+Retired older PowerShell support
+
+- Designed for Windows PowerShell 5.1 and PowerShell Core
+- Built with PowerShellStandard.Library
+- Published at PSGallery only
+
+Removed scripts from the package
+
+- `Mdbc.ArgumentCompleters.ps1` is available in the repository and PSGallery <https://www.powershellgallery.com/packages/Mdbc.ArgumentCompleters>
+- `Update-MongoFiles.ps1` is available in the repository
+
 ## v6.6.5
 
 List cmdlets in the module manifest, #80

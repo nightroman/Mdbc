@@ -5,13 +5,15 @@
 using System.Management.Automation;
 using MongoDB.Driver;
 
-namespace Mdbc.Commands
+namespace Mdbc.Commands;
+
+public abstract class AbstractClientCommand : Abstract
 {
-	public abstract class AbstractClientCommand : Abstract
+	MongoClient _Client;
+	[Parameter]
+	public MongoClient Client
 	{
-		MongoClient _Client;
-		[Parameter]
-		public MongoClient Client
-		{ get { return _Client ?? (_Client = ResolveClient()); } set { _Client = value; } }
+		get => _Client ??= ResolveClient();
+		set => _Client = value;
 	}
 }

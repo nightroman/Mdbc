@@ -50,6 +50,7 @@ task Basics {
 	remove z.bson
 }
 
+#! IModuleAssemblyInitializer may be called twice, keep this interesting case
 task Retry {
 	Import-Module SplitPipeline
 	$dataCount = 2000

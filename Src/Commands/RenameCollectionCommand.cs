@@ -5,27 +5,26 @@
 using MongoDB.Driver;
 using System.Management.Automation;
 
-namespace Mdbc.Commands
+namespace Mdbc.Commands;
+
+[Cmdlet(VerbsCommon.Rename, "MdbcCollection")]
+public sealed class RenameCollectionCommand : AbstractDatabaseCommand
 {
-	[Cmdlet(VerbsCommon.Rename, "MdbcCollection")]
-	public sealed class RenameCollectionCommand : AbstractDatabaseCommand
+	[Parameter(Position = 0, Mandatory = true)]
+	public string Name { get; set; }
+
+	[Parameter(Position = 1, Mandatory = true)]
+	public string NewName { get; set; }
+
+	[Parameter]
+	public SwitchParameter Force { get; set; }
+
+	protected override void BeginProcessing()
 	{
-		[Parameter(Position = 0, Mandatory = true)]
-		public string Name { get; set; }
+		var options = new RenameCollectionOptions();
+		if (Force)
+			options.DropTarget = true;
 
-		[Parameter(Position = 1, Mandatory = true)]
-		public string NewName { get; set; }
-
-		[Parameter]
-		public SwitchParameter Force { get; set; }
-
-		protected override void BeginProcessing()
-		{
-			var options = new RenameCollectionOptions();
-			if (Force)
-				options.DropTarget = true;
-
-			Database.RenameCollection(Name, NewName, options);
-		}
+		Database.RenameCollection(Name, NewName, options);
 	}
 }

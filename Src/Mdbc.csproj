@@ -1,24 +1,16 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net472</TargetFramework>
-    <TargetFrameworks>net472; netstandard2.0</TargetFrameworks>
-    <LangVersion>9.0</LangVersion>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>12.0</LangVersion>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <PostBuildEvent>ib publish -Configuration $(Configuration) -TargetFramework $(TargetFramework)</PostBuildEvent>
   </PropertyGroup>
-  <ItemGroup Condition="$(TargetFramework) == 'net472'">
-    <Reference Include="System.Management.Automation">
-      <HintPath>$(MSBuildProgramFiles32)\Reference Assemblies\Microsoft\WindowsPowerShell\3.0\System.Management.Automation.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
-  </ItemGroup>
-  <ItemGroup Condition="$(TargetFramework) == 'netstandard2.0'">
-    <PackageReference Include="PowerShellStandard.Library" Version="5.1.1" />
-  </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="MongoDB.Bson" Version="2.19.0" />
-    <PackageReference Include="MongoDB.Driver" Version="2.19.0" />
-    <PackageReference Include="MongoDB.Driver.Core" Version="2.19.0" />
+    <PackageReference Include="PowerShellStandard.Library" Version="5.1.1" />
+    <PackageReference Include="MongoDB.Bson" Version="2.23.1" />
+    <PackageReference Include="MongoDB.Driver" Version="2.23.1" />
+    <PackageReference Include="MongoDB.Driver.Core" Version="2.23.1" />
   </ItemGroup>
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="ib publish -Configuration $(Configuration)" />
+  </Target>
 </Project>

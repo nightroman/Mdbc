@@ -4,11 +4,6 @@ obj/
 Src/Properties/
 z
 *.bson
-AssemblyInfo.cs
+Directory.Build.props
 Mdbc.psd1
 README.htm
-
-Bin
-Obj
-Debug
-Release

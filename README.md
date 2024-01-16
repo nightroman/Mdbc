@@ -1,55 +1,31 @@
 
-[![NuGet](https://buildstats.info/nuget/Mdbc)](https://www.nuget.org/packages/Mdbc)
 [![PSGallery](https://img.shields.io/powershellgallery/dt/Mdbc.svg)](https://www.powershellgallery.com/packages/Mdbc)
 
 # Mdbc
 
-MongoDB Cmdlets for PowerShell
+MongoDB Cmdlets for Windows PowerShell 5.1 and PowerShell Core
 
-***
-
-Mdbc is the PowerShell module based on the official [MongoDB C# driver](https://github.com/mongodb/mongo-csharp-driver).
-Mdbc makes MongoDB data and operations PowerShell friendly.
-
-- The PSGallery package is for PowerShell Core and PowerShell v5.1 .NET 4.7.2
-- The NuGet package is for PowerShell v3-v5.1, .NET 4.7.2
+The PowerShell module based on the official [MongoDB C# driver](https://github.com/mongodb/mongo-csharp-driver)
 
 ## Quick start
 
-**Step 1:** Get and install
-
-**Package from PSGallery**
-
-Mdbc for PowerShell Core and v5.1 is published as the PSGallery module [Mdbc](https://www.powershellgallery.com/packages/Mdbc).
-
-You can install the module by this command:
+**Step 1:** Get and install [Mdbc](https://www.powershellgallery.com/packages/Mdbc) from the PSGallery:
 
 ```powershell
 Install-Module Mdbc
 ```
 
-**Package from NuGet**
-
-Mdbc for PowerShell v3-v5.1 is published as the NuGet package [Mdbc](https://www.nuget.org/packages/Mdbc).
-Download it by NuGet tools or [directly](http://nuget.org/api/v2/package/Mdbc).
-In the latter case save it as *".zip"* and unzip. Use the package subdirectory *"tools/Mdbc"*.
-
-Copy the directory *Mdbc* to one of the PowerShell module directories, see
-`$env:PSModulePath`, for example like this:
-
-    C:/Users/<User>/Documents/WindowsPowerShell/Modules/Mdbc
-
-**Step 2:** In a PowerShell command prompt import the module:
+**Step 2:** Import the module:
 
 ```powershell
 Import-Module Mdbc
 ```
 
-**Step 3:** Take a look at help and available commands:
+**Step 3:** See help and available commands:
 
 ```powershell
 help about_Mdbc
-help Connect-Mdbc -Full
+help Connect-Mdbc
 Get-Command -Module Mdbc
 ```
 
@@ -86,6 +62,8 @@ Get-MdbcData -Count
 
 ## Next Steps
 
+[Mdbc.ArgumentCompleters.ps1]: https://github.com/nightroman/Mdbc/blob/main/Scripts/Mdbc.ArgumentCompleters.ps1
+[Update-MongoFiles.ps1]: https://github.com/nightroman/Mdbc/blob/main/Scripts/Update-MongoFiles.ps1
 [HowTo.test.ps1]: https://github.com/nightroman/Mdbc/blob/main/Tests/HowTo.test.ps1
 [Classes.lib.ps1]: https://github.com/nightroman/Mdbc/blob/main/Tests/Classes.lib.ps1
 [Classes.test.ps1]: https://github.com/nightroman/Mdbc/blob/main/Tests/Classes.test.ps1
@@ -93,8 +71,15 @@ Get-MdbcData -Count
 
 Read cmdlet help topics and take a look at examples for some basic use cases.
 
-Use *Scripts/Mdbc.ArgumentCompleters.ps1* for database and collection name completion and property completion.
-*Scripts/Update-MongoFiles.ps1* is a toy for making test data but may be useful for tracking file changes.
+Use [Mdbc.ArgumentCompleters.ps1] for database and collection name completion and property completion.
+You may install this script from the PSGallery as [Mdbc.ArgumentCompleters](https://www.powershellgallery.com/packages/Mdbc.ArgumentCompleters):
+
+```powershell
+Install-Script Mdbc.ArgumentCompleters
+```
+
+Use [Update-MongoFiles.ps1], either for making some test data or for tracking file changes in practice.
+
 See also tests, for example:
 
 - [HowTo.test.ps1] - assorted how-to samples

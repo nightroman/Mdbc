@@ -132,3 +132,16 @@ task PublicTypes {
 		'WatchChangeCommand'
 	)
 }
+
+task help_examples {
+	. Helps.ps1
+	Test-Helps ..\Module\en-US\Mdbc-Help.ps1
+}
+
+task help_synopsis {
+	Get-Command -Module Mdbc | Get-Help | .{process{
+		if (!$_.Synopsis.EndsWith('.')) {
+			Write-Warning "$($_.Name) : unexpected/missing synopsis"
+		}
+	}}
+}

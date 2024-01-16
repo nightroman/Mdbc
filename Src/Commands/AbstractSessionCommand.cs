@@ -9,86 +9,88 @@ using System.Management.Automation;
 using System.Reflection;
 using System.Threading;
 
-namespace Mdbc.Commands
+namespace Mdbc.Commands;
+
+public abstract class AbstractSessionCommand : Abstract, IDisposable
 {
-	public abstract class AbstractSessionCommand : Abstract, IDisposable
+	bool _dispose;
+	bool _disposed;
+	IClientSessionHandle _Session;
+
+	//! ThreadStatic and `= new Stack()` fails in Split-Pipeline
+	[ThreadStatic]
+	static Stack<IClientSessionHandle> _DefaultSessions_;
+	static Stack<IClientSessionHandle> DefaultSessions => _DefaultSessions_ ??= new Stack<IClientSessionHandle>();
+
+	internal static void PushDefaultSession(IClientSessionHandle session) => DefaultSessions.Push(session);
+	internal static IClientSessionHandle PopDefaultSession() => DefaultSessions.Pop();
+
+	//! #33 Do not use MongoClient.StartSession(), i.e. true session as implicit, some servers do not support sessions.
+	//! For now follow the driver and hack its internal method.
+	static readonly MethodInfo _StartImplicitSession =
+		typeof(MongoClient).GetMethod("StartImplicitSession", BindingFlags.NonPublic | BindingFlags.Instance, null, [typeof(CancellationToken)], null);
+
+	IClientSessionHandle StartImplicitSession()
 	{
-		bool _dispose;
-		bool _disposed;
-		IClientSessionHandle _Session;
-
-		//! ThreadStatic and `= new Stack()` fails in Split-Pipeline
-		[ThreadStatic]
-		static Stack<IClientSessionHandle> _DefaultSessions_;
-		static Stack<IClientSessionHandle> DefaultSessions { get { return _DefaultSessions_ ?? (_DefaultSessions_ = new Stack<IClientSessionHandle>()); } }
-		internal static void PushDefaultSession(IClientSessionHandle session) { DefaultSessions.Push(session); }
-		internal static IClientSessionHandle PopDefaultSession() { return DefaultSessions.Pop(); }
-
-		//! #33 Do not use MongoClient.StartSession(), i.e. true session as implicit, some servers do not support sessions.
-		//! For now follow the driver and hack its internal method.
-		static MethodInfo _StartImplicitSession = typeof(MongoClient).GetMethod("StartImplicitSession", BindingFlags.NonPublic | BindingFlags.Instance, null, new Type[] { typeof(CancellationToken) }, null);
-		IClientSessionHandle StartImplicitSession()
+		try
 		{
-			try
-			{
-				return (IClientSessionHandle)_StartImplicitSession.Invoke(MyClient, new object[] { default(CancellationToken) });
-			}
-			catch (TargetInvocationException ex)
-			{
-				if (ex.InnerException == null)
-					throw;
-				else
-					throw ex.InnerException;
-			}
+			return (IClientSessionHandle)_StartImplicitSession.Invoke(MyClient, [default(CancellationToken)]);
 		}
-
-		[Parameter]
-		public IClientSessionHandle Session
+		catch (TargetInvocationException ex)
 		{
-			get
+			if (ex.InnerException == null)
+				throw;
+			else
+				throw ex.InnerException;
+		}
+	}
+
+	[Parameter]
+	public IClientSessionHandle Session
+	{
+		get
+		{
+			if (_Session == null)
 			{
-				if (_Session == null)
+				if (DefaultSessions.Count == 0)
 				{
-					if (DefaultSessions.Count == 0)
-					{
-						// create implicit session
-						_Session = StartImplicitSession();
-						_dispose = true;
-					}
-					else
-					{
-						// use current default session
-						_Session = DefaultSessions.Peek();
-					}
+					// create implicit session
+					_Session = StartImplicitSession();
+					_dispose = true;
 				}
-				return _Session;
+				else
+				{
+					// use current default session
+					_Session = DefaultSessions.Peek();
+				}
 			}
-			set
-			{
-				if (_Session != null)
-					throw new InvalidOperationException("Session cannot be set twice.");
-
-				_Session = value;
-			}
+			return _Session;
 		}
-
-		protected abstract IMongoClient MyClient { get; }
-
-		public void Dispose()
+		set
 		{
-			Dispose(true);
-			GC.SuppressFinalize(this);
+			if (_Session != null)
+				throw new InvalidOperationException("Session cannot be set twice.");
+
+			_Session = value;
 		}
+	}
 
-		protected virtual void Dispose(bool disposing)
-		{
-			if (_disposed)
-				return;
+	protected abstract IMongoClient MyClient { get; }
 
-			if (disposing && _dispose)
-				_Session.Dispose();
+	public void Dispose()
+	{
+		Dispose(true);
+		GC.SuppressFinalize(this);
+	}
 
-			_disposed = true;
-		}
+	protected virtual void Dispose(bool disposing)
+	{
+		if (_disposed)
+			return;
+
+		if (disposing && _dispose)
+			_Session.Dispose();
+
+		_disposed = true;
 	}
 }

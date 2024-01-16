@@ -7,84 +7,87 @@ using MongoDB.Driver;
 using System;
 using System.Management.Automation;
 
-namespace Mdbc.Commands
+namespace Mdbc.Commands;
+
+[Cmdlet(VerbsCommon.Remove, "MdbcData"), OutputType(typeof(DeleteResult))]
+public sealed class RemoveDataCommand : AbstractCollectionCommand
 {
-	[Cmdlet(VerbsCommon.Remove, "MdbcData"), OutputType(typeof(DeleteResult))]
-	public sealed class RemoveDataCommand : AbstractCollectionCommand
+	[Parameter(Position = 0, ValueFromPipeline = true)]
+	public object Filter
 	{
-		[Parameter(Position = 0, ValueFromPipeline = true)]
-		public object Filter { get { return _Filter; } set { _Filter = value; _FilterSet = true; } }
-		object _Filter;
-		bool _FilterSet;
+		get => _Filter;
+		set { _Filter = value; _FilterSet = true; }
+	}
+	object _Filter;
+	bool _FilterSet;
 
-		[Parameter]
-		public SwitchParameter Many { get; set; }
+	[Parameter]
+	public SwitchParameter Many { get; set; }
 
-		[Parameter]
-		public SwitchParameter Result { get; set; }
+	[Parameter]
+	public SwitchParameter Result { get; set; }
 
-		protected override void BeginProcessing()
+	protected override void BeginProcessing()
+	{
+		if (MyInvocation.ExpectingInput)
 		{
+			if (_FilterSet)
+				throw new PSArgumentException(Res.ParameterFilter2);
+
+			if (Many)
+				throw new PSArgumentException("Parameter Many is not supported with pipeline input.");
+		}
+		else
+		{
+			if (_Filter == null)
+				throw new PSArgumentException(Res.ParameterFilter1);
+		}
+	}
+
+	protected override void ProcessRecord()
+	{
+		try
+		{
+			FilterDefinition<BsonDocument> filter;
 			if (MyInvocation.ExpectingInput)
 			{
-				if (_FilterSet)
-					throw new PSArgumentException(Res.ParameterFilter2);
+				if (_Filter == null)
+					throw new PSArgumentException(Res.InputDocNull);
 
-				if (Many)
-					throw new PSArgumentException("Parameter Many is not supported with pipeline input.");
+				filter = Api.FilterDefinitionOfInputId(_Filter);
 			}
 			else
 			{
-				if (_Filter == null)
+				try
+				{
+					filter = Api.FilterDefinition(_Filter);
+				}
+				catch(Exception exn)
+				{
+					var text = $"Parameter Filter: {exn.Message}";
+					throw new PSArgumentException(text, exn);
+				}
+
+				if (filter == null)
 					throw new PSArgumentException(Res.ParameterFilter1);
 			}
+
+			DeleteResult result;
+			if (Many)
+			{
+				result = Collection.DeleteMany(Session, filter);
+			}
+			else
+			{
+				result = Collection.DeleteOne(Session, filter);
+			}
+
+			if (Result)
+				WriteObject(result);
 		}
-
-		protected override void ProcessRecord()
+		catch (MongoException ex)
 		{
-			try
-			{
-				FilterDefinition<BsonDocument> filter;
-				if (MyInvocation.ExpectingInput)
-				{
-					if (_Filter == null)
-						throw new PSArgumentException(Res.InputDocNull);
-
-					filter = Api.FilterDefinitionOfInputId(_Filter);
-				}
-				else
-				{
-					try
-					{
-						filter = Api.FilterDefinition(_Filter);
-					}
-					catch(Exception exn)
-					{
-						var text = $"Parameter Filter: {exn.Message}";
-						throw new PSArgumentException(text, exn);
-					}
-
-					if (filter == null)
-						throw new PSArgumentException(Res.ParameterFilter1);
-				}
-
-				DeleteResult result;
-				if (Many)
-				{
-					result = Collection.DeleteMany(Session, filter);
-				}
-				else
-				{
-					result = Collection.DeleteOne(Session, filter);
-				}
-
-				if (Result)
-					WriteObject(result);
-			}
-			catch (MongoException ex)
-			{
-				WriteException(ex, null);
-			}
+			WriteException(ex, null);
 		}
 	}
 }

@@ -5,20 +5,19 @@
 using System.Management.Automation;
 using MongoDB.Driver;
 
-namespace Mdbc.Commands
+namespace Mdbc.Commands;
+
+[Cmdlet(VerbsCommon.Add, "MdbcCollection")]
+public sealed class AddCollectionCommand : AbstractDatabaseCommand
 {
-	[Cmdlet(VerbsCommon.Add, "MdbcCollection")]
-	public sealed class AddCollectionCommand : AbstractDatabaseCommand
+	[Parameter(Position = 0, Mandatory = true)]
+	public string Name { get; set; }
+
+	[Parameter]
+	public CreateCollectionOptions Options { get; set; }
+
+	protected override void BeginProcessing()
 	{
-		[Parameter(Position = 0, Mandatory = true)]
-		public string Name { get; set; }
-
-		[Parameter]
-		public CreateCollectionOptions Options { get; set; }
-
-		protected override void BeginProcessing()
-		{
-			Database.CreateCollection(Name, Options);
-		}
+		Database.CreateCollection(Name, Options);
 	}
 }

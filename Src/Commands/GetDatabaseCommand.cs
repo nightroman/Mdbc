@@ -5,30 +5,29 @@
 using MongoDB.Driver;
 using System.Management.Automation;
 
-namespace Mdbc.Commands
+namespace Mdbc.Commands;
+
+[Cmdlet(VerbsCommon.Get, "MdbcDatabase"), OutputType(typeof(IMongoDatabase))]
+public sealed class GetDatabaseCommand : AbstractClientCommand
 {
-	[Cmdlet(VerbsCommon.Get, "MdbcDatabase"), OutputType(typeof(IMongoDatabase))]
-	public sealed class GetDatabaseCommand : AbstractClientCommand
+	[Parameter(Position = 0), ValidateNotNullOrEmpty]
+	public string Name { get; set; }
+
+	[Parameter]
+	public MongoDatabaseSettings Settings { get; set; }
+
+	protected override void BeginProcessing()
 	{
-		[Parameter(Position = 0), ValidateNotNullOrEmpty]
-		public string Name { get; set; }
-
-		[Parameter]
-		public MongoDatabaseSettings Settings { get; set; }
-
-		protected override void BeginProcessing()
+		if (Name == null)
 		{
-			if (Name == null)
+			foreach (var databaseName in Client.ListDatabaseNames().ToEnumerable())
 			{
-				foreach (var databaseName in Client.ListDatabaseNames().ToEnumerable())
-				{
-					WriteObject(Client.GetDatabase(databaseName, Settings));
-				}
+				WriteObject(Client.GetDatabase(databaseName, Settings));
 			}
-			else
-			{
-				WriteObject(Client.GetDatabase(Name, Settings));
-			}
+		}
+		else
+		{
+			WriteObject(Client.GetDatabase(Name, Settings));
 		}
 	}
 }

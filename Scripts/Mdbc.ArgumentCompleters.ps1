@@ -1,3 +1,13 @@
+<#PSScriptInfo
+.VERSION 1.0.0
+.AUTHOR Roman Kuzmin
+.COPYRIGHT (c) Roman Kuzmin
+.GUID 168df453-07de-492a-bffe-05905ab673b7
+.TAGS Mdbc, TabExpansion2, Register-ArgumentCompleter
+.LICENSEURI http://www.apache.org/licenses/LICENSE-2.0
+.PROJECTURI https://github.com/nightroman/Mdbc
+#>
+
 <#
 .Synopsis
 	Argument completers for Mdbc commands.

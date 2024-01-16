@@ -4,19 +4,21 @@
 
 using MongoDB.Bson;
 using MongoDB.Driver;
-using System;
 using System.Management.Automation;
 
-namespace Mdbc.Commands
-{
-	public abstract class AbstractCollectionCommand : AbstractSessionCommand
-	{
-		IMongoCollection<BsonDocument> _Collection;
-		[Parameter]
-		[ValidateNotNull]
-		public IMongoCollection<BsonDocument> Collection
-		{ get { return _Collection ?? (_Collection = ResolveCollection()); } set { _Collection = value; } }
+namespace Mdbc.Commands;
 
-		protected override IMongoClient MyClient => Collection.Database.Client;
+public abstract class AbstractCollectionCommand : AbstractSessionCommand
+{
+	IMongoCollection<BsonDocument> _Collection;
+
+	[Parameter]
+	[ValidateNotNull]
+	public IMongoCollection<BsonDocument> Collection
+	{
+		get => _Collection ??= ResolveCollection();
+		set => _Collection = value;
 	}
+
+	protected override IMongoClient MyClient => Collection.Database.Client;
 }

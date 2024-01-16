@@ -8,9 +8,9 @@ using MongoDB.Driver;
 namespace Mdbc.Commands;
 
 /// <summary>
-/// Commands with the Database parameter.
+/// Commands with the Database and Session parameters.
 /// </summary>
-public abstract class AbstractDatabaseCommand : Abstract
+public abstract class AbstractDatabaseCommand2 : AbstractSessionCommand
 {
 	IMongoDatabase _Database;
 
@@ -20,4 +20,6 @@ public abstract class AbstractDatabaseCommand : Abstract
 		get => _Database ??= ResolveDatabase();
 		set => _Database = value;
 	}
+
+	protected override IMongoClient MyClient => Database.Client;
 }
