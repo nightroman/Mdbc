@@ -83,26 +83,25 @@ task meta -Inputs $BuildFile, Release-Notes.md -Outputs "Module\$ModuleName.psd1
 }
 
 # Synopsis: Remove temp files.
-task clean {
+task clean -After pushPSGallery {
 	remove z, Src\bin, Src\obj, README.htm
 }
 
 # Synopsis: Build, publish in post-build, make help.
 task build meta, {
-	exec { dotnet build "Src\$ModuleName.csproj" -c $Configuration }
-},
-?help
+	exec {dotnet build "Src\$ModuleName.csproj" -c $Configuration}
+}
 
 # Synopsis: Publish the module (post-build).
 task publish {
-	exec { dotnet publish "Src\$ModuleName.csproj" --no-build -c $Configuration -o $ModuleRoot }
+	exec {dotnet publish "Src\$ModuleName.csproj" --no-build -c $Configuration -o $ModuleRoot}
 	remove "$ModuleRoot\System.Management.Automation.dll", "$ModuleRoot\*.deps.json"
 
-	exec { robocopy Module $ModuleRoot /s /xf *-Help.ps1 } (0..3)
+	exec {robocopy Module $ModuleRoot /s /xf *-Help.ps1} (0..3)
 }
 
 # Synopsis: Build help by https://github.com/nightroman/Helps
-task help -Inputs { Get-Item Src\Commands\*, "Module\en-US\$ModuleName-Help.ps1" } -Outputs "$ModuleRoot\en-US\$ModuleName-Help.xml" {
+task help -After ?build -Inputs {Get-Item Src\Commands\*, "Module\en-US\$ModuleName-Help.ps1"} -Outputs "$ModuleRoot\en-US\$ModuleName-Help.xml" {
 	. Helps.ps1
 	Convert-Helps "Module\en-US\$ModuleName-Help.ps1" $Outputs
 }
@@ -115,7 +114,7 @@ task version {
 # Synopsis: Convert markdown to HTML.
 task markdown {
 	requires -Environment MarkdownCss -Path $env:MarkdownCss
-	exec { pandoc.exe @(
+	exec {pandoc.exe @(
 		'README.md'
 		'--output=README.htm'
 		'--from=gfm'
@@ -128,17 +127,17 @@ task markdown {
 
 # Synopsis: Make the package.
 task package markdown, version, {
-	assert ((Get-Module $ModuleName -ListAvailable).Version -eq ([Version]$Version))
-	assert ((Get-Item $ModuleRoot\$ModuleName.dll).VersionInfo.FileVersion -eq ([Version]"$Version.0"))
+	equals (Get-Module $ModuleName -ListAvailable).Version ([Version]$Version)
+	equals (Get-Item $ModuleRoot\$ModuleName.dll).VersionInfo.FileVersion "$Version.0"
 
 	remove z
-	exec { robocopy $ModuleRoot z\$ModuleName /s /xf *.pdb } (0..3)
+	exec {robocopy $ModuleRoot z\$ModuleName /s /xf *.pdb} 1
 
 	Copy-Item LICENSE -Destination z\$ModuleName
 	Move-Item README.htm -Destination z\$ModuleName
 
-	$actual = (Get-ChildItem z\$ModuleName -File -Force -Recurse -Name) -join "`n"
-	$expected = @'
+	$result = Get-ChildItem z\$ModuleName -Recurse -File -Name | Out-String
+	$sample = @'
 AWSSDK.Core.dll
 AWSSDK.SecurityToken.dll
 DnsClient.dll
@@ -167,25 +166,23 @@ ZstdSharp.dll
 en-US\about_Mdbc.help.txt
 en-US\Mdbc-Help.xml
 '@
-
-	equals $actual ($expected -split '\r?\n' -join "`n")
+	Assert-SameFile.ps1 -Text $sample $result $env:MERGE
 }
 
 # Synopsis: Make and push the PSGallery package.
 task pushPSGallery package, {
 	$NuGetApiKey = Read-Host NuGetApiKey
 	Publish-Module -Path z\$ModuleName -NuGetApiKey $NuGetApiKey
-},
-clean
+}
 
 # Synopsis: Push repository with a version tag.
 task pushRelease version, updateScript, {
-	$changes = exec { git status --short }
+	$changes = exec {git status --short}
 	assert (!$changes) "Please, commit changes."
 
-	exec { git push }
-	exec { git tag -a "v$Version" -m "v$Version" }
-	exec { git push origin "v$Version" }
+	exec {git push}
+	exec {git tag -a "v$Version" -m "v$Version"}
+	exec {git push origin "v$Version"}
 }
 
 # Synopsis: Copy external scripts to sources.
@@ -193,7 +190,7 @@ task updateScript @{
 	Partial = $true
 	Inputs = {
 		Get-Command Mdbc.ArgumentCompleters.ps1, Update-MongoFiles.ps1 |
-		.{process{ $_.Definition }}
+		.{process{$_.Definition}}
 	}
 	Outputs = {process{
 		$2 = "Scripts\$(Split-Path -Leaf $_)"
@@ -212,7 +209,7 @@ task updateScript @{
 }
 
 # Synopsis: Remove test.test* collections
-task cleanTest {
+task cleanTest -After test {
 	Import-Module Mdbc
 	foreach($name in Connect-Mdbc . test *) {
 		if ($name -like 'test*') {
@@ -221,25 +218,20 @@ task cleanTest {
 	}
 }
 
-task test_core {
-	exec { pwsh -NoProfile -Command Invoke-Build test }
+# Synopsis: Test Desktop.
+task desktop -After pushPSGallery {
+	exec {powershell -NoProfile -Command Invoke-Build test}
 }
 
-task test_desktop {
-	exec { powershell -NoProfile -Command Invoke-Build test }
+# Synopsis: Test Core.
+task core -After pushPSGallery {
+	exec {pwsh -NoProfile -Command Invoke-Build test}
 }
-
-# Synopsis: Test PowerShell editions.
-task tests test_core, test_desktop
 
 # Synopsis: Test current PowerShell.
 task test {
 	Invoke-Build ** Tests
-},
-cleanTest
-
-# Synopsis: Build, test, clean.
-task all build, tests, clean
+}
 
 # Synopsis: Build and clean.
 task . build, clean
