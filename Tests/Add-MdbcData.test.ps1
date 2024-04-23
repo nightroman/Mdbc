@@ -66,12 +66,38 @@ task BadSameId {
 	equals $data[0].Name 'Hello'
 }
 
+### Array and Many
+
+$ManyCount = 20
+
+function Get-DocumentMany {
+	foreach($_ in 1 .. $ManyCount) {@{_id=$_}}
+}
+
+function Assert-DocumentMany {
+	$r = Get-MdbcData
+	equals $r.Count $ManyCount
+	equals ($r[0].ToString()) '{ "_id" : 1 }'
+	equals ($r[-1].ToString()) "{ `"_id`" : $ManyCount }"
+}
+
 # https://github.com/nightroman/Mdbc/issues/51
 task AddArray {
 	Connect-Mdbc -NewCollection
-	Add-MdbcData @{_id=1}, @{_id=2}
-	$r = Get-MdbcData
-	equals $r.Count 2
-	equals ($r[0].ToString()) '{ "_id" : 1 }'
-	equals ($r[1].ToString()) '{ "_id" : 2 }'
+	Add-MdbcData (Get-DocumentMany)
+	Assert-DocumentMany
+}
+
+# https://github.com/nightroman/Mdbc/issues/77
+task AddManyArray {
+	Connect-Mdbc -NewCollection
+	Add-MdbcData (Get-DocumentMany) -Many
+	Assert-DocumentMany
+}
+
+# https://github.com/nightroman/Mdbc/issues/77
+task AddManyPipeline {
+	Connect-Mdbc -NewCollection
+	Get-DocumentMany | Add-MdbcData -Many
+	Assert-DocumentMany
 }

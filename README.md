@@ -106,6 +106,7 @@ See also tests, for example:
 | Watch | Watch-MdbcChange -Database | cursor
 | **Collection** | |
 | InsertOne | Add-MdbcData | none
+| InsertMany | Add-MdbcData -Many | none
 | Find | Get-MdbcData | documents
 | CountDocuments | Get-MdbcData -Count | count
 | Distinct | Get-MdbcData -Distinct | values

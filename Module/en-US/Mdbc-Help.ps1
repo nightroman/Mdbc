@@ -530,6 +530,9 @@ an IEnumerable collection of documents.
 		NewId = $NewIdParameter
 		Convert = $ConvertParameter
 		Property = $PropertyParameter
+		Many = @'
+		Tells to collect input data and insert using InsertMany().
+'@
 	}
 	inputs = $DocumentInputs
 	links = @(
