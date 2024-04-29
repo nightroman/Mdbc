@@ -13,7 +13,7 @@ static class PS2
 	/// <summary>
 	/// Gets BaseObject of PSObject or the original object.
 	/// </summary>
-	public static object BaseObject(object value)
+	public static object ToBaseObject(this object value)
 	{
 		return value is PSObject ps ? ps.BaseObject : value;
 	}
@@ -21,7 +21,7 @@ static class PS2
 	/// <summary>
 	/// Gets BaseObject of PSObject, unless PSCustomObject, or the original object.
 	/// </summary>
-	public static object BaseObject(object value, out PSObject custom)
+	public static object ToBaseObject(this object value, out PSObject custom)
 	{
 		if (value is not PSObject ps)
 		{
@@ -51,10 +51,10 @@ static class PS2
 	/// <summary>
 	/// Invokes the script with $_ set to the specified value and optional arguments.
 	/// </summary>
-	public static Collection<PSObject> InvokeWithContext(ScriptBlock script, object value, params object[] args)
+	public static Collection<PSObject> InvokeWithContext(ScriptBlock script, object value)
 	{
 		var vars = new List<PSVariable> { new("_", value) };
-		return script.InvokeWithContext(null, vars, args);
+		return script.InvokeWithContext(null, vars);
 	}
 
 	/// <summary>

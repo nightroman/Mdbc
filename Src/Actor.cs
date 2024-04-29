@@ -60,7 +60,7 @@ static class Actor
 		if (value == null)
 			return BsonNull.Value;
 
-		value = PS2.BaseObject(value, out PSObject custom);
+		value = value.ToBaseObject(out PSObject custom);
 
 		// case: custom
 		if (custom != null)
@@ -278,7 +278,7 @@ static class Actor
 
 	static BsonDocument ToBsonDocument(BsonDocument source, object value, ScriptBlock convert, IList<Selector> properties, int depth)
 	{
-		value = PS2.BaseObject(value, out PSObject custom);
+		value = value.ToBaseObject(out PSObject custom);
 
 		//_131013_155413 reuse existing document or wrap
 		if (value is IConvertibleToBsonDocument cd)

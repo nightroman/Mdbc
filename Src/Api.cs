@@ -88,7 +88,7 @@ public static class Api
 			return true;
 		}
 
-		value = PS2.BaseObject(value);
+		value = value.ToBaseObject();
 
 		if (value is string json)
 		{
@@ -137,13 +137,13 @@ public static class Api
 
 	public static FilterDefinition<BsonDocument> FilterDefinitionOfId(object value)
 	{
-		value = PS2.BaseObject(value);
+		value = value.ToBaseObject();
 		return Builders<BsonDocument>.Filter.Eq(BsonId.Name, BsonValue.Create(value));
 	}
 
 	public static FilterDefinition<BsonDocument> FilterDefinitionOfInputId(object value)
 	{
-		value = PS2.BaseObject(value, out PSObject custom);
+		value = value.ToBaseObject(out PSObject custom);
 		if (custom == null)
 		{
 			if (value is IConvertibleToBsonDocument cd)

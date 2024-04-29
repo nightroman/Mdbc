@@ -21,7 +21,7 @@ class ParameterProject
 
 	internal void Set(object value)
 	{
-		value = PS2.BaseObject(value);
+		value = value.ToBaseObject();
 		if (value is string s && s == "*")
 			_IsAll = true;
 		else

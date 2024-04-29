@@ -39,7 +39,7 @@ static class DocumentInput
 		if (id == null)
 			return null;
 
-		id = PS2.BaseObject(id);
+		id = id.ToBaseObject();
 		if (id is not ScriptBlock sb)
 			return new BsonDocument(BsonId.Element(BsonValue.Create(id)));
 

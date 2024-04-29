@@ -24,7 +24,7 @@ class ParameterAs
 			return;
 
 		IsSet = true;
-		value = PS2.BaseObject(value);
+		value = value.ToBaseObject();
 
 		if (value is Type type)
 		{
