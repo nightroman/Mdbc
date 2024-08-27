@@ -1,6 +1,10 @@
 # Mdbc Release Notes
 [C# driver releases]: https://github.com/mongodb/mongo-csharp-driver/releases
 
+## v6.7.3
+
+C# driver 2.28.0
+
 ## v6.7.2
 
 `Add-MdbcData -Many` uses `InsertMany()`, #77
