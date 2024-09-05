@@ -1,5 +1,5 @@
 
-[![PSGallery](https://img.shields.io/powershellgallery/dt/Mdbc.svg)](https://www.powershellgallery.com/packages/Mdbc)
+[![PSGV](https://img.shields.io/powershellgallery/v/Mdbc)![PSGD](https://img.shields.io/powershellgallery/dt/Mdbc)](https://www.powershellgallery.com/packages/Mdbc)
 
 # Mdbc
 
