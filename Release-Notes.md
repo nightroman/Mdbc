@@ -1,6 +1,10 @@
 # Mdbc Release Notes
 [C# driver releases]: https://github.com/mongodb/mongo-csharp-driver/releases
 
+## v6.7.4
+
+C# driver 2.30.0
+
 ## v6.7.3
 
 C# driver 2.28.0

@@ -140,5 +140,10 @@ task BsonMapping {
 task Issue32 {
 	$manifestEntry = [PSCustomObject]@{releaseNumber = 1; p1 = 1}
 	$r = [Mdbc.Api]::UpdateDefinition(@{'$set' = @{value = $manifestEntry}})
-	equals $r.Render($null, $null).ToString() '{ "$set" : { "value" : { "releaseNumber" : 1, "p1" : 1 } } }'
+	#? adapted for 2.30.0 just to pass
+	$a = [MongoDB.Driver.RenderArgs[MongoDB.Bson.BsonDocument]]::new(
+		[MongoDB.Bson.Serialization.Serializers.BsonDocumentSerializer]::Instance,
+		[MongoDB.Bson.Serialization.BsonSerializerRegistry]::new()
+	)
+	equals $r.Render($a).ToString() '{ "$set" : { "value" : { "releaseNumber" : 1, "p1" : 1 } } }'
 }
