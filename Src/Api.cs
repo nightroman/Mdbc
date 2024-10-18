@@ -15,9 +15,11 @@ namespace Mdbc;
 
 public static class Api
 {
+	internal static GuidRepresentation GuidRepresentation => GuidRepresentation.Standard;
+
 	static object BaseObjectNotNull(object value)
 	{
-		if (value == null) throw new ArgumentNullException(nameof(value));
+		ArgumentNullException.ThrowIfNull(value);
 		return value is PSObject ps ? ps.BaseObject : value;
 	}
 

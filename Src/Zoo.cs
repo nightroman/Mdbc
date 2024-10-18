@@ -33,6 +33,23 @@ class PSObjectTypeMapper : ICustomBsonTypeMapper
 	}
 }
 
+class GuidTypeMapper : ICustomBsonTypeMapper
+{
+	public bool TryMapToBsonValue(object value, out BsonValue bsonValue)
+	{
+		if (value is Guid guid)
+		{
+			bsonValue = new BsonBinaryData(guid, Api.GuidRepresentation);
+			return true;
+		}
+		else
+		{
+			bsonValue = null;
+			return false;
+		}
+	}
+}
+
 static class BsonId
 {
 	public const string Name = "_id";

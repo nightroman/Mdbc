@@ -11,6 +11,31 @@
 # Notes
 
 ***
+## 2024-10-17 driver v3.0, Guid, JSON
+
+- [GUID serialization](https://www.mongodb.com/docs/drivers/csharp/v3.0/fundamentals/serialization/guid-serialization/) // tips, done (alike) + GUID mapper
+- [JsonOutputMode](https://mongodb.github.io/mongo-csharp-driver/3.0.0/api/MongoDB.Bson/MongoDB.Bson.IO.JsonOutputMode.html) // now just 3 values
+
+### `[MongoDB.Bson.IO.JsonWriterSettings]::Defaults`
+
+The default JSON `OutputMode` changed from `Shell` to `RelaxedExtendedJson`.
+
+We change it back to `Shell`,  not breaking, useful for `ToString()`, etc.
+
+`Shell` is also the mode on export with default `Auto` + `.json`.
+
+```
+$r = @{guid = [guid]::NewGuid()} | New-MdbcData
+$r.ToString()
+
+# v2, ok
+{ "guid" : UUID("d5467501-ff92-448d-9a03-21cd0a8bbcf2") }
+
+# v3 raw, odd
+{ "guid" : { "$binary" : { "base64" : "SmC+H5kjR6yONqcRSYASYg==", "subType" : "04" } } }
+```
+
+***
 ## 2020-10-13 driver v2.11.2, Guid, JSON
 
 <https://github.com/mongodb/mongo-csharp-driver/releases/tag/v2.11.0>

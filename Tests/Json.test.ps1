@@ -10,7 +10,7 @@ function JsonFile($Text) {
 	[System.IO.File]::WriteAllText($json, $Text)
 }
 
-#! Use 2+ docs in this test to cover issues like missing EOL after docs.
+#! Use 2+ documents in this test to cover issues like missing EOL after documents.
 task PreserveTypes {
 	$1 = New-MdbcData -NewId
 	$1.String = 'string1'
@@ -35,45 +35,23 @@ task PreserveTypes {
 	$r = Import-MdbcData $json
 	Test-List $data $r
 
-	# driver v2.11.2
 	# use JsonCanonicalExtended (data look preserved better)
 	Write-Build Cyan JsonCanonicalExtended
 	$data | Export-MdbcData $json -FileFormat JsonCanonicalExtended
+	$r = Import-MdbcData $json
+	Test-List $data $r
 	($r = Get-Content -LiteralPath $json)
 	$r1, $r2 = $r | ConvertFrom-Json
 	equals PSCustomObject ($r1.Double.GetType().Name)
 	equals PSCustomObject ($r2.Int64.GetType().Name)
 
-	# driver v2.11.2
 	# use JsonRelaxedExtended and see loss of some data types
 	Write-Build Cyan JsonRelaxedExtended
 	$data | Export-MdbcData $json -FileFormat JsonRelaxedExtended
 	($r = Get-Content -LiteralPath $json)
 	$r1, $r2 = $r | ConvertFrom-Json
-	if ($PSVersionTable.PSVersion.Major -ge 6) {
-		equals Double ($r1.Double.GetType().Name)
-		equals Int64 ($r2.Int64.GetType().Name)
-	}
-	else {
-		equals Decimal ($r1.Double.GetType().Name)
-		equals Int32 ($r2.Int64.GetType().Name)
-	}
-
-	# obsolete in driver v2.11.2
-	# use Strict and see loss of some data types
-	#! cover EOL written after each document, or PS cannot convert
-	Write-Build Cyan JsonStrict
-	$data | Export-MdbcData $json -FileFormat JsonStrict
-	($r = Get-Content -LiteralPath $json)
-	$r1, $r2 = $r | ConvertFrom-Json
-	if ($PSVersionTable.PSVersion.Major -ge 6) {
-		equals Double ($r1.Double.GetType().Name)
-		equals Int64 ($r2.Int64.GetType().Name)
-	}
-	else {
-		equals Decimal ($r1.Double.GetType().Name)
-		equals Int32 ($r2.Int64.GetType().Name)
-	}
+	equals Double ($r1.Double.GetType().Name) #! Decimal in PS 5.1
+	equals Int64 ($r2.Int64.GetType().Name) #! Int32 in PS 5.1
 }
 
 #!

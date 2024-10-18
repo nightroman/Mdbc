@@ -62,7 +62,7 @@ public sealed class ExportDataCommand : Abstract, IDisposable
 		if (fileFormat != FileFormat.Auto)
 			return fileFormat;
 		if (path.EndsWith(".JSON", StringComparison.Ordinal))
-			return FileFormat.JsonStrict;
+			return FileFormat.JsonCanonicalExtended;
 		if (path.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
 			return FileFormat.JsonShell;
 		return FileFormat.Bson;
@@ -102,21 +102,15 @@ public sealed class ExportDataCommand : Abstract, IDisposable
 						var settings = JsonWriterSettings.Defaults;
 						switch (FileFormat)
 						{
-							case FileFormat.JsonShell:
+							case FileFormat.JsonShell when settings.OutputMode != JsonOutputMode.Shell:
 								settings = settings.Clone();
 								settings.OutputMode = JsonOutputMode.Shell;
 								break;
-							case FileFormat.JsonStrict:
-								settings = settings.Clone();
-#pragma warning disable 618 // obsolete JsonOutputMode.Strict
-								settings.OutputMode = JsonOutputMode.Strict;
-#pragma warning restore 618
-								break;
-							case FileFormat.JsonCanonicalExtended:
+							case FileFormat.JsonCanonicalExtended when settings.OutputMode != JsonOutputMode.CanonicalExtendedJson:
 								settings = settings.Clone();
 								settings.OutputMode = JsonOutputMode.CanonicalExtendedJson;
 								break;
-							case FileFormat.JsonRelaxedExtended:
+							case FileFormat.JsonRelaxedExtended when settings.OutputMode != JsonOutputMode.RelaxedExtendedJson:
 								settings = settings.Clone();
 								settings.OutputMode = JsonOutputMode.RelaxedExtendedJson;
 								break;

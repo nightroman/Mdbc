@@ -1,6 +1,20 @@
 # Mdbc Release Notes
 [C# driver releases]: https://github.com/mongodb/mongo-csharp-driver/releases
 
+## v7.0.0
+
+**Breaking changes**
+
+The module requires PowerShell 7.4. Supporting outdated PowerShell 5.1
+becomes hard because C# driver 3.0 no longer supports `netstandard2.0`.
+
+C# driver 3.0 introduces some other breaking changes and Mdbc follows.
+
+`GuidRepresentation.Standard` is used for GUID serialization and mapping.
+
+C# removes enum value of strict JSON and suggests canonical extended JSON instead.
+Mdbc removes `FileFormat.JsonStrict` and uses `JsonCanonicalExtended` instead.
+
 ## v6.7.4
 
 C# driver 2.30.0

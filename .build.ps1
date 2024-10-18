@@ -9,7 +9,7 @@ param(
 
 Set-StrictMode -Version 3
 $ModuleName = 'Mdbc'
-$ModuleRoot = "$env:ProgramFiles\WindowsPowerShell\Modules\$ModuleName"
+$ModuleRoot = "$env:ProgramFiles\PowerShell\Modules\$ModuleName"
 
 # Synopsis: Generate meta files.
 task meta -Inputs $BuildFile, Release-Notes.md -Outputs "Module\$ModuleName.psd1", Src\Directory.Build.props -Jobs version, {
@@ -26,9 +26,9 @@ task meta -Inputs $BuildFile, Release-Notes.md -Outputs "Module\$ModuleName.psd1
 	Copyright = '$Copyright'
 
 	RootModule = '$ModuleName.dll'
-	RequiredAssemblies = 'MongoDB.Bson.dll', 'MongoDB.Driver.Core.dll', 'MongoDB.Driver.dll'
+	RequiredAssemblies = 'MongoDB.Bson.dll', 'MongoDB.Driver.dll'
 
-	PowerShellVersion = '5.1'
+	PowerShellVersion = '7.4'
 	GUID = '12c81cd8-bde3-4c91-a292-e6c4f868106a'
 
 	AliasesToExport = @()
@@ -138,30 +138,16 @@ task package markdown, version, {
 
 	$result = Get-ChildItem z\$ModuleName -Recurse -File -Name | Out-String
 	$sample = @'
-AWSSDK.Core.dll
-AWSSDK.SecurityToken.dll
 DnsClient.dll
 LICENSE
 Mdbc.dll
 Mdbc.psd1
-Microsoft.Bcl.AsyncInterfaces.dll
 Microsoft.Extensions.Logging.Abstractions.dll
-Microsoft.Win32.Registry.dll
 MongoDB.Bson.dll
-MongoDB.Driver.Core.dll
 MongoDB.Driver.dll
-MongoDB.Libmongocrypt.dll
 README.htm
 SharpCompress.dll
 Snappier.dll
-System.Buffers.dll
-System.Memory.dll
-System.Numerics.Vectors.dll
-System.Runtime.CompilerServices.Unsafe.dll
-System.Security.AccessControl.dll
-System.Security.Principal.Windows.dll
-System.Text.Encoding.CodePages.dll
-System.Threading.Tasks.Extensions.dll
 ZstdSharp.dll
 en-US\about_Mdbc.help.txt
 en-US\Mdbc-Help.xml
@@ -170,7 +156,7 @@ en-US\Mdbc-Help.xml
 }
 
 # Synopsis: Make and push the PSGallery package.
-task pushPSGallery package, {
+task pushPSGallery package, test, {
 	$NuGetApiKey = Read-Host NuGetApiKey
 	Publish-Module -Path z\$ModuleName -NuGetApiKey $NuGetApiKey
 }
@@ -218,17 +204,7 @@ task cleanTest -After test {
 	}
 }
 
-# Synopsis: Test Desktop.
-task desktop -After pushPSGallery {
-	exec {powershell -NoProfile -Command Invoke-Build test}
-}
-
-# Synopsis: Test Core.
-task core -After pushPSGallery {
-	exec {pwsh -NoProfile -Command Invoke-Build test}
-}
-
-# Synopsis: Test current PowerShell.
+# Synopsis: Run tests.
 task test {
 	Invoke-Build ** Tests
 }

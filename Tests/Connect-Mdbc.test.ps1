@@ -16,7 +16,7 @@ task BadParameters {
 task Parameterless {
 	Connect-Mdbc
 	Test-Type $Client MongoDB.Driver.MongoClient
-	Test-Type $Database MongoDB.Driver.MongoDatabaseImpl
+	Test-Type $Database MongoDB.Driver.MongoDatabase
 	Test-Type $Collection MongoDB.Driver.MongoCollectionImpl
 	equals $Database.DatabaseNamespace.DatabaseName test
 	equals $Collection.CollectionNamespace.FullName test.test

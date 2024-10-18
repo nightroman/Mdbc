@@ -10,7 +10,6 @@ public enum FileFormat
 	Bson,
 	Json,
 	JsonShell,
-	JsonStrict,
 	JsonCanonicalExtended,
 	JsonRelaxedExtended,
 }

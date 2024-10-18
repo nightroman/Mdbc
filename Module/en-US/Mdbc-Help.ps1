@@ -169,30 +169,28 @@ Specifies the data file format:
  		BSON format
 
  	Json
- 		JSON format with global output mode, default is Shell
+ 		JSON format, output mode is the current global value of
+ 		[MongoDB.Bson.IO.JsonWriterSettings]::Defaults.OutputMode
 
  	JsonShell
- 		JSON format with output mode Shell
-
- 	JsonStrict
- 		JSON format with output mode Strict
- 		(obsolete, similar to CanonicalExtendedJson)
+ 		JSON format, output mode Shell
 
  	JsonCanonicalExtended
- 		JSON format with output mode CanonicalExtendedJson
+ 		JSON format, output mode CanonicalExtendedJson
 
  	JsonRelaxedExtended
- 		JSON format with output mode RelaxedExtendedJson
+ 		JSON format, output mode RelaxedExtendedJson
 
  	Auto (default)
  		The format is defined by the file extension:
- 		- ".JSON" (all caps) is for JSON Strict,
- 		- ".json" (others) is for JSON Shell,
+ 		- ".JSON" (upper case) JsonCanonicalExtended,
+ 		- ".json" (other cases) Shell,
  		- other extensions are for BSON.
 
 Input JSON is a sequence of objects and arrays of objects. Arrays are unrolled.
 Top objects and arrays are optionally separated by spaces, tabs, and new lines.
-Input formats Json* just mean JSON.
+
+On input Json, JsonCanonicalExtended, JsonRelaxedExtended just mean JSON.
 '@
 
 ### Connect-Mdbc
