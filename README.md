@@ -3,7 +3,7 @@
 
 # Mdbc
 
-MongoDB Cmdlets for Windows PowerShell 5.1 and PowerShell Core
+MongoDB Cmdlets for PowerShell Core 7.4
 
 The PowerShell module based on the official [MongoDB C# driver](https://github.com/mongodb/mongo-csharp-driver)
 
