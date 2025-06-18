@@ -1,10 +1,6 @@
 ﻿
-// Copyright (c) Roman Kuzmin
-// http://www.apache.org/licenses/LICENSE-2.0
-
 using MongoDB.Bson;
 using MongoDB.Driver;
-using System;
 using System.Management.Automation;
 
 namespace Mdbc.Commands;

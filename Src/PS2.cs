@@ -1,8 +1,4 @@
 
-// PowerShell secondary methods
-// Copyright (c) Roman Kuzmin
-
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 

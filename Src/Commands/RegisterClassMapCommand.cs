@@ -1,11 +1,7 @@
 ﻿
-// Copyright (c) Roman Kuzmin
-// http://www.apache.org/licenses/LICENSE-2.0
-
 //! Do not expose `KnownTypes`, it is not useful in Mdbc because we require all types registered, i.e. "known".
 
 using MongoDB.Bson.Serialization;
-using System;
 using System.Management.Automation;
 
 namespace Mdbc.Commands;

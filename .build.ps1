@@ -106,9 +106,9 @@ task help -After ?build -Inputs {Get-Item Src\Commands\*, "Module\en-US\$ModuleN
 	Convert-Helps "Module\en-US\$ModuleName-Help.ps1" $Outputs
 }
 
-# Synopsis: Set $script:Version.
+# Synopsis: Set $Script:Version.
 task version {
-	($script:Version = switch -Regex -File Release-Notes.md {'##\s+v(\d+\.\d+\.\d+)' {$Matches[1]; break}})
+	($Script:Version = Get-BuildVersion Release-Notes.md '##\s+v(\d+\.\d+\.\d+)')
 }
 
 # Synopsis: Convert markdown to HTML.

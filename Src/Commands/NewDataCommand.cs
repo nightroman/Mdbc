@@ -1,11 +1,5 @@
 ﻿
-// Copyright (c) Roman Kuzmin
-// http://www.apache.org/licenses/LICENSE-2.0
-
-using System;
-using System.Collections.Generic;
 using System.Management.Automation;
-using MongoDB.Bson;
 
 namespace Mdbc.Commands;
 

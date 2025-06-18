@@ -1,16 +1,9 @@
 ﻿
-// Copyright (c) Roman Kuzmin
-// http://www.apache.org/licenses/LICENSE-2.0
-
 using MongoDB.Bson.IO;
 using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Serializers;
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
 using System.Management.Automation;
-using System.Threading;
 
 namespace Mdbc.Commands;
 
