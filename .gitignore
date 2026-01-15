@@ -4,6 +4,7 @@ obj/
 Src/Properties/
 z
 *.bson
+*.html
+*.nupkg
 Directory.Build.props
 Mdbc.psd1
-README.htm

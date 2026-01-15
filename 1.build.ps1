@@ -8,24 +8,29 @@ param(
 )
 
 Set-StrictMode -Version 3
-$ModuleName = 'Mdbc'
-$ModuleRoot = "$env:ProgramFiles\PowerShell\Modules\$ModuleName"
+$_name = 'Mdbc'
+$_root = "$env:ProgramFiles\PowerShell\Modules\$_name"
+
+# Synopsis: Remove temp files.
+task clean -After pushPSGallery {
+	remove *.nupkg, z, Src\bin, Src\obj, README.html
+}
 
 # Synopsis: Generate meta files.
-task meta -Inputs $BuildFile, Release-Notes.md -Outputs "Module\$ModuleName.psd1", Src\Directory.Build.props -Jobs version, {
+task meta -Inputs $BuildFile, Release-Notes.md -Outputs "Module\$_name.psd1", Src\Directory.Build.props -Jobs version, {
 	$Project = 'https://github.com/nightroman/Mdbc'
 	$Summary = 'Mdbc module - MongoDB Cmdlets for PowerShell'
 	$Copyright = 'Copyright (c) Roman Kuzmin'
 
-	Set-Content Module\$ModuleName.psd1 @"
+	Set-Content Module\$_name.psd1 @"
 @{
 	Author = 'Roman Kuzmin'
-	ModuleVersion = '$Version'
+	ModuleVersion = '$_version'
 	Description = '$Summary'
 	CompanyName = 'https://github.com/nightroman'
 	Copyright = '$Copyright'
 
-	RootModule = '$ModuleName.dll'
+	RootModule = '$_name.dll'
 	RequiredAssemblies = 'MongoDB.Bson.dll', 'MongoDB.Driver.dll'
 
 	PowerShellVersion = '7.4'
@@ -74,72 +79,71 @@ task meta -Inputs $BuildFile, Release-Notes.md -Outputs "Module\$ModuleName.psd1
 		<Company>$Project</Company>
 		<Copyright>$Copyright</Copyright>
 		<Description>$Summary</Description>
-		<Product>$ModuleName</Product>
-		<Version>$Version</Version>
+		<Product>$_name</Product>
+		<Version>$_version</Version>
 		<IncludeSourceRevisionInInformationalVersion>False</IncludeSourceRevisionInInformationalVersion>
 	</PropertyGroup>
 </Project>
 "@
 }
 
-# Synopsis: Remove temp files.
-task clean -After pushPSGallery {
-	remove z, Src\bin, Src\obj, README.html
-}
-
 # Synopsis: Build, publish in post-build, make help.
 task build meta, {
-	exec {dotnet build "Src\$ModuleName.csproj" -c $Configuration}
+	exec { dotnet build "Src\$_name.csproj" -c $Configuration --tl:off }
 }
 
 # Synopsis: Publish the module (post-build).
 task publish {
-	exec {dotnet publish "Src\$ModuleName.csproj" --no-build -c $Configuration -o $ModuleRoot}
-	remove "$ModuleRoot\System.Management.Automation.dll", "$ModuleRoot\*.deps.json"
-
-	exec {robocopy Module $ModuleRoot /s /xf *-Help.ps1} (0..3)
+	exec { dotnet publish "Src\$_name.csproj" -c $Configuration -o $_root --no-build }
+	remove "$_root\System.Management.Automation.dll", "$_root\*.deps.json"
+	exec { robocopy Module $_root /s /np /xf *-Help.ps1 } (0..3)
 }
 
 # Synopsis: Build help by https://github.com/nightroman/Helps
-task help -After ?build -Inputs {Get-Item Src\Commands\*, "Module\en-US\$ModuleName-Help.ps1"} -Outputs "$ModuleRoot\en-US\$ModuleName-Help.xml" {
+task help -After ?build -Inputs {Get-Item Src\Commands\*, "Module\en-US\$_name-Help.ps1"} -Outputs "$_root\en-US\$_name-Help.xml" {
 	. Helps.ps1
-	Convert-Helps "Module\en-US\$ModuleName-Help.ps1" $Outputs
-}
-
-# Synopsis: Set $Script:Version.
-task version {
-	($Script:Version = Get-BuildVersion Release-Notes.md '##\s+v(\d+\.\d+\.\d+)')
+	Convert-Helps "Module\en-US\$_name-Help.ps1" $Outputs
 }
 
 # Synopsis: Convert markdown to HTML.
 task markdown {
-	requires -Environment MarkdownCss -Path $env:MarkdownCss
-	exec {pandoc.exe @(
+	requires -Path $env:MarkdownCss
+	exec { pandoc.exe @(
 		'README.md'
 		'--output=README.html'
 		'--from=gfm'
 		'--embed-resources'
 		'--standalone'
 		"--css=$env:MarkdownCss"
-		"--metadata=pagetitle=$ModuleName"
+		"--metadata=pagetitle=$_name"
 	)}
+}
+
+# Synopsis: Set $Script:_version.
+task version {
+	($Script:_version = Get-BuildVersion Release-Notes.md '##\s+v(\d+\.\d+\.\d+)')
 }
 
 # Synopsis: Make the package.
 task package markdown, version, {
-	equals (Get-Module $ModuleName -ListAvailable).Version ([Version]$Version)
-	equals (Get-Item $ModuleRoot\$ModuleName.dll).VersionInfo.FileVersion "$Version.0"
+	equals (Get-Module $_name -ListAvailable).Version ([Version]$_version)
+	equals $_version (Get-Item "$_root\$_name.dll").VersionInfo.ProductVersion
 
 	remove z
-	exec {robocopy $ModuleRoot z\$ModuleName /s /xf *.pdb} 1
+	$null = mkdir z\$_name
 
-	Copy-Item LICENSE, README.html -Destination z\$ModuleName
+	Copy-Item -Recurse -Destination z\$_name $(
+		'LICENSE'
+		'README.html'
+		"$_root\*"
+	)
 
-	$result = Get-ChildItem z\$ModuleName -Recurse -File -Name | Out-String
+	$result = Get-ChildItem z\$_name -Recurse -File -Name | Out-String
 	$sample = @'
 DnsClient.dll
 LICENSE
 Mdbc.dll
+Mdbc.pdb
 Mdbc.psd1
 Microsoft.Extensions.Logging.Abstractions.dll
 MongoDB.Bson.dll
@@ -155,9 +159,8 @@ en-US\Mdbc-Help.xml
 }
 
 # Synopsis: Make and push the PSGallery package.
-task pushPSGallery package, test, {
-	$NuGetApiKey = Read-Host NuGetApiKey
-	Publish-Module -Path z\$ModuleName -NuGetApiKey $NuGetApiKey
+task pushPSGallery package, {
+	Publish-Module -Path z\$_name -NuGetApiKey (property NuGetApiKeyPS)
 }
 
 # Synopsis: Push repository with a version tag.
@@ -165,8 +168,8 @@ task pushRelease version, updateScript, {
 	assert (!(exec {git status --short})) "Commit changes."
 
 	exec {git push}
-	exec {git tag -a "v$Version" -m "v$Version"}
-	exec {git push origin "v$Version"}
+	exec {git tag -a "v$_version" -m "v$_version"}
+	exec {git push origin "v$_version"}
 }
 
 # Synopsis: Copy external scripts to sources.
@@ -187,6 +190,7 @@ task cleanTest -After test {
 
 # Synopsis: Run tests.
 task test {
+	$ErrorView = 'NormalView'
 	Invoke-Build ** Tests
 }
 

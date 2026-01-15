@@ -48,6 +48,9 @@ public sealed class ConnectCommand : Abstract
 	[Parameter]
 	public SwitchParameter NewCollection { get; set; }
 
+	[Parameter]
+	public SwitchParameter Ping { get; set; }
+
 	protected override void BeginProcessing()
 	{
 		MongoClient client;
@@ -80,6 +83,9 @@ public sealed class ConnectCommand : Abstract
 				return;
 		}
 
+		if (Ping)
+			DoPing(client);
+
 		SessionState.PSVariable.Set(ClientVariable ?? Actor.ClientVariable, client);
 
 		if (DatabaseName == null)
@@ -110,5 +116,18 @@ public sealed class ConnectCommand : Abstract
 
 		var collection = database.GetCollection<BsonDocument>(CollectionName);
 		SessionState.PSVariable.Set(CollectionVariable ?? Actor.CollectionVariable, collection);
+	}
+
+	private void DoPing(MongoClient client)
+	{
+		var database = client.GetDatabase("admin");
+		try
+		{
+			database.RunCommand<BsonDocument>(new BsonDocument("ping", 1));
+		}
+		catch (Exception ex)
+		{
+			WriteException(ex, client);
+		}
 	}
 }

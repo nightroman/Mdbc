@@ -6,8 +6,8 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="PowerShellStandard.Library" Version="5.1.1" />
-    <PackageReference Include="MongoDB.Bson" Version="3.4.0" />
-    <PackageReference Include="MongoDB.Driver" Version="3.4.0" />
+    <PackageReference Include="MongoDB.Bson" Version="3.5.2" />
+    <PackageReference Include="MongoDB.Driver" Version="3.5.2" />
   </ItemGroup>
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
     <Exec Command="ib publish -Configuration $(Configuration)" />

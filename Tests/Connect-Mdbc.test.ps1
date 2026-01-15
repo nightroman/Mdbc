@@ -56,16 +56,16 @@ task ConnectBySettingsTimeout {
 	$settings = [MongoDB.Driver.MongoClientSettings]::new()
 	$settings.Server = [MongoDB.Driver.MongoServerAddress]::new('localhost', 9999)
 	$settings.ServerSelectionTimeout = New-TimeSpan -Seconds 1
-	$r = try { Connect-Mdbc $settings test test -NewCollection } catch { $_ }
+	$r = try { Connect-Mdbc $settings test test -Ping } catch { $_ }
 	"$r"
-	assert ("$r".StartsWith('A timeout occurred after 1000ms'))
+	assert ("$r" -match '^A timeout occurred after \d+ms')
 }
 
 task ConnectByBuilderTimeout {
 	$url = [MongoDB.Driver.MongoUrlBuilder]::new('mongodb://localhost:9999')
 	$url.ServerSelectionTimeout = New-TimeSpan -Seconds 1
 	equals "$url" 'mongodb://localhost:9999/?serverSelectionTimeout=1s'
-	$r = try { Connect-Mdbc $url test test -NewCollection } catch { $_ }
+	$r = try { Connect-Mdbc $url test test -Ping } catch { $_ }
 	"$r"
-	assert ("$r".StartsWith('A timeout occurred after 1000ms'))
+	assert ("$r" -match '^A timeout occurred after \d+ms')
 }

@@ -19,16 +19,13 @@ public abstract class AbstractSessionCommand : Abstract, IDisposable
 	internal static void PushDefaultSession(IClientSessionHandle session) => DefaultSessions.Push(session);
 	internal static IClientSessionHandle PopDefaultSession() => DefaultSessions.Pop();
 
-	//! #33 Do not use MongoClient.StartSession(), i.e. true session as implicit, some servers do not support sessions.
-	//! For now follow the driver and hack its internal method.
-	static readonly MethodInfo _StartImplicitSession =
-		typeof(MongoClient).GetMethod("StartImplicitSession", BindingFlags.NonPublic | BindingFlags.Instance, null, [typeof(CancellationToken)], null);
-
-	IClientSessionHandle StartImplicitSession()
+	//! 2019-12-04 #33 Do not use MongoClient.StartSession(), i.e. true session as implicit, some servers do not support sessions. Hack internal method.
+	//! 2026-01-15 Driver 3.5.2 does not have this internal method, so revert to StartSession().
+	IClientSessionHandle StartSession()
 	{
 		try
 		{
-			return (IClientSessionHandle)_StartImplicitSession.Invoke(MyClient, [default(CancellationToken)]);
+			return MyClient.StartSession();
 		}
 		catch (TargetInvocationException ex)
 		{
@@ -49,7 +46,7 @@ public abstract class AbstractSessionCommand : Abstract, IDisposable
 				if (DefaultSessions.Count == 0)
 				{
 					// create implicit session
-					_Session = StartImplicitSession();
+					_Session = StartSession();
 					_dispose = true;
 				}
 				else

@@ -1,6 +1,12 @@
 # Mdbc Release Notes
 [C# driver releases]: https://github.com/mongodb/mongo-csharp-driver/releases
 
+## v7.1.0
+
+C# driver 3.5.2
+
+`Connect-Mdbc` - new switch `Ping`, #92
+
 ## v7.0.1
 
 C# driver 3.4.0

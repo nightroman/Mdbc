@@ -244,6 +244,9 @@ Name of a new variable in the current scope with the connected collection.
 The default variable is $Collection.
 Cmdlets with the parameter Collection use it as the default value.
 '@
+		Ping = @'
+Tells to test the connection and write an error if it cannot connect.
+'@
 	}
 	outputs = @(
 		@{ type = 'None or database or collection names.' }
